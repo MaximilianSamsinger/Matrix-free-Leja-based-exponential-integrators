@@ -10,7 +10,8 @@ from scipy.linalg.blas import dasum, dnrm2
 
 import scipy.io as sio
 
-def expleja(h,A,v,tol=[0,2**-53,float('inf'),float('inf')],p=5,interp_para=0): 
+def expleja(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
+                          p=5, interp_para=None): 
     '''
     EXPLEJA   Matrix exponential times vector or matrix.
     
@@ -98,12 +99,13 @@ def expleja(h,A,v,tol=[0,2**-53,float('inf'),float('inf')],p=5,interp_para=0):
     defaulttol = [0,2**-53,float('inf'),float('inf')]
     tol = tol + defaulttol[len(tol):]
         
-    if interp_para == 0:
+    if interp_para is None:
         interp_para = select_interp_para(h, A, v, tol, m_max=99, p=p)
     
     return newton_wrapper(h, v, tol, *interp_para, vectornorm = tol[2])
 
-def newton_wrapper(h, v, tol, nsteps, gamma2, xi, dd, A, mu, c, m, vectornorm = float('inf')):    
+def newton_wrapper(h, v, tol, nsteps, gamma2, xi, dd, A, mu, c, m, 
+                   vectornorm = float('inf')):    
     #Choose a norm for the newton interpolation
     if vectornorm == 2:
         norm = dnrm2
@@ -127,7 +129,7 @@ def newton_wrapper(h, v, tol, nsteps, gamma2, xi, dd, A, mu, c, m, vectornorm = 
     eta = np.exp(mu*h/float(nsteps)) 
     for k in range(int(nsteps)):
         pexpAv, perrest, pinfo = newton(h/nsteps,A,expAv,xi,dd,tol[0]/nsteps,
-                                      tol[1]/nsteps,norm=norm,maxm=m)
+                                      tol[1]/nsteps,norm=norm,m_max=m)
         errest[k] = perrest
         info[k] = pinfo
         expAv = pexpAv*eta
@@ -158,6 +160,7 @@ def select_interp_para(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
                                          
     tol = np.array(tol)
     sampletol = [2**-10,2**-24,2**-53]
+    
     if len((tol[np.where(tol[:2]!=0)])):
         t = min(tol[np.where(tol[:2]!=0)])
     else:
@@ -229,11 +232,13 @@ def select_interp_para(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
     xi = xi*(gamma2/2)
     ''' Idea: Since roh(A) is the best choice for c, shouldn't we set m*
     such that theta_m* == roh(A)? Then h*norm(A)/roh(A) gives us the optimal 
-    number of substeps. Where is the mistake?'''
+    number of substeps. Where is the mistake?
+    No: We cannot do that since we no longer know whether we converge or not.
+    '''
     return nsteps, gamma2, xi.flatten(), dd, A, mu, c, m
     
 
-def newton(h, A, v, xi, dd, abstol, reltol, norm, maxm):
+def newton(h, A, v, xi, dd, abstol, reltol, norm, m_max):
     '''
     Newton
     
@@ -250,7 +255,7 @@ def newton(h, A, v, xi, dd, abstol, reltol, norm, maxm):
     y = ydiff
     new_ydiff_norm = norm(ydiff)
     
-    for m in range(maxm):
+    for m in range(m_max):
         v = (A.dot(v))*h - xi[m]*v
         
         ydiff = dd[m+1]*v

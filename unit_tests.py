@@ -3,6 +3,11 @@ import scipy as sp
 from AdvectionDiffusion1D import AdvectionDiffusion1D
 from expleja import expleja
 
+'''
+Todo:
+    Unit Test for complex numbers
+'''
+
 N = 200
 adv_coeff = 1
 dif_coeff = 1
@@ -58,6 +63,13 @@ def test_with_0_vector(tau, matrix):
 test_with_0_vector(tau, A1)
 test_with_0_vector(tau, A2)
 test_with_0_vector(tau, A3)
+
+'''
+expleja: Behaviour with NaNs
+'''
+
+expleja(tau,A1,float('inf')*u)
+
 
 print('Everything is ok')
 
