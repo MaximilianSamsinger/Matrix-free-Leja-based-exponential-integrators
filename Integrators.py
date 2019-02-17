@@ -5,7 +5,6 @@ from scipy.sparse.linalg import gmres
 from numpy import array, asarray, transpose
 from expleja import expleja, normAmp
 import scipy.io as sio
-import warnings
 
 #functionEvaluations ~= Matrix-Vector Multiplications
 class MatrixIntegrator:
@@ -32,7 +31,7 @@ def rk2_matrixinput(M,t,u,t_end,Nt):
         
         t,u = t + tau, u + tau*k2
     
-    assert(abs(t - t_end) < 1e-14)
+    assert(abs(t - t_end) < tau)
 
     functionEvaluations = 2*Nt         
     otherCosts = 0
@@ -50,7 +49,7 @@ def rk4_matrixinput(M,t,u,t_end,Nt):
         
         t,u = t + tau, u + tau/6*(2*k1 + k2 + k3 + 2*k4)
      
-    assert(abs(t - t_end) < 1e-14)
+    assert(abs(t - t_end) < tau)
         
     functionEvaluations = 4*Nt
     otherCosts = 0
@@ -59,6 +58,13 @@ def rk4_matrixinput(M,t,u,t_end,Nt):
         
 
 def crankn(M,t,u,t_end,Nt):
+    ''' Crank-Nicolson method 
+    Optimal gmres tolerance is unclear a priori'''
+    
+    if not hasattr(crankn,'parameter'):
+        crankn.parameter = 2**-23
+    
+    gmres_tol = crankn.parameter
     
     ushape = u.shape
     N = ushape[0]
@@ -80,11 +86,11 @@ def crankn(M,t,u,t_end,Nt):
         if not issparse(A):
             A = asarray(A)
         '''
-        u,_ = gmres(A,b,x0=u,tol=2**-23,callback=gmresiterations)
+        u,_ = gmres(A,b,x0=u,tol=gmres_tol,callback=gmresiterations)
         t += tau
 
     
-    assert(abs(t - t_end) < 1e-14)
+    assert(abs(t - t_end) < tau)
     
     u = u.reshape(ushape)
     '''
@@ -98,6 +104,7 @@ def crankn(M,t,u,t_end,Nt):
     
     return u, functionEvaluations, otherCosts
 
+
 def expeuler(M,t,u,t_end,Nt):
     ''' We force s = Nt and m = 99 for Experiment1 '''
     
@@ -108,13 +115,10 @@ def expeuler(M,t,u,t_end,Nt):
     expAv, _, info, c, m, _, _ = expleja(t_end-t, M, u, 
             tol=[0,2**-23,float('inf'),float('inf')], p=0, interp_para=para)
     
-    functionEvaluations = sum(info)[0] + c
+    functionEvaluations = int(sum(info)[0] + c)
     otherCosts = 0
     
     return expAv, functionEvaluations, otherCosts
-    
-    ''' TODO: Runtime warnings kill our performance and the result is unusable 
-    anyway. We catch them as errors and skip the result '''
     
 def select_interp_para_for_fixed_m_and_s(h, A, v, s=1, m=99):    
     ''' The code is shortened version select_interp_para from expleja 
@@ -155,7 +159,7 @@ def rk2(f,t,u,t_end,Nt):
         
         t,u = t + tau, u + tau*k2
     
-    assert(abs(t - t_end) < 1e-14)
+    assert(abs(t - t_end) < tau)
 
     functionEvaluations = 2*Nt         
     return u, functionEvaluations 
