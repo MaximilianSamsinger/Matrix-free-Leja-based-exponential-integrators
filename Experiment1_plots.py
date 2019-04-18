@@ -1,7 +1,9 @@
 import pandas as pd
 import numpy as np
+import os
 from matplotlib import pyplot as plt
 from Experiment1_datapreperation import dataobject, get_optimal_data
+
 
 ''' 
 DISCRETIZED ONE DIMENSIONAL LINEAR ADVECTION-DIFFUSION EQUATION
@@ -50,7 +52,7 @@ keys = [keys[k] for k in [2,3,1,0]] # Rearrange
 ''' 
 CONFIG 
 '''
-maxerror = '1e-6'
+maxerror = '1e-7'
 adv = 1.0 # In all experiments, this is fixed
 dif = 1.0 
 Pe = adv/dif #Peclet number
@@ -58,6 +60,8 @@ Pe = adv/dif #Peclet number
 for key in keys:
     get_optimal_data(dataobjdict[key], float(maxerror), adv, dif)
 
+save_figures = False
+save_path = 'Plots' + os.sep
 
 '''
 1.1 Plot matrix dimension (Nx) vs matrix-vector multiplications (mv)
@@ -72,6 +76,11 @@ ax.set_ylabel('Matrix-vector multiplications')
 ax.set_ylim([5e2,1.5e5])
 ax.set_yscale('log')
 
+if save_figures:
+    plt.savefig(save_path + 'Experiment 1.1, dif=' + str(dif)
+            + ".pdf", format='pdf', bbox_inches='tight', transparent=True)
+    plt.close()
+
 '''
 1.2 Plot matrix dimension (Nx) vs optimal time step size (tau)
 '''
@@ -81,8 +90,8 @@ for key in keys:
     df.plot('Nx','tau', label=key[1:], ax=ax)
 CFLA = (1./np.array(df.Nx))
 CFLD = (1./np.array(df.Nx))**2*Pe
-ax.plot(df.Nx, CFLD, label="Diff. CFL",linestyle='--')
 ax.plot(df.Nx, CFLA, label="Adv. CFL",linestyle='--')
+ax.plot(df.Nx, CFLD, label="Diff. CFL",linestyle='--')
 
 ax.set_title(
         'Optimal time step for which error < ' + maxerror + ' is satisfied')
@@ -90,6 +99,11 @@ ax.legend()
 ax.set_xlabel('N')
 ax.set_ylabel('Optimal time step')
 ax.set_yscale('log')
+
+if save_figures:
+    plt.savefig(save_path + 'Experiment 1.2, dif=' + str(dif)
+            + ".pdf", format='pdf', bbox_inches='tight', transparent=True)
+    plt.close()
 
 '''
 1.3 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
@@ -107,8 +121,15 @@ ax.set_title('Parameter for which error < ' + maxerror + ' is satisfied')
 ax.legend()
 ax.set_xlabel('Matrix-vector multiplications')
 ax.set_ylabel('Optimal time step')
+ax.set_xlim([4e2,1.5e5])
+ax.set_ylim([1e-6,9.1e-2])
 ax.set_xscale('log')
 ax.set_yscale('log')
+
+if save_figures:
+    plt.savefig(save_path + 'Experiment 1.3, dif=' + str(dif)
+            + ".pdf", format='pdf', bbox_inches='tight', transparent=True)
+    plt.close()
 
 '''
 Experiment 1 Bonus: 
@@ -130,25 +151,7 @@ ax.set_ylabel('Absolute error')
 ax.set_xscale('log')
 ax.set_yscale('log')
 
-
-'''
-for key in keys:
-    get_optimal_data(dataobjdict[key], 1e-7) 
-    
-    x_vs_y(dataobjdict[key], 'Nx', 'mv', by=None, data='optimal', 
-           logplot=[False,True])
-'''
-'''  
-for k, key in enumerate(keys):
-    x_vs_y(dataobjdict[key], 'Nt', 'error', by='Nx', data='data', 
-           logplot=[True,True], 
-           y_cond = [0,1], 
-           figure_num = k)
-'''
-
-
- 
-'''
-with pd.HDFStore('Experiment1.h5') as hdf:
-    data = hdf['rk4']
-'''
+if save_figures:
+    plt.savefig(save_path + 'Experiment 1.expleja, dif=' + str(dif)
+            + ".pdf", format='pdf', bbox_inches='tight', transparent=True)
+    plt.close()
