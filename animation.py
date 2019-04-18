@@ -11,8 +11,8 @@ Create Animation
 
 if __name__ == '__main__': 
     t_end = 1e-1
-    Nx = 400
-    Nt = 1000
+    Nx = 200
+    Nt = 200
     
     
     adv_coeff = 1e0 # Multiply advection matrix with adv_coeff

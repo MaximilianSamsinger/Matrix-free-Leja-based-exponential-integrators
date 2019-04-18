@@ -63,8 +63,9 @@ def crankn(M,t,u,t_end,Nt):
     
     if not hasattr(crankn,'parameter'):
         crankn.parameter = 2**-23
-    
+        
     gmres_tol = crankn.parameter
+    
     
     ushape = u.shape
     N = ushape[0]

@@ -40,7 +40,7 @@ tau = 1.
 
 A_sparse, u = AdvectionDiffusion1D(N, adv_coeff, dif_coeff, periodic, h, False)
 expAv1 = sp.sparse.linalg.expm_multiply(tau*A_sparse, u)
-expAv2 = expleja(tau, A, u)[0]
+expAv2 = expleja(tau, A_sparse, u)[0]
 Truth_vector = np.isclose(expAv1, expAv2)
 assert(np.all(Truth_vector))
 

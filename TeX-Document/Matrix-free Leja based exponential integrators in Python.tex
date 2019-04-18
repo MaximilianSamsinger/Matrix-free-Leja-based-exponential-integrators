@@ -1,0 +1,121 @@
+\documentclass{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman,english]{babel}
+\usepackage{blindtext}
+\usepackage{color}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{upgreek}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{multirow}
+\usepackage{float}
+
+
+\newcommand{\argmax}{\operatornamewithlimits{argmax}}
+\newcommand{\defneq}{\mathrel{\mathop:}=}
+\newcommand{\eqdefn}{=\mathrel{\mathop:}}
+
+%\newcommand{\myparagraph}[1]{\paragraph{#1}\mbox{}\}
+%\setlength{\parindent}{0em}
+
+\begin{document}
+
+
+\theoremstyle{definition}
+\newtheorem{defn}{Definition}[section]
+\newtheorem{bsp}{Beispiel}[section]
+\newtheorem{satz}{Satz}[section]
+\newtheorem{prop}{Proposition}
+\newtheorem{lem}[satz]{Lemma}
+\newtheorem*{bem}{Bemerkung}
+\newtheorem*{rem}{Remark}
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+
+
+%\title{The Leja method in Python}
+%\subtitle{supervised by Peter Kandolf, Alexander Ostermann}
+%\maketitle
+%\author{Maximilian Samsinger}
+\begin{titlepage}
+\noindent\makebox[\textwidth][c]{\includegraphics[width=\paperwidth]{leiste.png}}
+\vspace{3cm}
+\begin{center}
+{\Large Master Thesis}
+\vspace{50pt}\\
+\textbf{\Huge Matrix-free Leja based exponential integrators in Python}
+\vspace{40pt}\\
+\textbf{\Large Maximilian Samsinger}\vspace{20pt}\\
+{\large\today}
+\vspace{120pt}\\
+{\Large Supervised by Lukas Einkemmer and\\
+Alexander Ostermann\vspace{10pt}}
+\end{center}
+\end{titlepage}
+\textsf{
+{\hspace{-16pt}\large\textbf{Leopold-Franzens-Universität Innsbruck}}
+\begin{figure}[!htp]
+\begin{flushright}
+	\includegraphics[scale=0.1]{./uni_logo}
+\end{flushright}
+\end{figure}\\\\
+{\Large\textbf{Eidesstattliche Erklärung}}\\\\
+Ich erkläre hiermit an Eides statt durch meine eigenhändige Unterschrift, dass ich die\\ vorliegende Arbeit selbständig verfasst und keine anderen als die angegebenen Quellen und\\ Hilfsmittel verwendet habe. Alle Stellen, die wörtlich oder inhaltlich den angegebenen Quellen \\entnommen wurden, sind als solche kenntlich gemacht.\\\\
+Ich erkläre mich mit der Archivierung der vorliegenden Bachelorarbeit einverstanden.
+\vspace{40pt}\\
+\begin{center}
+\ensuremath{\overline{\mbox{Datum}\hspace{8em}}
+    \hspace{10em}
+    \overline{\mbox{Unterschrift}\hspace{10em}}
+}
+\thispagestyle{empty}
+\end{center}}
+\pagebreak
+
+
+
+\begin{center}\textbf{\Huge Matrix-free Leja based exponential integrators in Python}\end{center}
+\begin{center}\textbf{Abstract}\end{center}
+\begin{abstract}
+
+\end{abstract}
+
+\setcounter{page}{1}
+
+\section{Introduction}
+%%%%%%%%
+%Examples needed
+%%%%%%%%%%
+Consider the action of the matrix exponential function 
+	\[e^Av,\quad A\in\mathbb{C}^{N\times N}, v\in\mathbb{C}^N.\] 
+It can be difficult or impossible to compute $e^A$ in a first step and then the action $e^Av$ in a seperate step. This is especially true in applications where $N>10000$ is not uncommon. Furthermore the matrix exponential of a sparse matrix is in general no longer sparse. Therefore it is more feasable to compute the action of the matrix exponential in a single step. This can be done by approximating the matrix exponential with a matrix polynomial $p_n$ of degree $n$ in $A$
+	\[e^Av \approx p_n(A)v.\]
+This approach has many advantages. The cost of the computation of $p_n(A)v$ mainly depends on the calculation of $n\in\mathbb{N}$ matrix-vector multiplications with $A$. Not only can $A$ be sparse, which significantly decreases the costs of the computation, the explicit knowledge of $A$ itself is no longer required. $A$ can be replaced by a linear function, which can be more convenient and saves memory.
+
+\section{Experiment 1}
+We discretize the one-dimensional advection-diffusion equation
+\begin{align*}
+\partial_tu &= \partial_{xx}u + \frac{1}{\operatorname{Pe}}\partial_xu \quad t\in[0,0.1]\\
+u_0(t) &= e^{-80\cdot(t-0,45)^2}
+\end{align*}
+with homogeneous Dirichlet boundary conditions on the domain $\Omega = [0,1]$. With $\operatorname{Pe}>0$ we denote the grid P\'eclet number.
+
+
+
+
+
+
+
+\begin{thebibliography}{6}
+	\bibitem{rosenbr} M. Caliari, A. Ostermann. Implementation of exponential Rosenbrock-type integrators, Applied Numerical Mathematics 59 (2009), 568-581.
+	\bibitem{action} A. Al-Mohy, N. Higham. Computing the action of the matrix exponential, with an application to exponential integrators, SIAM Journal on Scientific Computing 33 (2011), 488-511.
+	\bibitem{newt} L. Reichel. Newton interpolation at Leja points, BIT Numerical Mathematics 30 (1990), 332-346.
+    \bibitem{advdif} M. Caliari, M. Vianello, L. Bergamaschi. Interpolating discrete advection-diffusion propagators at Leja sequences, Journal of Computational and Applied Mathematics 172 (2004), 79-99.
+    \bibitem{lejarev} M. Caliari, P. Kandolf, A. Ostermann, S. Rainer. The Leja method revisited: backward error analysis for the matrix exponential, SIAM Journal on Scientific Computation, Accepted for publication (2016). arXiv:1506.08665.
+    \bibitem{python} Python Software Foundation. Python Language Reference, version 2.7. Available at http://www.python.org. Manual at https://docs.python.org/2/. [Online; accessed 2015-12-14]
+    %\bibitem{numpy} S. v. d. Walt, C. Colbert, G Varoquaux, The NumPy Array: A Structure for Efficient Numerical Computation, Computing in Science & Engineering, 13, 22-30 (2011)
+    \bibitem{scipy} E. Jones, E. Oliphant, P. Peterson, SciPy: Open Source Scientific Tools for Python, Available at http://www.scipy.org/. [Online; accessed 2015-12-14]
+\end{thebibliography}
+
+
+\end{document}
