@@ -9,7 +9,7 @@ from Experiment1_datapreperation import dataobject, get_optimal_data
 DISCRETIZED ONE DIMENSIONAL LINEAR ADVECTION-DIFFUSION EQUATION
 
 Experiment 1:
-    Here we fix the highest acceptable absolute error (2-norm) for the solution
+    Here we fix the highest acceptable error (2-norm/inf-norm) for the solution
     of the linear advection-diffusion equantion and look at all datapoints
     for which an integrator satisfies:
         - The maximal integration error is small enough 
@@ -47,21 +47,22 @@ Load data
 with pd.HDFStore('Experiment1.h5') as hdf:
     keys = hdf.keys()
     dataobjdict = {key:dataobject(key) for key in keys}
-keys = [keys[k] for k in [2,3,1,0]] # Rearrange
+#keys = [keys[k] for k in [2,3,1,0]] # Rearrange
 
 ''' 
 CONFIG 
 '''
 maxerror = '1e-7'
-adv = 1.0 # In all experiments, this is fixed
-dif = 1.0 
+errortype = 'abs_error_2' #rel_error_2, abs_error_inf, rel_error_inf
+adv = 1.0 # In all experiments, adv is fixed
+dif = 1.0
 Pe = adv/dif #Peclet number
 
 for key in keys:
-    get_optimal_data(dataobjdict[key], float(maxerror), adv, dif)
+    get_optimal_data(dataobjdict[key], float(maxerror), errortype, adv, dif)
 
-save_figures = False
-save_path = 'Plots' + os.sep
+save_figures = True
+save_path = 'figures' + os.sep + 'Experiment1' + os.sep 
 
 '''
 1.1 Plot matrix dimension (Nx) vs matrix-vector multiplications (mv)
@@ -70,19 +71,38 @@ fig, ax = plt.subplots()
 for key in keys:
     df = dataobjdict[key].optimaldata
     df.plot('Nx','mv', label=key[1:], ax=ax)
-ax.set_title('Minimal costs for which error < ' + maxerror + ' is satisfied')
+ax.set_title('Pe = ' + str(Pe) + '\n'
+             + 'Minimal costs for which error < ' + maxerror + ' is satisfied')
 ax.set_xlabel('N')
 ax.set_ylabel('Matrix-vector multiplications')
-ax.set_ylim([5e2,1.5e5])
+#ax.set_ylim([5e2,1.5e5])
 ax.set_yscale('log')
 
 if save_figures:
-    plt.savefig(save_path + 'Experiment 1.1, dif=' + str(dif)
+    plt.savefig(save_path + '1,err='+maxerror+',Pe='+str(Pe)
             + ".pdf", format='pdf', bbox_inches='tight', transparent=True)
     plt.close()
 
 '''
-1.2 Plot matrix dimension (Nx) vs optimal time step size (tau)
+1.2 Plot matrix dimension (Nx) vs matrix-vector multiplications (mv)
+'''
+fig, ax = plt.subplots()
+for key in keys:
+    df = dataobjdict[key].optimaldata
+    df.plot('Nx','m', label=key[1:], ax=ax)
+ax.set_title('Pe = ' + str(Pe) + '\n'
+             + 'Minimal costs for which error < ' + maxerror + ' is satisfied')
+ax.set_xlabel('N')
+ax.set_ylabel('Matrix-vector multiplications per timestep')
+ax.set_ylim([0,100])
+
+if save_figures:
+    plt.savefig(save_path + '2,err='+maxerror+',Pe='+str(Pe)
+            + ".pdf", format='pdf', bbox_inches='tight', transparent=True)
+    plt.close()
+
+'''
+1.3 Plot matrix dimension (Nx) vs optimal time step size (tau)
 '''
 fig, ax = plt.subplots()
 for key in keys:
@@ -93,20 +113,20 @@ CFLD = (1./np.array(df.Nx))**2*Pe
 ax.plot(df.Nx, CFLA, label="Adv. CFL",linestyle='--')
 ax.plot(df.Nx, CFLD, label="Diff. CFL",linestyle='--')
 
-ax.set_title(
-        'Optimal time step for which error < ' + maxerror + ' is satisfied')
+ax.set_title('Pe = ' + str(Pe) + '\n'
+        + 'Optimal time step for which error < ' + maxerror + ' is satisfied')
 ax.legend()
 ax.set_xlabel('N')
 ax.set_ylabel('Optimal time step')
 ax.set_yscale('log')
 
 if save_figures:
-    plt.savefig(save_path + 'Experiment 1.2, dif=' + str(dif)
+    plt.savefig(save_path + '3,err='+maxerror+',Pe='+str(Pe)
             + ".pdf", format='pdf', bbox_inches='tight', transparent=True)
     plt.close()
 
 '''
-1.3 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
+1.4 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
 '''
 fig, ax = plt.subplots()
 for key in keys:
@@ -117,7 +137,8 @@ for key in keys:
             ax.annotate('N=' + str(j), xy=(df.mv[i], df.tau[i]))
 
 
-ax.set_title('Parameter for which error < ' + maxerror + ' is satisfied')
+ax.set_title('Pe = ' + str(Pe) + '\n'
+             + 'Parameter for which error < ' + maxerror + ' is satisfied')
 ax.legend()
 ax.set_xlabel('Matrix-vector multiplications')
 ax.set_ylabel('Optimal time step')
@@ -127,31 +148,42 @@ ax.set_xscale('log')
 ax.set_yscale('log')
 
 if save_figures:
-    plt.savefig(save_path + 'Experiment 1.3, dif=' + str(dif)
+    plt.savefig(save_path + '4,err='+maxerror+',Pe='+str(Pe)
             + ".pdf", format='pdf', bbox_inches='tight', transparent=True)
     plt.close()
 
 '''
-Experiment 1 Bonus: 
+Experiment 1.5 (Bonus): 
 
 Compute the error of the expleja method for varying matrix dimensions NxN.
 Normally this would result would be almost exact, but in this case we fix the
 number of substeps and assume single accuracy.
 '''
-fig, ax = plt.subplots()
-data = dataobjdict['/expeuler'].data
-data = data.loc[(data['adv_coeff'] == adv) & (data['dif_coeff'] == dif)] 
+fig, axes = plt.subplots(2, 1, sharex=True)
+axes = axes.flatten()
+errortypes = ['abs_error_2', 'rel_error_2', 
+              'abs_error_inf', 'rel_error_inf'][:2]
+titles = ['2-norm\nabsolute error', '2-norm\nrelative error',
+          'inf-norm\nabsolute error', 'inf-norm\nrelative error', ][:2]
 
-for label, df in data.groupby('Nx'):
-    if label%100 == 0:
-        df.plot('Nt','error', ax=ax, label='N = ' + str(label))
-ax.set_title('Single precision expleja\n for varying matrix dimensions NxN')
-ax.set_xlabel('Number of substeps')
-ax.set_ylabel('Absolute error')
-ax.set_xscale('log')
-ax.set_yscale('log')
+for k, errortype in enumerate(errortypes):
+    data = dataobjdict['/expeuler'].data
+    data = data.loc[(data['adv'] == adv) & (data['dif'] == dif)
+                    & (data[errortype] <= 1)] 
+    
+    for label, df in data.groupby('Nx'):
+        if label%100 == 0:
+            df.plot('Nt',errortype, ax=axes[k], label='N = ' + str(label))
+    axes[k].set_xlabel('Number of substeps')
+    axes[k].set_ylabel(titles[k])
+    axes[k].set_xscale('log')
+    axes[k].set_yscale('log')
+axes[-1].get_legend().remove()
+plt.subplots_adjust(hspace=0)
+plt.suptitle('Pe = ' + str(Pe) + '\n'
+             + 'Single precision expleja')
 
 if save_figures:
-    plt.savefig(save_path + 'Experiment 1.expleja, dif=' + str(dif)
+    plt.savefig(save_path + '5,err='+maxerror+',Pe='+str(Pe)
             + ".pdf", format='pdf', bbox_inches='tight', transparent=True)
     plt.close()

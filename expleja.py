@@ -246,7 +246,7 @@ def newton(h, A, v, xi, dd, abstol, reltol, norm, m_max):
     matrix function specified with the divided differences DD applied to the
     right hand side V of the operator A*H*V as Y=P_m(H*A)V.
     
-    The result is stored in Y the estimated error in NORMERREST and the
+    The result is stored in Y, the estimated error in NORMERREST and the
     number of steps in M.
     '''
     

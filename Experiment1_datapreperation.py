@@ -16,19 +16,22 @@ class dataobject:
         with pd.HDFStore('Experiment1.h5') as hdf:
             self.data = hdf[key]
         self.data['tau'] = 0.1 / self.data['Nt']
+        self.data['Pe'] = self.data['adv'] / self.data['dif']
+        self.data['m'] = self.data['mv']/self.data['Nt']
         self.key = key
         self.name = key[1:]
         self.Nx = self.data['Nx'].unique()
         self.Nt = self.data['Nt'].unique()
         self.Pe = self.data['Pe'].unique()
-        self.adv_coeff = self.data['adv_coeff'].unique()
-        self.dif_coeff = self.data['adv_coeff'].unique()
+        self.adv = self.data['adv'].unique()
+        self.dif = self.data['dif'].unique()
 
-def get_optimal_data(dataobj, tol, adv, dif, subset=['Nx'], costs='mv',):
-    data = dataobj.data.sort_values(by=costs)
-    data = data.loc[(data['adv_coeff'] == adv) 
-                  & (data['dif_coeff'] == dif)
-                  & (data['error']<tol)] 
+def get_optimal_data(dataobj, tol, errortype, adv, dif,
+                     subset=['Nx'], costs='mv',):
+    data = dataobj.data.sort_values(by=[costs]+subset)
+    data = data.loc[(data['adv'] == adv) 
+                  & (data['dif'] == dif)
+                  & (data[errortype]<tol)] 
     dataobj.optimaldata = data.drop_duplicates(subset=subset, keep='first')
     dataobj.optimaldata.reset_index(drop=True, inplace=True)
 

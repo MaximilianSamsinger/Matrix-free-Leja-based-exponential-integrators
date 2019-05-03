@@ -95,11 +95,21 @@ This approach has many advantages. The cost of the computation of $p_n(A)v$ main
 \section{Experiment 1}
 We discretize the one-dimensional advection-diffusion equation
 \begin{align*}
-\partial_tu &= \partial_{xx}u + \frac{1}{\operatorname{Pe}}\partial_xu \quad t\in[0,0.1]\\
-u_0(t) &= e^{-80\cdot(t-0,45)^2}
+\partial_tu &= a\partial_{xx}u + b\partial_xu  &a, b\in[0,1]\\
+u_0(t) &= e^{-80\cdot(t-0,45)^2} &t\in[0,0.1]\\
 \end{align*}
-with homogeneous Dirichlet boundary conditions on the domain $\Omega = [0,1]$. With $\operatorname{Pe}>0$ we denote the grid P\'eclet number.
+with homogeneous Dirichlet boundary conditions on the domain $\Omega = [0,1]$. 
+\[\operatorname{Pe} = \frac{\Delta x}{\abs c}\]
+we denote the grid P\'eclet number. 
+In the following experiments we will denote the advection-diffusion ratio, scaled by grid size $\Delta x = {(N + 1)}^{-1}$ 
 
+
+\includegraphics[]{../figures/Experiment1/{1,err=1e-7,Pe=1.0}.pdf}
+\includegraphics[]{../figures/Experiment1/{3,err=1e-7,Pe=1.0}.pdf}
+\includegraphics[]{../figures/Experiment1/{4,err=1e-7,Pe=1.0}.pdf}
+\includegraphics[]{../figures/Experiment1/{5,err=1e-7,Pe=1.0}.pdf}
+Question: Do we only care about the relative error? If yes, in which norm?
+Argument for 2
 
 
 

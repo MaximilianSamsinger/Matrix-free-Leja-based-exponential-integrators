@@ -12,15 +12,16 @@ Create Animation
 if __name__ == '__main__': 
     t_end = 1e-1
     Nx = 200
-    Nt = 200
+    Nt = 1000
     
     
     adv_coeff = 1e0 # Multiply advection matrix with adv_coeff
-    dif_coeff = 1e0 # Multiply diffusion matrix with dif_coeff
+    dif_coeff = 1e1 # Multiply diffusion matrix with dif_coeff
     Pe = adv_coeff/dif_coeff
     A, u = AdvectionDiffusion1D(Nx, adv_coeff, dif_coeff, periodic = False, 
                                 h = None, asLinearOp = False)
     u = u.flatten()
+    uexakt = expleja(t_end,A,u.copy())
     
     x = np.linspace(0,1,len(u))
     
