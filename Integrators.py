@@ -68,8 +68,8 @@ def crankn(M,t,u,t_end,Nt, usepreconditioner=False):
     ''' Crank-Nicolson method 
     Optimal gmres tolerance is unclear a priori'''
     
-    if crankn.parameter is None:
-        crankn.parameter = 2**-23
+    assert(crankn.parameter is not None)
+    
         
     gmres_tol = crankn.parameter
     

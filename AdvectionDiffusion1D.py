@@ -6,7 +6,7 @@ def AdvectionDiffusion1D(N, adv_coeff, dif_coeff, periodic = True , h = None,
                          asLinearOp = False):
     '''
     Input:
-        N... Number of rows and columns of Matrix A
+        N... Number of rows/columns of Matrix A
         adv_coeff... Advection coefficient
         dif_coeff... Diffusion coefficient
         periodic... If True, we assume periodic boundary conditions, 

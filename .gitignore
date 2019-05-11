@@ -6,3 +6,8 @@ TeX-Document/uni_logo.jpg
 *.aux
 TeX-Document/Matrix-free Leja based exponential integrators in Python.log
 *.gz
+DELETE2.py
+Testing_gmres_preconditioner.py
+Resources/PecletNumber.pdf
+Resources/Transport (peclet number).pdf
+Resources/Versteeg_Malalasekera_2ed.pdf

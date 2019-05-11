@@ -32,20 +32,19 @@ if __name__ == '__main__':
     ''' Runtime warnings kill performance and will not lead to results '''
     np.seterr(over='raise', invalid='raise') # Raise error instead of warning
     
-    adv = 1e0 # Multiply advection matrix with adv (fixed)
-    dif = 1e0 # Multiply diffusion matrix with dif
+    adv = 1e0 # Multiply advection matrix with adv. Should be <= 1
+    dif = 1e0 # Multiply diffusion matrix with dif. Should be <= 1
     
     ''' 
     Nx... discretize x-axis into Nx parts 
     Nt... Integrate with Nt substeps
     '''
-    Nxlist = list(range(50,401,50))
+    Nxlist = list(range(25,401,25))
     Ntlist = np.floor(1.12**np.array(range(1,121)))
     Ntlist = np.unique(Ntlist.astype('int'))
     
     names = ['rk2', 'rk4', 'expeuler']
     methods = [rk2_matrixinput, rk4_matrixinput, expeuler] 
-    
     columns = ['Nt', 'Nx', 'adv', 'dif', 
               'abs_error_2', 'rel_error_2', 'abs_error_inf', 'rel_error_inf',
               'mv', 'other_costs', ]
@@ -68,7 +67,7 @@ if __name__ == '__main__':
             '''
             df = []
             print(integrator.name)
-            skip = False #Skip when results get sufficiently bad
+            count = 0
             for Nt in Ntlist:
                 ''' 
                 Calculate error and costs
@@ -80,10 +79,13 @@ if __name__ == '__main__':
                     ''' 
                     If the results are good enough, skip further calculations
                     '''
-                    if (skip and errors[3] > 1e-7) or errors[3] < 1e-9:
+                    
+                    if errors[3] < 1e-8:
+                        if integrator.name in ['rk4', 'rk2', 'crankn']:
+                            break
+                        count += 1
+                    if count > 4 or (count > 1 and errors[3] > 1e-8): 
                         break
-                    elif errors[3] < 1e-8:
-                        skip = True # We got good results
             
                 except (FloatingPointError):
                     pass

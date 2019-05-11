@@ -32,15 +32,15 @@ if __name__ == '__main__':
     ''' Runtime warnings kill performance and will not lead to results '''
     np.seterr(over='raise', invalid='raise') # Raise error instead of warning
     
-    adv = 1e0 # Multiply advection matrix with adv_coeff (fixed)
-    dif = 1e0 # Multiply diffusion matrix with dif_coeff 
+    adv = 1e0 # Multiply advection matrix with adv. Should be <= 1
+    dif = 1e0 # Multiply diffusion matrix with dif. Should be <= 1
     
     '''
     Nx... discretize x-axis into Nx parts 
     Nt... Integrate with Nt substeps
     '''
-    Nxlist = list(range(100,401,50))
-    Ntlist = np.floor(1.12**np.array(range(1,79)))
+    Nxlist = list(range(25,401,25))
+    Ntlist = np.floor(1.12**np.array(range(1,90)))
     Ntlist = np.unique(Ntlist.astype('int'))
     
     names = ['crankn']
@@ -48,10 +48,10 @@ if __name__ == '__main__':
     columns = ['Nt', 'Nx', 'adv', 'dif', 
           'abs_error_2', 'rel_error_2', 'abs_error_inf', 'rel_error_inf',
           'mv', 'other_costs', 'gmres_tol']
+    target_errors = [10**-k for k in range(2,9)]
         
     for Nx in Nxlist:
         print('Nx:', Nx)
-        Pe = adv/dif
         A, u = AdvectionDiffusion1D(Nx, adv, dif, periodic = False, 
                                     h = None, asLinearOp = False)
         
@@ -63,36 +63,43 @@ if __name__ == '__main__':
         
         integrator = integrators[0]
         begin = time()
-        for tol in [2**-k for k in range(33,22,-1)]:
-            crankn.parameter = tol
+        for target_error in target_errors:
+            crankn.parameter = target_error/500
             ''' 
             Create and fill pandas dataframe 
             '''
             df = []
-            print(integrator.name, tol)
-            skip = False #Skip when results get sufficiently bad
+            print(integrator.name, target_error)
+            ERROR_SMALL_ENOUGH = False #Skip when results get sufficiently bad
             for Nt in Ntlist:
                 ''' 
                 Calculate error and costs
                 '''
-                                
+                begin2 = time()
                 try:
                     ''' Calculate error and costs'''
                     _, errors, costs = integrator.solve(A, t, u, t_end, Nt)
                     df.append([Nt, Nx, adv, dif] + list(errors) + list(costs)
-                    + [tol])
+                    + [crankn.parameter])
                     '''
-                    If the results are good enough, skip further calculations
+                    If the error is small enough, decrease gmres tolerance
+                    until the error is no longer small enough. 
+                    (Find optimal gmres tolerance for a given target_error)
                     '''
-                    if (skip and errors[3] > 1e-7) or errors[3] < 1e-9:
+                    if errors[3] < target_error:
+                        crankn.parameter /= 1.1
+                        _, errors, costs = integrator.solve(
+                                A, t, u, t_end, Nt)
+                        df.append([Nt, Nx, adv, dif] 
+                            + list(errors) + list(costs)
+                            + [crankn.parameter])
+                        if errors[3] > target_error or (
+                                crankn.parameter == target_error):
+                            break
                         break
-                    elif errors[3] < 1e-8:
-                        skip = True # We got good results
-                    elif Nt > 1000 and errors[3] > 1e-4:
-                        break # gmres_tol was too large to get good results
+
                 except (FloatingPointError):
                     pass
-                
                 
             '''
             Save dataframe
@@ -105,7 +112,7 @@ if __name__ == '__main__':
             with pd.HDFStore('Experiment1.h5') as hdf:
                 hdf.open()
                 hdf.append(key='/'+integrator.name, value=df, format='table')
-        
+            print(time()-begin)
         ''' Remove duplicates '''
         with pd.HDFStore('Experiment1.h5') as hdf:
             for key in hdf.keys():

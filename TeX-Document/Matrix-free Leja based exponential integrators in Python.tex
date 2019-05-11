@@ -92,30 +92,68 @@ It can be difficult or impossible to compute $e^A$ in a first step and then the 
 	\[e^Av \approx p_n(A)v.\]
 This approach has many advantages. The cost of the computation of $p_n(A)v$ mainly depends on the calculation of $n\in\mathbb{N}$ matrix-vector multiplications with $A$. Not only can $A$ be sparse, which significantly decreases the costs of the computation, the explicit knowledge of $A$ itself is no longer required. $A$ can be replaced by a linear function, which can be more convenient and saves memory.
 
-\section{Experiment 1}
-We discretize the one-dimensional advection-diffusion equation
+\section{Numerical experiments for the advection-diffusion equation}
+We solve the advection-diffusion equation for four different integrators and investigate the respective computational costs necessary to achieve a prescribed tolerance. 
+
+\begin{itemize}
+	\item $\operatorname{cn2}$: The Crank-Nicolson method of order 2.
+	\item $\operatorname{exprb2}$: The exponential Rosenbrock-Euler method of order 2.
+	\item $\operatorname{rk2}$: The explicit midpoint method of order 2. 
+	\item $\operatorname{rk4}$: The classical Runge-Kutta method of order 4.
+\end{itemize}
+
+The stiffness of this differential equation mainly depends on the advection-diffusion ratio.   
+
+Note that this comparison is a bit unfair, since the expleja approximates the matrix exponential function, which  returns the exact solution in the linear case. In the nonlinear case, which we consider in Experiment 2, we replace expleja with the exponential Euler method. We expect that the behaviour in the linear case will be similar to the nonlinear case
+
+\subsection{Experiment 1}
+Consider the one-dimensional advection-diffusion equation
 \begin{align*}
-\partial_tu &= a\partial_{xx}u + b\partial_xu  &a, b\in[0,1]\\
-u_0(t) &= e^{-80\cdot(t-0,45)^2} &t\in[0,0.1]\\
+\partial_tu &= a\partial_{xx}u + b\partial_xu \quad a,b\ge 0\\
+u_0(t) &= e^{-80\cdot(t-0,45)^2} \quad t\in[0,0.1]
 \end{align*}
-with homogeneous Dirichlet boundary conditions on the domain $\Omega = [0,1]$. 
-\[\operatorname{Pe} = \frac{\Delta x}{\abs c}\]
-we denote the grid P\'eclet number. 
-In the following experiments we will denote the advection-diffusion ratio, scaled by grid size $\Delta x = {(N + 1)}^{-1}$ 
+with homogeneous Dirichlet boundary conditions on the domain $\Omega = [0,1]$. For a fixed $N\in\mathbb N$ we choose an equidistant grid on $\Omega$ with grid points $x_i = \frac{i}{N}, i=0\dots,N$. We approximate the diffusion with second-order central differences
+\[\partial_{xx}u(x_i) = \frac{u(x_{i+1}) - 2u(x_i) + u(x_{i-1})}{h^2} + \mathcal{O}(h^2),\]
+where $h = \frac{1}{N}$ is the lenght between grid points. In order to limit numerical instabilities we discretize the advective part with the upwind scheme.
+Still the resulting system of ordinary differential equation 
+\begin{align*}
+\partial_tu &= Au
+\end{align*}
+imposes stringent conditions on $h$ and  
+
+In our case the problem is fully linear and therefore $\operatorname{exprb2}$ simplifies to the computation of the action of the matrix exponential funcion with the Leja method. We write $\operatorname{expleja}$ for the single precision Leja method approximation. Note that reference solution was computed with double precision and therefore uses different nodes.
 
 
-\includegraphics[]{../figures/Experiment1/{1,err=1e-7,Pe=1.0}.pdf}
-\includegraphics[]{../figures/Experiment1/{3,err=1e-7,Pe=1.0}.pdf}
-\includegraphics[]{../figures/Experiment1/{4,err=1e-7,Pe=1.0}.pdf}
-\includegraphics[]{../figures/Experiment1/{5,err=1e-7,Pe=1.0}.pdf}
-Question: Do we only care about the relative error? If yes, in which norm?
-Argument for 2
+In order to keep the solution from vanishing, we only consider coefficients $a$, $b\in[0,1]$ such that $a + b = 1$. We will denote the advection-diffusion ratio scaled by grid size $\Delta x = {(N - 1)}^{-1}$ by
+\[\operatorname{Pe} = \frac{b \Delta x}{2a}\].
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[]{../figures/Experiment1/{1,err=1e-7,adv=1.0,dif=1.0}.pdf}
+	\caption{A picture of a gull.}
+\end{figure}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[]{../figures/Experiment1/{1,err=1e-7,adv=1.0,dif=1.0}.pdf}
+	\caption{A picture of a gull.}
+\end{figure}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[]{../figures/Experiment1/{1,err=1e-7,adv=1.0,dif=1.0}.pdf}
+	\caption{A picture of a gull.}
+\end{figure}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[]{../figures/Experiment1/{1,err=1e-7,adv=1.0,dif=1.0}.pdf}
+	\caption{A picture of a gull.}
+\end{figure}
 
 
 
 
 
 
+\clearpage
 \begin{thebibliography}{6}
 	\bibitem{rosenbr} M. Caliari, A. Ostermann. Implementation of exponential Rosenbrock-type integrators, Applied Numerical Mathematics 59 (2009), 568-581.
 	\bibitem{action} A. Al-Mohy, N. Higham. Computing the action of the matrix exponential, with an application to exponential integrators, SIAM Journal on Scientific Computing 33 (2011), 488-511.
