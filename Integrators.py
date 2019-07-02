@@ -11,13 +11,13 @@ class MatrixIntegrator:
     Calculate u(t_end), assuming f is a matrix-vector mult f(t,u) = M @ u
     and estimate the error
     '''
-    def __init__(self, name, method, exact_solution):
+    def __init__(self, name, method, reference_solution):
         def solve(M, t , u, t_end, Nt):
             u, functionEvaluations, otherCosts = method(M, t, u, t_end, Nt)
             
-            abs_error_2 = np.linalg.norm(u - exact_solution, 2)
+            abs_error_2 = np.linalg.norm(u - reference_solution, 2)
             rel_error_2 = abs_error_2/np.linalg.norm(u, 2)
-            abs_error_inf = np.linalg.norm(u - exact_solution, float('inf'))
+            abs_error_inf = np.linalg.norm(u - reference_solution, float('inf'))
             rel_error_inf = abs_error_inf/np.linalg.norm(u, float('inf'))
             errors = (abs_error_2, rel_error_2, abs_error_inf, rel_error_inf)
             return u, errors, (functionEvaluations, otherCosts)
@@ -25,11 +25,11 @@ class MatrixIntegrator:
         self.name = name
         self.solve = solve
         
-        method.parameter = None # Relevant for gmres in crankn
+        method.parameter = None # Relevant for gmres in cn2
         self.method = method
         
 
-def rk2_matrixinput(M,t,u,t_end,Nt):
+def rk2_matrixinput(M, t, u, t_end, Nt):
     ''' Midpoint rule '''
     tau = (t_end-t)/Nt # time step size
     for _ in range(Nt):
@@ -45,7 +45,7 @@ def rk2_matrixinput(M,t,u,t_end,Nt):
     
     return u, functionEvaluations, otherCosts
 
-def rk4_matrixinput(M,t,u,t_end,Nt):
+def rk4_matrixinput(M, t, u, t_end, Nt):
     ''' Classical Runge-Kutta method '''
     tau = (t_end-t)/Nt # time step size
     for _ in range(Nt):
@@ -62,17 +62,12 @@ def rk4_matrixinput(M,t,u,t_end,Nt):
     otherCosts = 0
     
     return u, functionEvaluations, otherCosts
-        
 
-def crankn(M,t,u,t_end,Nt, usepreconditioner=False):
+def cn2(M, t, u, t_end, Nt):
     ''' Crank-Nicolson method 
     Optimal gmres tolerance is unclear a priori'''
     
-    assert(crankn.parameter is not None)
-    
-        
-    gmres_tol = crankn.parameter
-    
+    assert(cn2.gmrestol is not None)   
     
     ushape = u.shape
     N = ushape[0]
@@ -86,18 +81,11 @@ def crankn(M,t,u,t_end,Nt, usepreconditioner=False):
     A = identity(N) - tau/2.*M
     B = identity(N) + tau/2.*M
     
-    if usepreconditioner:
-        import scipy.sparse.linalg as spla
-        M_x = lambda x: spla.spsolve(A, x)
-        preconditioner = spla.LinearOperator((N, N), M_x)
-    else:
-        preconditioner = None
-    
     for _ in range(Nt):
         #Solve A*u = b 
         b = B @ u # Counts as another function evaluation (Matrix-Vector-Mult)
-        u,_ = gmres(A, b, x0=u, tol=gmres_tol, callback=gmresiterations,
-                    M = preconditioner)
+        u,_ = gmres(A, b, x0=u, tol=cn2.gmrestol, callback=gmresiterations,
+                    M = None, atol=0)
         t += tau
 
     assert(abs(t - t_end) < tau)
@@ -115,48 +103,64 @@ def crankn(M,t,u,t_end,Nt, usepreconditioner=False):
     return u, functionEvaluations, otherCosts
 
 
-def expeuler(M,t,u,t_end,Nt):
+def exprk2(M,t,u,t_end,Nt):
     ''' We force s = Nt and m = 99 for Experiment1 '''
+    assert(exprk2.tol is not None)
+    tol = exprk2.tol
     
     tau = (t_end-t)/Nt
     
-    para = select_interp_para_for_fixed_m_and_s(tau, M, u, s=Nt, m=99)
+    para = select_interp_para_for_fixed_m_and_s(tau, M, u, tol, s=Nt, m=99)
     
-    expAv, _, info, c, m, _, _ = expleja(t_end-t, M, u, 
-            tol=[0,2**-23,float('inf'),float('inf')], p=0, interp_para=para)
+    expAv, _, info, c, m, _, _ = expleja(t_end-t, M, u, tol=tol, p=0, 
+                                         interp_para=para)
     
     functionEvaluations = int(sum(info)[0] + c)
     otherCosts = 0
     
     return expAv, functionEvaluations, otherCosts
     
-def select_interp_para_for_fixed_m_and_s(h, A, v, s=1, m=99):    
+def select_interp_para_for_fixed_m_and_s(h, A, v, tol, s=1, m=99):    
     ''' The code is shortened version select_interp_para from expleja 
     and forces 
         a fixed interpolation degree m,
         a fixed number of substeps s,
-        no hump reduction,
-        32 bit precision,
+        no hump reduction
     and we assume a sparse matrix A as input.
     However, we still shift the matrix A '''
     
-    tol = [0,2**-23,float('inf'),float('inf')]
-    data = sio.loadmat('data_leja_single_u.mat')
+    '''
+    Load interpolation parameter depending on chosen precision
+    '''                                     
+    sampletol = [2**-10,2**-24,2**-53]
+    
+    if len(tol) == 1:       
+        t = max(tol[0],2**-53)
+    else:
+        t = max(min(tol[0],tol[1]),2**-53)
+    
+    if t>=sampletol[0]:
+        data = sio.loadmat('data_leja_half_u.mat')
+    elif t>= sampletol[1]:
+        data = sio.loadmat('data_leja_single_u.mat')
+    else:
+        data = sio.loadmat('data_leja_double_u.mat')
 
-    theta = data['theta']
-    xi = data['xi']
-    dd = data['dd']
+    theta, xi, dd = data['theta'], data['xi'], data['dd']
+    
     n = v.shape[0]
     
-    #Selects the shift mu = trace(A)/n
+    '''
+    Selects the shift mu = trace(A)/n
+    '''
     mu = sum(A.diagonal())/float(n)
     
     A = A-mu*identity(n) # We assume, we work with sparse matrices
     [gamma2,c] = normAmp(A,1,tol[3])
        
-    gamma2 = theta[m]
-    dd = dd[:,m]
+    gamma2, dd = theta[m], dd[:,m]
     xi = xi*(gamma2/2)
+    
     return s, gamma2, xi.flatten(), dd, A, mu, c, m 
     
 
@@ -186,6 +190,8 @@ def rk4(f,t,u,t_end,Nt):
         k4 = f(t+tau, u+tau*k3)
         
         t,u = t + tau, u + tau/6*(2*k1 + k2 + k3 + 2*k4)
+     
+    assert(abs(t - t_end) < tau)
         
     functionEvaluations = 4*Nt
     otherCosts = 0

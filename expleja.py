@@ -73,7 +73,10 @@ def expleja(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
       param = select_interp_para(h, A, v)
       y = expleja(h,A,v,interp_para=param)    
     '''
-    #check consistency of matrix and vector sizes
+    
+    '''
+    Check consistency of matrix and vector sizes
+    '''
     n = v.shape[0]
     if A.shape != (n,n):
         print('Shape of matrix', A.shape)
@@ -81,21 +84,23 @@ def expleja(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
         raise ValueError('Inconsistent matrix and vector sizes')
 
     
-    
-    #v is zero - computation finished
-    if not v.any():
+    '''
+    Check trivial cases
+    '''
+    if not v.any(): #v is the zero vector
         return v, np.array([[0]]), np.array([[0]]), 0, 0, 0, np.array([0])
-    #h and/or A are zero - computation is finished
     if h == 0:
         return v, np.array([[0]]), np.array([[0]]), 0, 0, 0, np.array([0])
     if issparse(A):
-        if not (A.nonzero()[0]).size:
+        if not (A.nonzero()[0]).size: # A (sparse) has no non-zero entry
             return v, np.array([[0]]), np.array([[0]]), 0, 0, 0, np.array([0])
     elif not isinstance(A,LinearOperator):
-        if not A.any():
+        if not A.any(): # A (array) has no non-zero entry
             return v, np.array([[0]]), np.array([[0]]), 0, 0, 0, np.array([0])
     
-    #Check if tolerance is given and set to default otherwise
+    '''
+    Set the default value to all tolerances which have not been given
+    '''
     defaulttol = [0,2**-53,float('inf'),float('inf')]
     tol = tol + defaulttol[len(tol):]
         
@@ -106,7 +111,9 @@ def expleja(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
 
 def newton_wrapper(h, v, tol, nsteps, gamma2, xi, dd, A, mu, c, m, 
                    vectornorm = float('inf')):    
-    #Choose a norm for the newton interpolation
+    '''
+    Set norm for the newton interpolation
+    '''
     if vectornorm == 2:
         norm = dnrm2
     elif vectornorm == 1:
@@ -125,7 +132,9 @@ def newton_wrapper(h, v, tol, nsteps, gamma2, xi, dd, A, mu, c, m,
     errest = np.zeros((int(nsteps),1))
     info = np.zeros((int(nsteps),1))
     
-    #scaling parameter per step
+    '''
+    Scaling parameter per step
+    '''
     eta = np.exp(mu*h/float(nsteps)) 
     for k in range(int(nsteps)):
         pexpAv, perrest, pinfo = newton(h/nsteps,A,expAv,xi,dd,tol[0]/nsteps,
@@ -157,16 +166,16 @@ def newton_wrapper(h, v, tol, nsteps, gamma2, xi, dd, A, mu, c, m,
 '''
 def select_interp_para(h, A, v, tol=[0,2**-53,float('inf'),float('inf')], 
                                      m_max=99, p=5):    
-                                         
-    tol = np.array(tol)
+    
+    '''
+    Load interpolation parameter depending on chosen precision
+    '''                                     
     sampletol = [2**-10,2**-24,2**-53]
     
-    if len((tol[np.where(tol[:2]!=0)])):
-        t = min(tol[np.where(tol[:2]!=0)])
+    if len(tol) == 1:       
+        t = max(tol[0],2**-53)
     else:
-        t = 2**-53
-    if t<2**-53:
-        t = 2**-53
+        t = max(min(tol[0],tol[1]),2**-53)
     
     if t>=sampletol[0]:
         data = sio.loadmat('data_leja_half_u.mat')
@@ -176,22 +185,28 @@ def select_interp_para(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
         data = sio.loadmat('data_leja_double_u.mat')
 
 
-    theta = data['theta']
-    xi = data['xi']
-    dd = data['dd']
+    theta, xi, dd = data['theta'], data['xi'], data['dd']
+    
     n = v.shape[0]
     
-    #Calculating shift mu (Half of value of (absolutely) largest eigenvalue) 
+    '''
+    Calculating shift mu (Half of value of (absolutely) largest eigenvalue)
+    ''' 
     reduction = False    
     if isinstance(A,LinearOperator):
+        '''
+        Poweriteration to estimate the 2-norm of A
+        '''
         [mu,c] = powerit(A)
         mu = -mu/2.0
         A = A - mu*aslinearoperator(identity(n))
         gamma2 = abs(mu)
     
-    #Poweriteration to estimate the 2-norm of A
+    
     else:
-        #Selects the shift mu = trace(A)/n
+        '''
+        Selects the shift mu = trace(A)/n
+        '''
         mu = sum(A.diagonal())/float(n)
         
         A = A-mu*identity(n)
@@ -199,7 +214,9 @@ def select_interp_para(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
             A = np.asarray(A)
         [normA,c] = normAmp(A,1,tol[3])
         
-        #Estimate of the spectral radius
+        '''
+        Estimate of the spectral radius
+        '''
         if p>0:
             dest = float('inf')*np.ones(p)
             dest[0] = normA
@@ -227,14 +244,9 @@ def select_interp_para(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
         m = m+2
     nsteps = np.ceil((h*gamma2)/theta[m])
     
-    gamma2 = theta[m]
-    dd = dd[:,m]
+    gamma2, dd = theta[m], dd[:,m]
     xi = xi*(gamma2/2)
-    ''' Idea: Since roh(A) is the best choice for c, shouldn't we set m*
-    such that theta_m* == roh(A)? Then h*norm(A)/roh(A) gives us the optimal 
-    number of substeps. Where is the mistake?
-    No: We cannot do that since we no longer know whether we converge or not.
-    '''
+
     return nsteps, gamma2, xi.flatten(), dd, A, mu, c, m
     
 
@@ -249,8 +261,7 @@ def newton(h, A, v, xi, dd, abstol, reltol, norm, m_max):
     The result is stored in Y, the estimated error in NORMERREST and the
     number of steps in M.
     '''
-    
-    #Newton interpolation begins here  
+
     ydiff = dd[0]*v
     y = ydiff
     new_ydiff_norm = norm(ydiff)

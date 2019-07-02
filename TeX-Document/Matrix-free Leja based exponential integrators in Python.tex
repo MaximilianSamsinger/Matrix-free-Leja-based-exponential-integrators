@@ -104,7 +104,8 @@ We solve the advection-diffusion equation for four different integrators and inv
 
 The stiffness of this differential equation mainly depends on the advection-diffusion ratio.   
 
-Note that this comparison is a bit unfair, since the expleja approximates the matrix exponential function, which  returns the exact solution in the linear case. In the nonlinear case, which we consider in Experiment 2, we replace expleja with the exponential Euler method. We expect that the behaviour in the linear case will be similar to the nonlinear case
+Note that this comparison is a bit unfair, since the expleja approximates the matrix exponential function, which  returns the exact solution in the linear case. In the nonlinear case, which we consider in Experiment 2, we replace expleja with the exponential Euler method. We expect that the behaviour in the linear case will be similar to the nonlinear case. \\
+All errors are measured in the maximum norm unless stated otherwise. The reference solution was computed with $exprb2$ using the Leja method in double precision, which has interpolation nodes different from single precision Leja method used by the $exprb2$ we study.
 
 \subsection{Experiment 1}
 Consider the one-dimensional advection-diffusion equation
@@ -112,39 +113,45 @@ Consider the one-dimensional advection-diffusion equation
 \partial_tu &= a\partial_{xx}u + b\partial_xu \quad a,b\ge 0\\
 u_0(t) &= e^{-80\cdot(t-0,45)^2} \quad t\in[0,0.1]
 \end{align*}
-with homogeneous Dirichlet boundary conditions on the domain $\Omega = [0,1]$. For a fixed $N\in\mathbb N$ we choose an equidistant grid on $\Omega$ with grid points $x_i = \frac{i}{N}, i=0\dots,N$. We approximate the diffusion with second-order central differences
-\[\partial_{xx}u(x_i) = \frac{u(x_{i+1}) - 2u(x_i) + u(x_{i-1})}{h^2} + \mathcal{O}(h^2),\]
-where $h = \frac{1}{N}$ is the lenght between grid points. In order to limit numerical instabilities we discretize the advective part with the upwind scheme.
+with homogeneous Dirichlet boundary conditions on the domain $\Omega = [0,1]$. 
+For a fixed $N\in\mathbb N$ we approximate the diffusive part with second-order central differences on an equidistant grid with grid size $\Delta x = \frac{1}{N}$ and grid points $x_i = i\Delta x$, $i=0\dots,N$.
+\[\partial_{xx}u(x_i) = \frac{u(x_{i+1}) - 2u(x_i) + u(x_{i-1})}{{\Delta x}^2} + \mathcal{O}({\Delta x}^2)\]
+In order to limit numerical instabilities we discretize the advective part with forward differences, similar to the upwind scheme.
+\[\partial_{x}u(x_i) = \frac{u(x_{i+1}) - u(x_i)}{\Delta x} + \mathcal{O}(\Delta x)\]
 Still the resulting system of ordinary differential equation 
 \begin{align*}
 \partial_tu &= Au
 \end{align*}
-imposes stringent conditions on $h$ and  
+imposes stringent conditions on ${\Delta x}$. On the one hand (explicit time integration!!!) $\operatorname{rk2}$ and $\operatorname{rk4}$ suffer from stability issues if the Courant-Friedrich-Lewy (CFL) condition for the advection
+\[ C_{adv} = b\frac{\Delta t}{\Delta x} \le 1\] is not satisfied.
+
+
 
 In our case the problem is fully linear and therefore $\operatorname{exprb2}$ simplifies to the computation of the action of the matrix exponential funcion with the Leja method. We write $\operatorname{expleja}$ for the single precision Leja method approximation. Note that reference solution was computed with double precision and therefore uses different nodes.
 
 
-In order to keep the solution from vanishing, we only consider coefficients $a$, $b\in[0,1]$ such that $a + b = 1$. We will denote the advection-diffusion ratio scaled by grid size $\Delta x = {(N - 1)}^{-1}$ by
-\[\operatorname{Pe} = \frac{b \Delta x}{2a}\].
+In order to keep the solution from vanishing, we only consider coefficients $a$, $b\in[0,1]$. The advection-diffusion ratio scaled by the grid size $\Delta x$ is represented by the grid P\'eclet number
+\[\operatorname{Pe} = \frac{b \Delta x}{a}.\]
+
 
 \begin{figure}[h!]
 	\centering
 	\includegraphics[]{../figures/Experiment1/{1,err=1e-7,adv=1.0,dif=1.0}.pdf}
+	\caption{In this case $N$ is equal to the grid P\'eclet number $\operatorname{Pe}$.}
+\end{figure}
+\begin{figure}[h!]
+	\centering
+	\includegraphics[]{../figures/Experiment1/{2,err=1e-7,adv=1.0,dif=1.0}.pdf}
 	\caption{A picture of a gull.}
 \end{figure}
 \begin{figure}[h!]
 	\centering
-	\includegraphics[]{../figures/Experiment1/{1,err=1e-7,adv=1.0,dif=1.0}.pdf}
+	\includegraphics[]{../figures/Experiment1/{3,err=1e-7,adv=1.0,dif=1.0}.pdf}
 	\caption{A picture of a gull.}
 \end{figure}
 \begin{figure}[h!]
 	\centering
-	\includegraphics[]{../figures/Experiment1/{1,err=1e-7,adv=1.0,dif=1.0}.pdf}
-	\caption{A picture of a gull.}
-\end{figure}
-\begin{figure}[h!]
-	\centering
-	\includegraphics[]{../figures/Experiment1/{1,err=1e-7,adv=1.0,dif=1.0}.pdf}
+	\includegraphics[]{../figures/Experiment1/{4,err=1e-7,adv=1.0,dif=1.0}.pdf}
 	\caption{A picture of a gull.}
 \end{figure}
 

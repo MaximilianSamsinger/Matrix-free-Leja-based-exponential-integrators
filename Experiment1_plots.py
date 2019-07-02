@@ -18,8 +18,8 @@ Experiment 1:
     The integrators are
         - rk2... Runge-Kutta method of order 2
         - rk4... Runge-Kutta method of order 4
-        - crankn... Crank-Nicolson method of order 2
-        - expeuler... Exponential euler method of order 2, in this case EXACT
+        - cn2... Crank-Nicolson method of order 2
+        - exprk2... Exponential euler method of order 2, in this case EXACT
         
 Note: We write expeuler, even though we only compute the matrix exponential
     function of the discretized matrix using expleja with single precision
@@ -48,25 +48,33 @@ Load data
 with pd.HDFStore('Experiment1.h5') as hdf:
     keys = hdf.keys()
     dataobjdict = {key:dataobject(key) for key in keys}
-#keys = [keys[k] for k in [2,3,1,0]] # Rearrange
+keys = [keys[k] for k in [2,3,1,0]] # Rearrange
 
 ''' 
 CONFIG 
 '''
-maxerror = '1e-8'
-errortype = 'rel_error_inf' #abs_error_2 rel_error_2, abs_error_inf
+maxerror = str(2**-24)
+if maxerror == str(2**-24):
+    precision = 'single precision'
+elif maxerror == str(2**-10):
+    precision = 'half precision'
+
+norm = 2 #float('inf')
+errortype = 'rel_error_' + str(norm)
+
 adv = 1e0 # Should be <= 1
 dif = 1e0 # Should be <= 1
  
 save = False # Flag: If true, figures will be saved as pdf
 save_path = 'figures' + os.sep + 'Experiment1' + os.sep 
 
+suptitle = r'Pe$ / \Delta x = $' + str(adv/dif)
 suptitle = r'Pe$\cdot\Delta x = $' + str(adv/dif)
-#suptitle = 'Advection: ' + str(adv) + ', Diffusion: ' + str(dif)
+
 
 def savefig(number, save=False):
     if save:
-        plt.savefig(save_path + str(number) + ',err=' + maxerror
+        plt.savefig(save_path + str(number) + ',' + precision.split()[0]
                     +',adv='+str(adv) + ',dif='+str(dif) + ".pdf"
                     , format='pdf', bbox_inches='tight', transparent=True)
         plt.close()
@@ -82,7 +90,7 @@ fig.suptitle(suptitle)
 for key in keys:
     df = dataobjdict[key].optimaldata
     df.plot('Nx','mv', label=key[1:], ax=ax)
-ax.set_title('Minimal costs for which error < ' + maxerror + ' is satisfied')
+ax.set_title('Minimal costs for ' + precision + ' results')
 ax.set_xlabel('N')
 ax.set_ylabel('Matrix-vector multiplications')
 #ax.set_ylim([5e2,1.5e5])
@@ -104,7 +112,7 @@ CFLD = (1./np.array(df.Nx))**2/dif
 ax.plot(df.Nx, CFLA, label="Adv. CFL",linestyle='--')
 ax.plot(df.Nx, CFLD, label="Diff. CFL",linestyle='--')
 
-ax.set_title('Optimal time step for which error < ' + maxerror + ' is satisfied')
+ax.set_title('Optimal time step for ' + precision + ' results')
 ax.legend()
 ax.set_xlabel('N')
 ax.set_ylabel('Optimal time step')
@@ -124,7 +132,7 @@ for key in keys:
             ax.annotate('N=' + str(j), xy=(df.mv[i], df.tau[i]))
 
 
-ax.set_title('Parameter for which error < ' + maxerror + ' is satisfied')
+ax.set_title('Parameter for ' + precision + ' results')
 ax.legend()
 ax.set_xlabel('Matrix-vector multiplications')
 ax.set_ylabel('Optimal time step')
@@ -139,14 +147,16 @@ Experiment 1.4 (Bonus):
 
 Compute the error of the expleja method for varying matrix dimensions NxN.
 Normally this would result would be almost exact, but in this case we fix the
-number of substeps and assume single accuracy.
+number of substeps and assume single precision.
 '''
 fig, ax = plt.subplots(1, 1, sharex=True)
 fig.suptitle(suptitle + '\n Single precision expleja')
 
-data = dataobjdict['/expeuler'].data
+data = dataobjdict['/exprk2'].data
 data = data.loc[(data['adv'] == adv) & (data['dif'] == dif)
-                & (data[errortype] <= 1)] 
+                & (data[errortype] <= 1) 
+                & (data['target_error'] == float(maxerror))]
+data = data.sort_values(by='Nt')
 
 for label, df in data.groupby('Nx'):
     if label%100 == 0:
@@ -154,6 +164,8 @@ for label, df in data.groupby('Nx'):
 ax.set_xlabel('Number of substeps')
 if errortype == 'rel_error_inf':
     ax.set_ylabel('Relative error in maximum norm')
+elif errortype == 'rel_error_2':
+    ax.set_ylabel('Relative error in Euclidean norm')
 ax.set_xscale('log')
 ax.set_yscale('log')
 
@@ -170,7 +182,7 @@ fig.suptitle(suptitle)
 for key in keys:
     df = dataobjdict[key].optimaldata
     df.plot('Nx','m', label=key[1:], ax=ax)
-ax.set_title('Minimal costs for which error < ' + maxerror + ' is satisfied')
+ax.set_title('Minimal costs for ' + precision + ' results')
 ax.set_xlabel('N')
 ax.set_ylabel('Matrix-vector multiplications per timestep')
 ax.set_ylim([0,100])
