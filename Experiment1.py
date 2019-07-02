@@ -34,6 +34,7 @@ Nt... Integrate with Nt substeps
 TODO:
     - Consider splitting this file into 2 files.
     - Run Experiment with Pe fixed.
+    - Adapt the code to handle the nonlinear case as well
 '''
 
 Nxlist = list(range(50,401,25))
@@ -46,8 +47,8 @@ t_end = 1e-1 # Final time
 adv = 1e0 # Multiply advection matrix with adv. Should be <= 1
 dif = 1e0 # Multiply diffusion matrix with dif. Should be <= 1
 
-names = ['cn2', 'rk2', 'rk4', 'exprk2']
-methods = [cn2, rk2_matrixinput, rk4_matrixinput, exprk2] 
+names = ['exprk2', 'cn2', 'rk2', 'rk4']
+methods = [exprk2, cn2, rk2_matrixinput, rk4_matrixinput] 
 
 target_errors = [2**-10,2**-24]
 columns = ['Nt', 'Nx', 'adv', 'dif', 
@@ -161,20 +162,29 @@ def solve_advection_diffusion_equation(Nx, lock=None,
             lock.release()
         
 if __name__ == '__main__':
+    begin = time()
     multiprocessing = True
     start = time()
     if multiprocessing:
         lock = Lock()
-        for Nx in Nxlist:
-            Process(target=solve_advection_diffusion_equation, 
-                    args=(Nx,lock)).start()
+        all_processes = [Process(target=solve_advection_diffusion_equation, 
+                    args=(Nx,lock)) for Nx in Nxlist]
+        
+        for p in all_processes:
+            p.start()
+
+        for p in all_processes:
+          p.join()
+          
     else:
         for Nx in Nxlist:
             solve_advection_diffusion_equation(Nx)
-    
+            
+    pd.set_option('io.hdf.default_format','table')
     with pd.HDFStore('Experiment1.h5') as hdf:
         for key in hdf.keys():
             hdf[key] = hdf[key].drop_duplicates()
             print('Key',key)
             print(hdf[key])
-    sleep(10)
+    print('Total time:', time()-begin)
+    sleep(30)
