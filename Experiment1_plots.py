@@ -68,8 +68,7 @@ dif = 1e0 # Should be <= 1
 save = False # Flag: If true, figures will be saved as pdf
 save_path = 'figures' + os.sep + 'Experiment1' + os.sep 
 
-suptitle = r'Pe$ / \Delta x = $' + str(adv/dif)
-suptitle = r'Pe$\cdot\Delta x = $' + str(adv/dif)
+suptitle = r'Pe = ' + str(adv/dif)
 
 
 def savefig(number, save=False):

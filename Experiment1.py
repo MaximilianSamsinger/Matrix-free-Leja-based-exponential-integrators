@@ -33,7 +33,6 @@ Nt... Integrate with Nt substeps
 '''
 TODO:
     - Consider splitting this file into 2 files.
-    - Run Experiment with Pe fixed.
     - Adapt the code to handle the nonlinear case as well
 '''
 
@@ -60,8 +59,6 @@ def compute_errors_and_costs(integrator, A, u, Nx, Ntlist = Ntlist,
     ''' 
     Runtime warnings due to overflow lead to unusable results. We skip them.
     '''
-    #np.seterr(over='raise', invalid='raise') # Raise error instead of warning              
-    #np.seterr(all='raise')
     ''' 
     Create dataframe 
     '''
@@ -75,11 +72,12 @@ def compute_errors_and_costs(integrator, A, u, Nx, Ntlist = Ntlist,
           
         skip = False
         for Nt in Ntlist:               
-            try: # We skip computation when we encounter overflow errors 
+            try: # We skip computation when we encounter runtime errors 
                 ''' 
-                Compute errors and costs
+                Compute errors and costs. We skip calculations when runtime 
+                warnings arise since the results are unusable.
                 '''
-                with np.errstate(all='raise'):
+                with np.errstate(all='raise'): #Runtime warnings are errors.
                     _, errors, costs = integrator.solve(A, t, u, t_end, Nt)
                 row = [Nt, Nx, adv, dif] + list(errors) + list(costs)
                 if integrator.name in ['cn2','exprk2']:
@@ -94,6 +92,11 @@ def compute_errors_and_costs(integrator, A, u, Nx, Ntlist = Ntlist,
                     if errors[1] < target_error:
                         break
                 
+                
+                ''' 
+                If the error is small enough, find optimal tolerance parameter
+                for gmres and skip further calculations
+                '''
                 elif integrator.name == 'cn2':
                     if errors[1] < target_error:
                         while errors[1] < target_error:
