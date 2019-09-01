@@ -2,14 +2,14 @@ from expleja import expleja
 from AdvectionDiffusion1D import AdvectionDiffusion1D
 import numpy as np
 import pandas as pd
-from Integrators import MatrixIntegrator, rk2_matrixinput, rk4_matrixinput, \
-                        cn2, exprk2
+from Integrators import Integrator, rk2, rk4, cn2, exprb2
 from time import time, sleep
+from itertools import chain, product
 from multiprocessing import Process, Lock
 
 '''
 Linear Case: dt u = adv dxx u + dif dx u
-On the interval [0,1] with dirichlet homogeneous Dirichlet boundary conditions,
+On the interval [0,1] with homogeneous Dirichlet boundary conditions,
 for t in [0,0.1]
 
 For different fixed time stepsizes and matrix dimension we calculate the error
@@ -18,16 +18,9 @@ and the cost for each integration method
 
 #!ptrepack -o Experiment1.h5 Experiment11.h5
 
-'''
-The costs of the crank-nicolson method largly depend on the tolerance chosen 
-for gmres.
-We add an extra column to the dataframe in Experiment1.h5 which specifies the
-chosen tolerance for gmres.
-'''
-
 ''' 
-Nx... discretize x-axis into Nx parts 
-Nt... Integrate with Nt substeps
+Nx... discretize x-axis into Nx-1 parts 
+s... number of substeps used when integrating
 '''
 
 '''
@@ -36,125 +29,71 @@ TODO:
     - Adapt the code to handle the nonlinear case as well
 '''
 
-Nxlist = list(range(50,401,25))
-Ntlist = np.floor(1.12**np.array(range(1,121)))
-Ntlist = np.unique(Ntlist.astype('int'))
-
-t = 0 # Start time
-t_end = 1e-1 # Final time
-
-adv = 1e0 # Multiply advection matrix with adv. Should be <= 1
-dif = 1e0 # Multiply diffusion matrix with dif. Should be <= 1
-
-names = ['exprk2', 'cn2', 'rk2', 'rk4']
-methods = [exprk2, cn2, rk2_matrixinput, rk4_matrixinput] 
-
-target_errors = [2**-10,2**-24]
-columns = ['Nt', 'Nx', 'adv', 'dif', 
-          'abs_error_2', 'rel_error_2', 'abs_error_inf', 'rel_error_inf',
-          'mv', 'other_costs']
-
-def compute_errors_and_costs(integrator, A, u, Nx, Ntlist = Ntlist, 
-                             t = t, t_end = t_end, adv = adv, dif = dif): 
-    ''' 
-    Runtime warnings due to overflow lead to unusable results. We skip them.
-    '''
+def compute_errors_and_costs(integrator, inputs, substeps, add_to_row): 
     ''' 
     Create dataframe 
     '''
     begin = time()
-    data = []
+    data = [] # Will be filled with rows later on
+    
     for target_error in integrator.target_errors:
+        min_error, skip = 1, False # Indicates if computation can be stopped
+        '''
+        Set tolerances
+        '''               
         if integrator.name == 'cn2':
-            cn2.gmrestol = target_error/500 # Relative tolerance used by gmres
-        elif integrator.name == 'exprk2':
-            exprk2.tol = [0,target_error,2,2] # Tolerance specified for expleja
-          
-        skip = False
-        for Nt in Ntlist:               
+            cn2.tol = target_error # rel. tolerance for gmres
+        elif integrator.name == 'exprb2':
+            exprb2.tol = [0,target_error,2,2] # rel. tolerance for expleja
+
+        
+        for s in substeps:            
             try: # We skip computation when we encounter runtime errors 
                 ''' 
-                Compute errors and costs. We skip calculations when runtime 
-                warnings arise since the results are unusable.
+                Compute relative errors (2norm) and costs. 
+                We skip calculations when runtime warnings arise 
+                since the results would unusable anyways.
                 '''
-                with np.errstate(all='raise'): #Runtime warnings are errors.
-                    _, errors, costs = integrator.solve(A, t, u, t_end, Nt)
-                row = [Nt, Nx, adv, dif] + list(errors) + list(costs)
-                if integrator.name in ['cn2','exprk2']:
+                with np.errstate(all='raise'): #Runtime warnings set to errors.
+                    _, error, costs = integrator.solve(*inputs, s)
+                row = [s] + add_to_row + [error] + list(costs) 
+                if integrator.name in ['cn2','exprb2']: 
                     row += [target_error]
                 data.append(row)
                     
-                
                 ''' 
                 If the error is small enough, skip further calculations
                 '''
-                if integrator.name in ['rk2','rk4']:
-                    if errors[1] < target_error:
-                        break
-                
-                
-                ''' 
-                If the error is small enough, find optimal tolerance parameter
-                for gmres and skip further calculations
-                '''
-                elif integrator.name == 'cn2':
-                    if errors[1] < target_error:
-                        while errors[1] < target_error:
-                            cn2.gmrestol *= 1.2
-                            _, errors, costs = integrator.solve(
-                                    A, t, u, t_end, Nt)
-                            data.append([Nt, Nx, adv, dif] 
-                                + list(errors) + list(costs)
-                                + [target_error])
-                            if cn2.gmrestol >= target_error:
-                                break
-                        break
-                
-                elif integrator.name == 'exprk2':
-                    if errors[1] < target_error/50:
-                        break
-                    elif skip and errors[1] > target_error*50:
-                        break
-                    elif errors[1] < target_error:
-                        skip = True
+                if integrator.name in ['rk2','rk4','cn2']:
+                    if error < target_error: break
+                elif integrator.name == 'exprb2':
+                    if error < target_error: skip = True
+                    if error < min_error: min_error = min(min_error, error)
+                    elif skip and error > min_error*50: break
+                else:
+                    raise NameError('Method name not recognized, therefore it '
+                                    + 'unclear when the computation finishes')
             except (FloatingPointError):
                 pass
+    print(integrator.columns)
     df = pd.DataFrame(data, columns=integrator.columns)
-    df = df.astype({'Nt':np.int32,'Nx':np.int32, 'mv':np.int32,
+    df = df.astype({'substeps':np.int32,'Nx':np.int32, 'mv':np.int32,
                         'other_costs':np.int32})
-    key = '/'+integrator.name
-    print(integrator.name, 'Nx:', Nx, 'time:', time()-begin, flush=True)
+    key = '/'+integrator.name # If we don't do that, we get an error.
+    print(integrator.name, 'Nx:', add_to_row[0], 
+          'time:', time()-begin, flush=True)
     return df, key
 
-def solve_advection_diffusion_equation(Nx, lock=None, 
-                                       t = t, t_end = t_end, 
-                                       adv = adv, dif = dif,
-                                       columns = columns,
-                                       names = names, methods = methods,
-                                       target_errors = target_errors):
-    
-    A, u = AdvectionDiffusion1D(Nx, adv, dif, periodic = False, 
-                                h = None, asLinearOp = False)
-    
-    reference_solution = expleja(t_end, A, u)[0] # Double precision
-    
-    integrators = [MatrixIntegrator(name, method, reference_solution
-                             ) for name, method in zip(names, methods)]
+def solve_ODE(integrators, integrator_inputs, substeps, add_to_row, lock=None):
     
     for integrator in integrators:
-        if integrator.name in ['rk2','rk4']:
-            integrator.target_errors = [min(target_errors)]
-            integrator.columns = columns
-        elif integrator.name in ['cn2','exprk2']:
-            integrator.target_errors = target_errors
-            integrator.columns = columns + ['target_error']
-        
-        df, key = compute_errors_and_costs(integrator, A, u, Nx)
+        df, key = compute_errors_and_costs(integrator, integrator_inputs,
+                                           substeps, add_to_row)
         ''' 
         Save dataframe 
         '''
         if lock is not None:
-            lock.acquire()
+            lock.acquire() #For multiprocessing
         
         pd.set_option('io.hdf.default_format','table')
         with pd.HDFStore('Experiment1.h5') as hdf:
@@ -163,25 +102,67 @@ def solve_advection_diffusion_equation(Nx, lock=None,
         
         if lock is not None:
             lock.release()
-        
+
+def Linear_Advection_Diffusion_Equation(Nx, adv, dif, Petype, lock):
+    
+    if Petype == 'pe':
+        adv *= 2
+        dif /= (Nx-1)
+    elif Petype == 'Pe':
+        pass
+    else:
+        raise TypeError("Petype needs to be either 'pe' or 'Pe'")
+    
+    t = 0 # Start time
+    t_end = 1e-1 # Final time
+    
+    A, u = AdvectionDiffusion1D(Nx, adv, dif, periodic = False, 
+                                h = None, asLinearOp = False)
+    
+    reference_solution = expleja(t_end, A, u)[0] # Double precision
+    target_errors = [2**-10,2**-24]
+    
+    substeps = np.floor(1.12**np.array(range(1,151)))
+    substeps = np.unique(substeps.astype('int'))  
+    
+    methods = [exprb2, cn2, rk2, rk4]
+    columns = ['substeps', 'Nx', 'adv', 'dif', 'rel_error_2norm', 'mv', 
+               'other_costs']
+    
+    integrators = [Integrator(method, reference_solution, target_errors, 
+                              columns) for method in methods]
+    
+    integrator_inputs = [A, u, t, t_end]
+    
+    add_to_row = [Nx, adv, dif]
+    
+    solve_ODE(integrators, integrator_inputs, substeps, add_to_row, lock=lock)
+    
 if __name__ == '__main__':
+    Nxlist = list(range(50,401,50))
+    
+    advs = [1e0]#, 1e-1, 1e-2] # Coefficient of advection matrix. Should be <= 1
+    difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1
+    advdifs = list(chain(product([1e0], difs),product(advs, [1e0])))
+    
+    Petype = 'Pe'
+    
+    multiprocessing = False
+    
     begin = time()
-    multiprocessing = True
-    start = time()
     if multiprocessing:
         lock = Lock()
-        all_processes = [Process(target=solve_advection_diffusion_equation, 
-                    args=(Nx,lock)) for Nx in Nxlist]
+        all_processes = [Process(target = Linear_Advection_Diffusion_Equation,
+                                 args=(Nx, adv, dif, Petype, lock)
+                                 ) for Nx in Nxlist for adv, dif in advdifs]
         
-        for p in all_processes:
-            p.start()
-
-        for p in all_processes:
-          p.join()
+        for p in all_processes: p.start()
+        for p in all_processes: p.join()
           
     else:
-        for Nx in Nxlist:
-            solve_advection_diffusion_equation(Nx)
+        for Nx, advdif in product(Nxlist, advdifs):
+            adv, dif = advdif
+            Linear_Advection_Diffusion_Equation(Nx, adv, dif, Petype, None)
             
     pd.set_option('io.hdf.default_format','table')
     with pd.HDFStore('Experiment1.h5') as hdf:
@@ -190,4 +171,4 @@ if __name__ == '__main__':
             print('Key',key)
             print(hdf[key])
     print('Total time:', time()-begin)
-    sleep(30)
+    sleep(120)

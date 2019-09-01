@@ -3,7 +3,8 @@ from __future__ import print_function, division
 import numpy as np
 from scipy.sparse import identity, issparse
 from numpy.linalg import norm
-from scipy.sparse.linalg import aslinearoperator, LinearOperator
+from scipy.sparse.linalg import LinearOperator
+from scipy.sparse.linalg.interface import IdentityOperator
 from scipy.sparse.linalg._onenormest import _onenormest_core    
 from scipy.sparse.linalg.matfuncs import MatrixPowerOperator
 from scipy.linalg.blas import dasum, dnrm2
@@ -129,19 +130,13 @@ def newton_wrapper(h, v, tol, nsteps, gamma2, xi, dd, A, mu, c, m,
         raise ValueError('Specified norm is not implemented')    
     
     expAv = v
-    errest = np.zeros((int(nsteps),1))
-    info = np.zeros((int(nsteps),1))
+    errest = np.zeros(int(nsteps))
+    info = np.zeros(int(nsteps))
     
-    '''
-    Scaling parameter per step
-    '''
-    eta = np.exp(mu*h/float(nsteps)) 
     for k in range(int(nsteps)):
-        pexpAv, perrest, pinfo = newton(h/nsteps,A,expAv,xi,dd,tol[0]/nsteps,
-                                      tol[1]/nsteps,norm=norm,m_max=m)
-        errest[k] = perrest
-        info[k] = pinfo
-        expAv = pexpAv*eta
+        pexpAv, errest[k], info[k] = newton(h/nsteps, A, expAv, xi, dd,
+                      tol[0]/nsteps, tol[1]/nsteps, norm=norm, m_max=m)
+        expAv = pexpAv * np.exp(mu*h/float(nsteps))  # Compensate for shifting
     return expAv, errest, info, c, m, mu, gamma2
 
 
@@ -161,7 +156,7 @@ def newton_wrapper(h, v, tol, nsteps, gamma2, xi, dd, A, mu, c, m,
       The output is the number of substeps NSTEPS, the interpolation interval
       GAMMA2, the scaled interpolation points XI as well as the divided
       differences DD. The (shifted) matrix A, the shift MU and the performed
-      matrix vector products C are returned as well. M is the selected
+      matrix vector products MV are returned as well. M is the selected
       maximal degree of interpolation.
 '''
 def select_interp_para(h, A, v, tol=[0,2**-53,float('inf'),float('inf')], 
@@ -188,52 +183,39 @@ def select_interp_para(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
     theta, xi, dd = data['theta'], data['xi'], data['dd']
     
     n = v.shape[0]
-    
-    '''
-    Calculating shift mu (Half of value of (absolutely) largest eigenvalue)
-    ''' 
-    reduction = False    
+      
     if isinstance(A,LinearOperator):
         '''
-        Poweriteration to estimate the 2-norm of A
-        '''
-        [mu,c] = powerit(A)
+        Selects the shift mu (Half of (absolutely) largest eigenvalue)
+        ''' 
+        [mu,mv] = powerit(A) # Poweriteration to estimate the 2-norm of A
         mu = -mu/2.0
-        A = A - mu*aslinearoperator(identity(n))
+        A = A - mu*IdentityOperator((n,n))
         gamma2 = abs(mu)
-    
-    
+        
     else:
         '''
         Selects the shift mu = trace(A)/n
         '''
         mu = sum(A.diagonal())/float(n)
         
-        A = A-mu*identity(n)
+        A = A - mu*identity(n)
         if not issparse(A):
             A = np.asarray(A)
-        [normA,c] = normAmp(A,1,tol[3])
         
         '''
         Estimate of the spectral radius
         '''
-        if p>0:
-            dest = float('inf')*np.ones(p)
-            dest[0] = normA
-            i=2
-            k=0
-            [dest[i-1],k] = normAmp(A,i,tol[3])
-            c += k
-            while i<p and dest[i-2]/dest[i-1]>1.01:
-                reduction = True
-                i = i+1
-                [dest[i-1],k] = normAmp(A,i,tol[3])
-                c += k
-    
-        gamma2 = normA
-    
-    if reduction:
+        dest = float('inf')*np.ones(p+1)
+        dest[0], mv = normAmp(A,1,tol[3])
+        
+        for i in range(p): # Hump reduction procedure for p>0
+            dest[i+1], costs = normAmp(A,i+2,tol[3])
+            mv += costs
+            if dest[i]/dest[i+1] < 1.01: # Check if estimate is good enough
+                break
         gamma2 = min(dest)
+
     
     mm = min(m_max, len(theta))
     if gamma2 == 0: #Prevents division by 0
@@ -247,7 +229,7 @@ def select_interp_para(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
     gamma2, dd = theta[m], dd[:,m]
     xi = xi*(gamma2/2)
 
-    return nsteps, gamma2, xi.flatten(), dd, A, mu, c, m
+    return nsteps, gamma2, xi.flatten(), dd, A, mu, mv, m
     
 
 def newton(h, A, v, xi, dd, abstol, reltol, norm, m_max):
@@ -262,8 +244,7 @@ def newton(h, A, v, xi, dd, abstol, reltol, norm, m_max):
     number of steps in M.
     '''
 
-    ydiff = dd[0]*v
-    y = ydiff
+    y = ydiff = dd[0]*v
     new_ydiff_norm = norm(ydiff)
     
     for m in range(m_max):
@@ -282,16 +263,17 @@ def newton(h, A, v, xi, dd, abstol, reltol, norm, m_max):
 def normAmp(A, m, p):
     #Adds the property .H to the MatrixPowerOperator
     #.H transposes and conjugates the matrix
-    MatrixPowerOperator.H = property(lambda self: MatrixPowerOperator(self._A.conj().T, self._p))
+    MatrixPowerOperator.H = property(
+            lambda self: MatrixPowerOperator(self._A.conj().T, self._p))
     A = MatrixPowerOperator(A,m)
     if p == 1:
-        [c,_,_,mv,_] = _onenormest_core(A, A.T, t=2, itmax=5)   #ERROR WHEN A IS 2x2 (sparse?) MATRIX OR SMALLER
+        c,_,_,mv,_ = _onenormest_core(A, A.T, t=2, itmax=5)   #ERROR WHEN A IS 2x2 (sparse?) MATRIX OR SMALLER
         return c**(1./m), mv*m
     elif p == float('inf'):
-        [c,_,_,mv,_] = _onenormest_core(A.T, A, t=2, itmax=5)   #ERROR WHEN A IS 2x2 (sparse?) MATRIX OR SMALLER
+        c,_,_,mv,_ = _onenormest_core(A.T, A, t=2, itmax=5)   #ERROR WHEN A IS 2x2 (sparse?) MATRIX OR SMALLER
         return c**(1./m), mv*m
     elif p == 2:
-        [c,mv] = normest2(A,m)
+        c,mv = normest2(A,m)
         return c, mv*m
     else:
         print('Error: p not equal to 1, 2 or inf')

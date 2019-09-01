@@ -90,72 +90,128 @@ Consider the action of the matrix exponential function
 	\[e^Av,\quad A\in\mathbb{C}^{N\times N}, v\in\mathbb{C}^N.\] 
 It can be difficult or impossible to compute $e^A$ in a first step and then the action $e^Av$ in a seperate step. This is especially true in applications where $N>10000$ is not uncommon. Furthermore the matrix exponential of a sparse matrix is in general no longer sparse. Therefore it is more feasable to compute the action of the matrix exponential in a single step. This can be done by approximating the matrix exponential with a matrix polynomial $p_n$ of degree $n$ in $A$
 	\[e^Av \approx p_n(A)v.\]
-This approach has many advantages. The cost of the computation of $p_n(A)v$ mainly depends on the calculation of $n\in\mathbb{N}$ matrix-vector multiplications with $A$. Not only can $A$ be sparse, which significantly decreases the costs of the computation, the explicit knowledge of $A$ itself is no longer required. $A$ can be replaced by a linear function, which can be more convenient and saves memory.
+This approach has many advantages. The cost of the computation of $p_n(A)v$ mainly depends on the calculation of $n$ matrix-vector multiplications with $A$. Furthermore the explicit knowledge of $A$ itself is no longer required. $A$ can be replaced by a linear function, which can be more convenient and saves memory.
 
-\section{Numerical experiments for the advection-diffusion equation}
-We solve the advection-diffusion equation for four different integrators and investigate the respective computational costs necessary to achieve a prescribed tolerance. 
+\section{The Leja method}
+In this section we explore the core concepts of the Leja method for the exponential function. This serves as an introduction for the 
 
-\begin{itemize}
-	\item $\operatorname{cn2}$: The Crank-Nicolson method of order 2.
-	\item $\operatorname{exprb2}$: The exponential Rosenbrock-Euler method of order 2.
-	\item $\operatorname{rk2}$: The explicit midpoint method of order 2. 
-	\item $\operatorname{rk4}$: The classical Runge-Kutta method of order 4.
-\end{itemize}
+\paragraph{Replacing the matrix exponential with a polynomial:}
 
-The stiffness of this differential equation mainly depends on the advection-diffusion ratio.   
+\paragraph{Exploiting the properties of the matrix exponential functions:}
 
-Note that this comparison is a bit unfair, since the expleja approximates the matrix exponential function, which  returns the exact solution in the linear case. In the nonlinear case, which we consider in Experiment 2, we replace expleja with the exponential Euler method. We expect that the behaviour in the linear case will be similar to the nonlinear case. \\
-All errors are measured in the maximum norm unless stated otherwise. The reference solution was computed with $exprb2$ using the Leja method in double precision, which has interpolation nodes different from single precision Leja method used by the $exprb2$ we study.
+\paragraph{Evaluate the polynomial using precomputed Leja interpolation nodes:}
 
-\subsection{Experiment 1}
+
+
+\section{Numerical experiments}
+For the first experiments we will discretize multiple one-dimensional advection-diffusion-reaction equations with hybrid difference schemes.\footnote{Need a source, https://en.wikipedia.org/wiki/Hybrid\_difference\_scheme} We will always choose an equidistant grid with grid size $h = \frac{1}{N}$, $N\in\mathbb{N}$ and grid points $x_i = ih$ for $i=0\dots,N$ on the domain $\Omega = [0,1]$. The resulting ordinary differential equations (ODEs) will be solved with four different integrators. Our goal is to investigate the respective computational costs of these methods while achieving a prescribed relative tolerance \texttt{tol}.
+
+\paragraph{Crank-Nicolson method:}
+	We refer to the Crank-Nicolson method of order 2 as \texttt{cn2}. 
+	In our implementation of \texttt{cn2}, we used the SciPy\cite{scipy} package \texttt{scipy.sparse.linalg.gmres} to solve linear equations. We set the relative tolerance to $\texttt{tol}/s$, where $s$ is the total number of substeps taken for solving the ODE. This choice guarantees that the sum of errors made by \texttt{gmres} is always lower than our specified tolerance \texttt{tol}, since we have to solve exactly one linear equation per substep. No preconditioner was used for \texttt{gmres}. The Crank-Nicolson method is unconditionally stable and therefore does not have to satisfy the Courant-Friedrichs-Lewy (CFL) conditions imposed by the advective and diffusive part of the differential equations.
+	
+\paragraph{Exponential Rosenbrock-Euler method:}
+	We refer to the Exponential Rosenbrock-Euler method of order 2 as \texttt{exprb2}.
+	The approximate the action of the matrix exponential with the Leja method. No hump reduction is used. The maximal interpolation degree is set to 100. Note that the total number of matrix-vector multiplication per time step can still exeed 100 since we have to compute a single matrix norm. This typically happens for $s=1$. 
+
+\paragraph{Explicit midpoint method:}
+	We refer to the explicit midpoint method of order 2 as \texttt{rk2}. 
+
+\paragraph{Classical Runge kutta:}
+	We refer to the classical Runge-Kutta method of order 4 as \texttt{rk4}.\\
+
+
+\noindent For our experiments we will often fix one of two different P\'eclet numbers
+\[\texttt{Pe} = \frac{b}{a}, \quad \texttt{pe} = \frac{hb}{2a},\]
+The P\'eclet numbers are dimensionless quantities representing the ratio of the advective velocity $b$ to the diffusive velocity $a$. While \texttt{Pe} characterizes the original partial differential equation, the grid P\'eclet number \texttt{pe} is the dimensionless quantity for the resulting ODE after discretization. Note that by fixing \texttt{pe} for varying grid sizes, we have to change the original partial differential equantion. Unless otherwise noted we accomplish that by replacing $b$ with $2b$ and $a$ with $ah$.
+   
+
+\subsection{Experiment 1: Linear advection diffusion equation}
 Consider the one-dimensional advection-diffusion equation
 \begin{align*}
 \partial_tu &= a\partial_{xx}u + b\partial_xu \quad a,b\ge 0\\
 u_0(t) &= e^{-80\cdot(t-0,45)^2} \quad t\in[0,0.1]
 \end{align*}
 with homogeneous Dirichlet boundary conditions on the domain $\Omega = [0,1]$. 
-For a fixed $N\in\mathbb N$ we approximate the diffusive part with second-order central differences on an equidistant grid with grid size $\Delta x = \frac{1}{N}$ and grid points $x_i = i\Delta x$, $i=0\dots,N$.
-\[\partial_{xx}u(x_i) = \frac{u(x_{i+1}) - 2u(x_i) + u(x_{i-1})}{{\Delta x}^2} + \mathcal{O}({\Delta x}^2)\]
-In order to limit numerical instabilities we discretize the advective part with forward differences, similar to the upwind scheme.
-\[\partial_{x}u(x_i) = \frac{u(x_{i+1}) - u(x_i)}{\Delta x} + \mathcal{O}(\Delta x)\]
-Still the resulting system of ordinary differential equation 
+For a fixed $N\in\mathbb N$ we approximate the diffusive part with second-order central differences on an equidistant grid with grid size $h = \frac{1}{N}$ and grid points $x_i = ih$, $i=0\dots,N$.
+\[\partial_{xx}u(x_i) = \frac{u(x_{i+1}) - 2u(x_i) + u(x_{i-1})}{{h}^2} + \mathcal{O}({h}^2)\]
+In order to limit numerical instabilities we discretize the advective part with forward differences, similar to the upwind scheme.\footnote{Maybe create a seperate section on hybrid difference schemes? There we can also analyze the resulting matrix $A$ itself and plot the eigenvalues. I need sources for that though.}
+\[\partial_{x}u(x_i) = \frac{u(x_{i+1}) - u(x_i)}{h} + \mathcal{O}(h)\]
+The resulting system of ordinary differential equation is given by
 \begin{align*}
-\partial_tu &= Au
-\end{align*}
-imposes stringent conditions on ${\Delta x}$. On the one hand (explicit time integration!!!) $\operatorname{rk2}$ and $\operatorname{rk4}$ suffer from stability issues if the Courant-Friedrich-Lewy (CFL) condition for the advection
-\[ C_{adv} = b\frac{\Delta t}{\Delta x} \le 1\] is not satisfied.
+\partial_tu &= Au.
+\end{align*} 
+Some eigenvalues of $A$ can have an extremely large negative real part. Therefore, since no explicit Runge-Kutta method is A-stable, this imposes very stingend conditions on the time step size $\uptau$ for $\operatorname{rk2}$ and $\operatorname{rk4}$.\footnote{See section \ref{CFL}} We will refer to the Courant-Friedrich-Lewy (CFL) conditions imposed by the advective and diffusive part of $A$ respectively by $C_{adv}$ and $C_{dif}$.  
+\[ C_{adv} = \frac{b\uptau}{h} \le 1, \quad C_{dif} = \frac{a\uptau}{h^2} \le \frac{1}{2}\] 
 
 
 
-In our case the problem is fully linear and therefore $\operatorname{exprb2}$ simplifies to the computation of the action of the matrix exponential funcion with the Leja method. We write $\operatorname{expleja}$ for the single precision Leja method approximation. Note that reference solution was computed with double precision and therefore uses different nodes.
+In our case the problem is fully linear and therefore $\texttt{exprb2}$ simplifies to the computation of the action of the matrix exponential funcion with the Leja method. We write $\texttt{expleja}$ for the single precision Leja method approximation. Note that reference solution was computed with double precision and therefore uses different nodes.
+
+In order to keep the solution from vanishing, we only consider coefficients $a$, $b\in[0,1]$. The advection-diffusion ratio scaled by the grid size $h$ is represented by the grid P\'eclet number
 
 
-In order to keep the solution from vanishing, we only consider coefficients $a$, $b\in[0,1]$. The advection-diffusion ratio scaled by the grid size $\Delta x$ is represented by the grid P\'eclet number
-\[\operatorname{Pe} = \frac{b \Delta x}{a}.\]
+\section{Appendix}
+%
+%\subsection{CFL Condition} \label{CFL}
+%We conduct a Von Neumann stability analysis for the diffusion equation
+%\[ \partial_tu = \partial_{xx}u. \]
+%The eigenfunctions of $\partial_{xx}$ are given by
+%\[ u_k(x) = e^{ikx} \]
+%with eigenvalues $-k^2$.
 
+\subsection{Experiment 1}
+\newcommand{\adv}{1.0}
+\newcommand{\dif}{1.0}
+\newcommand{\precision}{single}
 
 \begin{figure}[h!]
 	\centering
-	\includegraphics[]{../figures/Experiment1/{1,err=1e-7,adv=1.0,dif=1.0}.pdf}
-	\caption{In this case $N$ is equal to the grid P\'eclet number $\operatorname{Pe}$.}
-\end{figure}
-\begin{figure}[h!]
-	\centering
-	\includegraphics[]{../figures/Experiment1/{2,err=1e-7,adv=1.0,dif=1.0}.pdf}
-	\caption{A picture of a gull.}
-\end{figure}
-\begin{figure}[h!]
-	\centering
-	\includegraphics[]{../figures/Experiment1/{3,err=1e-7,adv=1.0,dif=1.0}.pdf}
-	\caption{A picture of a gull.}
-\end{figure}
-\begin{figure}[h!]
-	\centering
-	\includegraphics[]{../figures/Experiment1/{4,err=1e-7,adv=1.0,dif=1.0}.pdf}
-	\caption{A picture of a gull.}
+	\includegraphics[]{../figures/Experiment1/{1, \precision, overall, adv=\dif, dif=\adv}.pdf}
+%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 \end{figure}
 
+\begin{figure}[h!]
+	\centering
+	\includegraphics[]{../figures/Experiment1/{1, \precision, grid, adv=\dif, dif=\adv}.pdf}
+%	\caption{In this case $N$ is equal to the grid P\'eclet number $\operatorname{Pe}$.}
+\end{figure}
 
+\begin{figure}[h!]
+	\centering
+	\includegraphics[]{../figures/Experiment1/{2, \precision, overall, adv=\dif, dif=\adv}.pdf}
+%	\caption{A picture of a gull.}
+\end{figure}
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[]{../figures/Experiment1/{2, \precision, grid, adv=\dif, dif=\adv}.pdf}
+%	\caption{A picture of a gull.}
+\end{figure}
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[]{../figures/Experiment1/{3, \precision, overall, adv=\dif, dif=\adv}.pdf}
+%	\caption{A picture of a gull.}
+\end{figure}
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[]{../figures/Experiment1/{3, \precision, grid, adv=\dif, dif=\adv}.pdf}
+%	\caption{A picture of a gull.}
+\end{figure}
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[]{../figures/Experiment1/{4, \precision, overall}.pdf}
+%	\caption{A picture of a gull.}
+\end{figure}
+
+\begin{figure}[h!]
+	\centering
+	\includegraphics[]{../figures/Experiment1/{4, \precision, grid}.pdf}
+%	\caption{A picture of a gull.}
+\end{figure}
 
 
 

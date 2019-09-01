@@ -8,10 +8,10 @@ Todo:
     Unit Test for complex numbers
 '''
 
-N = 200
+N = 400
 adv_coeff = 1
 dif_coeff = 1
-periodic = False
+periodic = True
 h = 1
 asLinearOp = True
 
@@ -24,11 +24,11 @@ Test if AdvectionDiffusion Matrix delivers plausible results
 #print(A.toarray())
 
 '''
-Test if the periodic and non-periodic case have the same result, except for 
-the border
+Test if the periodic and non-periodic case have the same result, except on 
+the boundary
 '''
-A1, u = AdvectionDiffusion1D(N, adv_coeff, dif_coeff, True, h)
-A2, u = AdvectionDiffusion1D(N, adv_coeff, dif_coeff, False, h)
+A1, u = AdvectionDiffusion1D(N, adv_coeff, dif_coeff, True, h, asLinearOp)
+A2, u = AdvectionDiffusion1D(N, adv_coeff, dif_coeff, False, h, asLinearOp)
 Truth_vector = np.isclose(A1 @ u,A2 @ u)[1:-1]
 assert(np.all(Truth_vector))
 
@@ -39,10 +39,14 @@ expleja: Is the result plausible?
 tau = 1.
 
 A_sparse, u = AdvectionDiffusion1D(N, adv_coeff, dif_coeff, periodic, h, False)
+A_LinOp, u = AdvectionDiffusion1D(N, adv_coeff, dif_coeff, periodic, h, True)
 expAv1 = sp.sparse.linalg.expm_multiply(tau*A_sparse, u)
-expAv2 = expleja(tau, A_sparse, u)[0]
-Truth_vector = np.isclose(expAv1, expAv2)
-assert(np.all(Truth_vector))
+expAv2 = expleja(tau, A_sparse, u, p=100)[0]
+expAv3 = expleja(tau, A_LinOp, u)[0]
+Truth_vector1 = np.isclose(expAv1, expAv2)
+Truth_vector2 = np.isclose(expAv1, expAv3)
+assert(np.all(Truth_vector1))
+assert(np.all(Truth_vector2))
 
 '''
 expleja: Test with zero vector

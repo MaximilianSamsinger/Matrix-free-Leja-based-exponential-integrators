@@ -3,22 +3,25 @@ from matplotlib import pyplot as plt
 from matplotlib import animation
 from AdvectionDiffusion1D import AdvectionDiffusion1D
 from expleja import expleja
-from Integrators import expeuler
+from Integrators import exprk2
+from IPython import get_ipython
 
 '''
 Create Animation
 '''
 
 if __name__ == '__main__': 
+    #get_ipython().run_line_magic('matplotlib', 'qt')
+    
     t_end = 1e-1
-    Nx = 200
-    Nt = 1000
+    Nx = 100
+    Nt = 500
     
     
-    adv_coeff = 1e0 # Multiply advection matrix with adv_coeff
-    dif_coeff = 1e1 # Multiply diffusion matrix with dif_coeff
-    Pe = adv_coeff/dif_coeff
-    A, u = AdvectionDiffusion1D(Nx, adv_coeff, dif_coeff, periodic = False, 
+    adv = 1e0 # Multiply advection matrix with adv
+    dif = 1e0 # Multiply diffusion matrix with dif
+    Pe = adv/dif
+    A, u = AdvectionDiffusion1D(Nx, 2*adv, dif/(Nx-1), periodic = False, 
                                 h = None, asLinearOp = False)
     u = u.flatten()
     uexakt = expleja(t_end,A,u.copy())
@@ -29,8 +32,10 @@ if __name__ == '__main__':
     y_list = np.zeros((Nt+1,len(u)))
     y_list[0] = u
     
+    exprk2.tol = [0,2**-24,2,2]
+    
     for k in range(Nt):
-        y_list[k+1] += expeuler(A,t_list[k],y_list[k],t_list[k+1],1)[0]
+        y_list[k+1] += exprk2(A,y_list[k],t_list[k],t_list[k+1],1)[0]
 
     
     fig = plt.figure(1)
@@ -49,6 +54,6 @@ if __name__ == '__main__':
         return line,
 
     # call the animator.  blit=True means only re-draw the parts that have changed.
-    anim = animation.FuncAnimation(fig, animate, init_func=init,
-                                   interval=100, repeat=True)
+    anim = animation.FuncAnimation(fig, animate, init_func=init, interval=1,
+                                   repeat=True)
 
