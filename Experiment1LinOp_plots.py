@@ -7,7 +7,6 @@ from matplotlib import pyplot as plt
 from itertools import chain, product
 from Experiment1_datapreperation import dataobject, get_optimal_data
 
-
 '''
 DISCRETIZED ONE DIMENSIONAL LINEAR ADVECTION-DIFFUSION EQUATION
 
@@ -48,11 +47,11 @@ plt.rcParams['lines.linewidth'] = 3
 '''
 Load data
 '''
-
-filename = 'Experiment1.h5'
+filename = 'Experiment1LinOp.h5'
 with pd.HDFStore(filename) as hdf:
     keys = hdf.keys()
     dataobjdict = {key:dataobject(filename,key) for key in keys}
+
 '''
 CONFIG
 '''
@@ -71,36 +70,15 @@ save = False # Flag: If True, figures will be saved as pdf
 save_path = 'figures' + os.sep + 'Experiment1' + os.sep
 
 adv = 1.0 # Coefficient of advection matrix. Do not change
-difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1
+difs = [1e0,1e-1,1e-2]
+dif = difs[0]
 
 '''
-For testing only
+1.5 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
 '''
-'''
-names = []
-datas = []
-optdatas = []
-for k in range(4):
-    names += [list(dataobjdict.items())[k][0]]
-    datas += [list(dataobjdict.items())[k][1].data]
-    optdatas += [list(dataobjdict.items())[k][1].optimaldata]
-data = datas[0]
-optdata = optdatas[0]
-'''
-for dif in difs:
-    print(dif)
-    assert(dif <= 1)
 
 
-
-    suptitle = 'Pe = ' + str(adv/dif)
-    Petext = ' for Pe = ' + str(adv/dif)
-
-    precisiontext = '\n achieving error ≤ ' + precision
-    title = 'Optimal time step ' + precisiontext + Petext
-
-
-    def savefig(number, save=False,
+def savefig(number, save=False,
                 add_to_name = ', Pe='+str(adv/dif)):
         if save:
             print('wow, it worked')
@@ -110,96 +88,40 @@ for dif in difs:
             plt.close()
 
 
-    for key in keys:
-        get_optimal_data(dataobjdict[key], float(maxerror), errortype, dif)
 
-
-    '''
-    1.1 Plot matrix dimension (Nx) vs matrix-vector multiplications (mv)
-    '''
-    fig, ax = plt.subplots()
-    for key in keys:
-        df = dataobjdict[key].optimaldata
-        df.plot('Nx','mv', label=key[1:], ax=ax)
-    ax.set_title(title)
-    ''' Optimal in the sense of cost minimizing '''
-    ax.set_xlabel('N')
-    ax.set_ylabel('Matrix-vector multiplications')
-    #ax.set_ylim([5e2,1.5e5])
-    ax.set_yscale('log')
-
-    savefig(1, save)
-
-
-    '''
-    1.2 Plot matrix dimension (Nx) vs optimal time step size (tau)
-    '''
-    fig, ax = plt.subplots()
-    for key in keys:
-        df = dataobjdict[key].optimaldata
-        df.plot('Nx','tau', label=key[1:], ax=ax)
-
-
-    CFLA = df.gridsize/adv
-    CFLD = 0.5*df.gridsize**2/df.dif
-    ax.plot(df.Nx, CFLA, label="$CFL_{adv}$",linestyle='-.')
-    ax.plot(df.Nx, CFLD, label="$CFL_{dif}$",linestyle=':')
-
-    ax.set_title(title)
-    ax.legend()
-    ax.set_xlabel('N')
-    ax.set_ylabel('Optimal time step')
-    ax.set_yscale('log')
-
-    savefig(2, save)
-
-    '''
-    1.3 Plot matrix dimension (Nx) vs matrix-vector multiplications (mv)
-    '''
-    fig, ax = plt.subplots()
-    fig.suptitle(suptitle)
-    for key in keys:
-        df = dataobjdict[key].optimaldata
-        df.plot('Nx','m', label=key[1:], ax=ax)
-    ax.set_title('Minimal costs for ' + precision + ' results')
-    ax.set_xlabel('N')
-    ax.set_ylabel('Matrix-vector multiplications per timestep')
-    ax.set_ylim([0,120])
-
-    savefig(3, save)
-
-'''
-1.4 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
-'''
 fig, ax = plt.subplots()
-linestyles = ['solid', 'dotted', 'dashed']
+from copy import deepcopy
 
-for k, dif in enumerate([1e0,1e-1,1e-2]):
-    plt.gca().set_prop_cycle(None)
-    for key in keys:
-        get_optimal_data(dataobjdict[key], float(maxerror), errortype, dif)
-        df = dataobjdict[key].optimaldata
+Nts = [250, 500, 750, 1000]
+powerits = [2,3,4,6,8,10,25,50]
 
-        label = key[1:] if k == 0 else '_nolegend_'
-        df.plot('mv','tau', label=label, ax=ax, linestyle = linestyles[k])
+dobj = deepcopy(dataobjdict['/exprb2'])
 
-        for i,j in df.Nx.items():
-            if j in [df.Nx.iloc[k] for k in [0,-1]]:
-                ax.annotate('N=' + str(j), xy=(df.mv[i], df.tau[i]))
+for Nt in Nts:
+    for dif in difs:
+        fig, ax = plt.subplots()
+        title = 'Péclet '
+        for its in powerits:
+            data = dobj.data
+            data = data.loc[(data['misc']==its) & (data.substeps == Nt) &
+                            (data.dif == dif) & (data.target_error == 2**-24)]
+            data = data.drop_duplicates(subset='Nx', keep='first')
+            data = data.sort_values(by='Nx')
+            data.m = (data.mv-data.misc)/data.substeps + data.misc #Assumption: Matrix changes every substep
+            try:
+                data.plot('Nx','m',label=str(its) +' it', ax=ax)
+            except TypeError:
+                print('No numeric data to plot')
+                print('Nt: %s, dif: %s, its: %s\n' %(Nt,dif,its))
 
-for k, l in enumerate(linestyles):
-    ax.plot([],[], 'k', linestyle = l,
-            label = 'Pe = ' + str((difs[k]/dif)))
 
-ax.set_title(title)
-ax.legend()
-ax.set_xlabel('Matrix-vector multiplications')
-ax.set_ylabel('Optimal time step')
-ax.set_xscale('log')
-ax.set_yscale('log')
+        ax.legend()
+        ax.set_xlabel('Matrix-vector multiplications')
+        ax.set_ylabel('Optimal time step')
+        ax.set_ylim([0,400])
+        ax.set_ylim([0,120])
 
-savefig(4, save, '')
-
+        savefig(5, save, '')
 
 '''
 1.6 Plot Peclet number (Nx) vs something else

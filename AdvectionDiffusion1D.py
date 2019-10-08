@@ -2,7 +2,7 @@ import numpy as np
 from scipy.sparse import dia_matrix
 from scipy.sparse.linalg import LinearOperator
 
-def AdvectionDiffusion1D(n, adv_coeff, dif_coeff, periodic = True , h = None, 
+def AdvectionDiffusion1D(n, adv_coeff, dif_coeff, periodic = False , h = None, 
                          asLinearOp = False):
     '''
     Input:

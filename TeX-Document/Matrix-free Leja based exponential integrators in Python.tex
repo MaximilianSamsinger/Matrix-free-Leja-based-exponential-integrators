@@ -101,6 +101,9 @@ In this section we explore the core concepts of the Leja method for the exponent
 
 \paragraph{Evaluate the polynomial using precomputed Leja interpolation nodes:}
 
+\section{Linear advection diffusion equation}
+
+\paragraph{Plot the eigenvalues of the matrix}
 
 
 \section{Numerical experiments}
@@ -150,6 +153,12 @@ In our case the problem is fully linear and therefore $\texttt{exprb2}$ simplifi
 
 In order to keep the solution from vanishing, we only consider coefficients $a$, $b\in[0,1]$. The advection-diffusion ratio scaled by the grid size $h$ is represented by the grid P\'eclet number
 
+\section{Experiment 1.5}
+In the matrix-free case the linear operator $A$ is not explicitly given. In order to compute the matrix norm ${\norm A}_2$ we use power iterations to estimate the absolutely largest eigenvalue of $A$. A priory it is not clear how many power iterations $it$ are neccessary for a good approximation. 
+
+DESCRIPTION OF THE EXPERIMENT, NUMBER OF POWERITS, SAFETYFACTOR, HOW STABLE IS THE COMPUTATION???
+
+First that the matrix $A = A(t)$ changes at every time step and therefore
 
 \section{Appendix}
 %
@@ -161,55 +170,30 @@ In order to keep the solution from vanishing, we only consider coefficients $a$,
 %with eigenvalues $-k^2$.
 
 \subsection{Experiment 1}
-\newcommand{\adv}{1.0}
-\newcommand{\dif}{1.0}
+\newcommand{\Pe}{Pe=1.0}
 \newcommand{\precision}{single}
 
 \begin{figure}[h!]
 	\centering
-	\includegraphics[]{../figures/Experiment1/{1, \precision, overall, adv=\dif, dif=\adv}.pdf}
+	\includegraphics[]{../figures/Experiment1/{1, \precision, \Pe}.pdf}
 %	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 \end{figure}
 
 \begin{figure}[h!]
 	\centering
-	\includegraphics[]{../figures/Experiment1/{1, \precision, grid, adv=\dif, dif=\adv}.pdf}
-%	\caption{In this case $N$ is equal to the grid P\'eclet number $\operatorname{Pe}$.}
-\end{figure}
-
-\begin{figure}[h!]
-	\centering
-	\includegraphics[]{../figures/Experiment1/{2, \precision, overall, adv=\dif, dif=\adv}.pdf}
+	\includegraphics[]{../figures/Experiment1/{2, \precision, \Pe}.pdf}
 %	\caption{A picture of a gull.}
 \end{figure}
 
 \begin{figure}[h!]
 	\centering
-	\includegraphics[]{../figures/Experiment1/{2, \precision, grid, adv=\dif, dif=\adv}.pdf}
+	\includegraphics[]{../figures/Experiment1/{3, \precision, \Pe}.pdf}
 %	\caption{A picture of a gull.}
 \end{figure}
 
 \begin{figure}[h!]
 	\centering
-	\includegraphics[]{../figures/Experiment1/{3, \precision, overall, adv=\dif, dif=\adv}.pdf}
-%	\caption{A picture of a gull.}
-\end{figure}
-
-\begin{figure}[h!]
-	\centering
-	\includegraphics[]{../figures/Experiment1/{3, \precision, grid, adv=\dif, dif=\adv}.pdf}
-%	\caption{A picture of a gull.}
-\end{figure}
-
-\begin{figure}[h!]
-	\centering
-	\includegraphics[]{../figures/Experiment1/{4, \precision, overall}.pdf}
-%	\caption{A picture of a gull.}
-\end{figure}
-
-\begin{figure}[h!]
-	\centering
-	\includegraphics[]{../figures/Experiment1/{4, \precision, grid}.pdf}
+	\includegraphics[]{../figures/Experiment1/{4, \precision}.pdf}
 %	\caption{A picture of a gull.}
 \end{figure}
 
