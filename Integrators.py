@@ -14,7 +14,7 @@ class Integrator:
     Calculate u(t_end), assuming M is a matrix or LinearOperator
     '''
     def __init__(self, method, reference_solution, target_errors,
-                 powerits, columns):
+                 estKwargsList, columns):
         def solve(M, u, t, t_end, s):
             u, functionEvaluations, misc = method(M, u, t, t_end, s)
 
@@ -35,8 +35,10 @@ class Integrator:
         else:
             self.target_errors = target_errors
             self.columns += ['target_error']
+        if name == 'exprb2' and estKwargsList != [{}]:
+            self.columns += ['safetyfactor']
 
-        self.powerits = powerits if name=='exprb2' else [None]
+        self.estKwargsList = estKwargsList if name=='exprb2' else [{}]
 
 def rk2(M, u, t, t_end, s):
     ''' Midpoint rule '''
@@ -120,17 +122,15 @@ def exprb2(M, u, t, t_end, s):
     ''' We force s = s and m = 99 for Experiment1 '''
     assert(exprb2.tol is not None)
     if isinstance(M,LinearOperator):
-        assert(exprb2.powerits is not None)
+        assert(bool(exprb2.estKwargs)) #Asserts dictionart is not empty
     else:
-        assert(exprb2.powerits is None)
+        assert(not bool(exprb2.estKwargs)) #Asserts dictionart is empty
 
     tol = exprb2.tol
-
     τ = (t_end-t)/s
 
-
-    para = select_interp_para_for_fixed_m_and_s(τ, M, u, tol, s=s, m=99,
-                                                powerits = exprb2.powerits)
+    para = select_interp_para_for_fixed_m_and_s(τ, M, u, tol, s=s,
+                                                estKwargs = exprb2.estKwargs)
 
     expAv, _, info, c, m, _, _ = expleja(t_end-t, M, u, tol=tol, p=0,
                                          interp_para=para)
@@ -140,7 +140,22 @@ def exprb2(M, u, t, t_end, s):
 
     return expAv, functionEvaluations, misc
 
-def select_interp_para_for_fixed_m_and_s(h, A, v, tol, s=1, m=99, powerits=100):
+
+def largestEV(A, powerits=100, safetyfactor=1.1):
+    n = A.shape[0]
+    x = np.random.randn(n,1)
+    λ = float('inf')
+
+    for mv in range(1,powerits+1):
+        λ_old, λ = λ, np.linalg.norm(x)
+        y = x/λ
+        x = A.dot(y)
+
+    return safetyfactor*λ, mv
+
+def select_interp_para_for_fixed_m_and_s(h, A, v, tol, s=1, m=99,
+                                         normEstimator = largestEV,
+                                         estKwargs = {"powerits":100}):
     '''
     The code is shortened version select_interp_para from expleja
     and forces
@@ -169,7 +184,7 @@ def select_interp_para_for_fixed_m_and_s(h, A, v, tol, s=1, m=99, powerits=100):
         '''
         Selects the shift μ (Half of (absolutely) largest eigenvalue)
         '''
-        [μ, mv] = largestEV(A, powerits) # Estimates 2-norm of A
+        [μ, mv] = normEstimator(A, **estKwargs) # Estimates 2-norm of A
         μ = -μ/2.0
         A -= μ*IdentityOperator((n,n))
         γ2 = abs(μ)
@@ -189,15 +204,3 @@ def select_interp_para_for_fixed_m_and_s(h, A, v, tol, s=1, m=99, powerits=100):
     ξ = ξ*(γ2/2)
 
     return s, γ2, ξ.flatten(), dd, A, μ, mv, m
-
-def largestEV(A, powerits=100, tol=1e-2):
-    n = A.shape[0]
-    x = np.random.randn(n,1)
-    λ = float('inf')
-
-    for mv in range(1,powerits+1):
-        λ_old, λ = λ, np.linalg.norm(x)
-        y = x/λ
-        x = A.dot(y)
-
-    return 1.1*λ, mv

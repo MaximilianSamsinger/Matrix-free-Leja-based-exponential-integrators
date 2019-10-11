@@ -12,7 +12,7 @@ from Experiment1_datapreperation import dataobject, get_optimal_data
 DISCRETIZED ONE DIMENSIONAL LINEAR ADVECTION-DIFFUSION EQUATION
 
 Experiment 1:
-    Here we fix the highest acceptable error (2-norm/inf-norm) for the solution
+    Here we fix the highest acceptable error (2-norm) for the solution
     of the linear advection-diffusion equantion and look at all datapoints
     for which an integrator satisfies:
         - The maximal integration error is small enough
@@ -24,8 +24,8 @@ Experiment 1:
         - cn2... Crank-Nicolson method of order 2
         - exprb2... Exponential euler method of order 2, in this case EXACT
 
-Note: We write expeuler, even though we only compute the matrix exponential
-    function of the discretized matrix using expleja with single precision
+Note: We write exprb2, even though we only compute the matrix exponential
+    function of the discretized matrix using expleja with half/single precision
     and fixed step size.
 '''
 
@@ -73,20 +73,7 @@ save_path = 'figures' + os.sep + 'Experiment1' + os.sep
 adv = 1.0 # Coefficient of advection matrix. Do not change
 difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1
 
-'''
-For testing only
-'''
-'''
-names = []
-datas = []
-optdatas = []
-for k in range(4):
-    names += [list(dataobjdict.items())[k][0]]
-    datas += [list(dataobjdict.items())[k][1].data]
-    optdatas += [list(dataobjdict.items())[k][1].optimaldata]
-data = datas[0]
-optdata = optdatas[0]
-'''
+
 for dif in difs:
     print(dif)
     assert(dif <= 1)
@@ -103,10 +90,10 @@ for dif in difs:
     def savefig(number, save=False,
                 add_to_name = ', Pe='+str(adv/dif)):
         if save:
-            print('wow, it worked')
             plt.savefig(save_path + str(number) + ', ' + precision_type
                         + add_to_name + ".pdf"
                         , format='pdf', bbox_inches='tight', transparent=True)
+            print('File saved')
             plt.close()
 
 

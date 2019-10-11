@@ -13,7 +13,7 @@ Linear Case: dt u = adv dxx u + dif dx u
 On the interval [0,1] with homogeneous Dirichlet boundary conditions
 for t in [0,0.1]
 
-For different fixed time stepsizes and matrix dimension we calculate the error
+For different fixed time stepsizes and space dimension we calculate the error
 and the cost for each integration method
 '''
 
@@ -37,23 +37,34 @@ def Linear_Advection_Diffusion_Equation(Nx, dif, asLinearOp, filename, lock):
     reference_solution, tmp = expleja(t_end, A, u)[:2] # Double precision
 
     target_errors = [2**-10,2**-24]
-
+    """
+    Settings = {}
+    Settings["rk2"] = {
+            "columns": columns, "substeps": substeps, "target_errors": [None],}
+    Settings["rk4"] = {
+            "columns": columns, "substeps": substeps, "target_errors": [None],}
+    Settings["cn2"] = {
+            "columns": columns, "substeps": substeps,
+            "target_errors": [2**-10,2**-24], }
+    """
     if asLinearOp is True:
         exprb2.maxsubsteps = 1001
-        substeps = [125, 250, 500, 1000]
+        substeps = [250, 500, 750, 1000]
         methods = [exprb2]
-        powerits = [2,3,4,6,8,10,25,50]
+        estKwargsList = [{"powerits":it, "safetyfactor": sf}
+                            for it in [2,3,4,6,8,10,25,50]
+                            for sf in [0.5,0.75,0.9,1,1.1,1.5,2]]
     else:
         exprb2.maxsubsteps = len(tmp)*10
         substeps = (1.10**np.array(range(1,122))).astype('int')
         methods = [exprb2, cn2, rk2, rk4]
-        powerits = [None]
+        estKwargsList = [{}]
     substeps = np.unique(substeps)
     A, u = AdvectionDiffusion1D(Nx, 1, dif, asLinearOp = asLinearOp)
 
     columns = ['substeps', 'Nx', 'dif', 'rel_error_2norm', 'mv', 'misc']
     integrators = [Integrator(method, reference_solution, target_errors,
-                              powerits, columns) for method in methods]
+                              estKwargsList, columns) for method in methods]
 
     integrator_inputs = [A, u, t, t_end]
     add_to_row = [Nx, dif]

@@ -10,21 +10,15 @@ from Experiment1_datapreperation import dataobject, get_optimal_data
 '''
 DISCRETIZED ONE DIMENSIONAL LINEAR ADVECTION-DIFFUSION EQUATION
 
-Experiment 1:
-    Here we fix the highest acceptable error (2-norm/inf-norm) for the solution
-    of the linear advection-diffusion equantion and look at all datapoints
-    for which an integrator satisfies:
-        - The maximal integration error is small enough
-        - The costs (matrix-vector multiplication) are minimal
+Experiment 1LinOP:
+    We study the matrix-free case and determine for which parameter
+    (number of power iterations, substeps, etc) expleja still converges
 
     The integrators are
-        - rk2... Runge-Kutta method of order 2
-        - rk4... Runge-Kutta method of order 4
-        - cn2... Crank-Nicolson method of order 2
         - exprb2... Exponential euler method of order 2, in this case EXACT
 
-Note: We write expeuler, even though we only compute the matrix exponential
-    function of the discretized matrix using expleja with single precision
+Note: We write exprb2, even though we only compute the matrix exponential
+    function of the discretized matrix using expleja with half/single precision
     and fixed step size.
 '''
 
@@ -41,7 +35,7 @@ plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
 plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
-plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
+plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 plt.rcParams['lines.linewidth'] = 3
 
 '''
@@ -66,127 +60,68 @@ elif maxerror == str(2**-10):
 
 errortype = 'rel_error_2norm'
 
-save = False # Flag: If True, figures will be saved as pdf
-save_path = 'figures' + os.sep + 'Experiment1' + os.sep
+save = True # Flag: If True, figures will be saved as pdf
+save_path = 'figures' + os.sep + 'Experiment1LinOp' + os.sep
 
 adv = 1.0 # Coefficient of advection matrix. Do not change
 difs = [1e0,1e-1,1e-2]
 dif = difs[0]
-
-'''
-1.5 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
-'''
-
-
-def savefig(number, save=False,
-                add_to_name = ', Pe='+str(adv/dif)):
-        if save:
-            print('wow, it worked')
-            plt.savefig(save_path + str(number) + ', ' + precision_type
-                        + add_to_name + ".pdf"
-                        , format='pdf', bbox_inches='tight', transparent=True)
-            plt.close()
-
 
 
 fig, ax = plt.subplots()
 from copy import deepcopy
 
 Nts = [250, 500, 750, 1000]
-powerits = [2,3,4,6,8,10,25,50]
+powerits = [2,3,4,6,10,25]
+safetyfactors = [0.75,0.9,1.,1.1,1.5]
+target_error = 2**-24
 
 dobj = deepcopy(dataobjdict['/exprb2'])
 
-for Nt in Nts:
-    for dif in difs:
-        fig, ax = plt.subplots()
-        title = 'Péclet '
+def savefig(number, save=False,
+            add_to_name = ''):
+    if save:
+        plt.savefig(save_path + f'{number}, ' + precision_type
+                    + add_to_name + ".pdf"
+                    , format='pdf', bbox_inches='tight', transparent=True)
+        print('File saved')
+        plt.close()
+
+'''
+1.1 Experiment 1
+'''
+mng = plt.get_current_fig_manager()
+for dif, sf in product(difs, safetyfactors):
+    fig, axes = plt.subplots(2,2, figsize=(12,9))
+    axes = axes.flatten()
+    fig.suptitle(f'Péclet: {1/dif}, sf: {sf}')
+    for k, Nt in enumerate(Nts):
+        ax = axes[k]
+        ax.set_title(f's: {Nt}')
+
         for its in powerits:
+            ''' Prepare data '''
             data = dobj.data
             data = data.loc[(data['misc']==its) & (data.substeps == Nt) &
-                            (data.dif == dif) & (data.target_error == 2**-24)]
+                            (data.dif == dif) & (data.safetyfactor == sf)
+                            & (data.target_error == target_error)]
             data = data.drop_duplicates(subset='Nx', keep='first')
             data = data.sort_values(by='Nx')
             data.m = (data.mv-data.misc)/data.substeps + data.misc #Assumption: Matrix changes every substep
+            ''' Here we try to plot '''
             try:
-                data.plot('Nx','m',label=str(its) +' it', ax=ax)
+                data.plot('Nx','m',label=str(its) +' it', ax=ax,)
             except TypeError:
                 print('No numeric data to plot')
                 print('Nt: %s, dif: %s, its: %s\n' %(Nt,dif,its))
 
-
-        ax.legend()
-        ax.set_xlabel('Matrix-vector multiplications')
-        ax.set_ylabel('Optimal time step')
-        ax.set_ylim([0,400])
+        ax.legend(loc ='lower right')
+        ax.set_xlabel('N')
+        ax.set_ylabel('mv/s')
+        ax.set_xlim([50,400])
         ax.set_ylim([0,120])
+    plt.subplots_adjust(hspace=0.35)
+    savefig(1, save, f', Pe={1/dif}, sf={sf}')
 
-        savefig(5, save, '')
 
-'''
-1.6 Plot Peclet number (Nx) vs something else
-'''
-'''
-fig, ax = plt.subplots()
-linestyles = ['solid', 'dotted', 'dashed']
-difs = [1e0,1e-1,1e-2]
-for k, dif in enumerate([1e0,1e-1,1e-2]):
-    plt.gca().set_prop_cycle(None)
-    for key in keys:
-        get_optimal_data(dataobjdict[key], float(maxerror), errortype, dif)
-        df = dataobjdict[key].optimaldata
 
-        if k == 0:
-            df.plot('pe','mv', label=key[1:], ax=ax,
-                    linestyle = linestyles[k])
-        else:
-            df.plot('pe','mv', label='_nolegend_', ax=ax,
-                    linestyle = linestyles[k])
-        for i,j in df.Nx.items():
-            if j in [df.Nx.iloc[k] for k in [0,-1]]:
-                ax.annotate('N=' + str(j), xy=(df.mv[i], df.tau[i]))
-
-for k, l in enumerate(linestyles):
-    ax.plot([],[], 'k', linestyle = l, label='pe = ' + str(int(adv/difs[k])))
-
-ax.set_title(title)
-ax.legend()
-ax.set_xlabel('Grid peclet number')
-ax.set_ylabel('Matrix-vector multiplications')
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-savefig(6, save)
-'''
-'''
-Experiment 1.4 (Bonus):
-
-Compute the error of the expleja method for varying matrix dimensions NxN.
-Normally this would result would be almost exact, but in this case we fix the
-number of substeps and assume single precision.
-'''
-'''
-fig, ax = plt.subplots(1, 1, sharex=True)
-fig.suptitle(suptitle + '\n Single precision expleja')
-
-data = dataobjdict['/exprb2'].data
-data = data.loc[((data['dif'] == dif)
-                & (data[errortype] <= 1)
-                & (data['target_error'] == float(maxerror))]
-data = data.sort_values(by='substeps')
-
-for label, df in data.groupby('Nx'):
-    if label%100 == 0:
-        df.plot('substeps',errortype, ax=ax, label='N = ' + str(label))
-ax.set_xlabel('Number of substeps')
-if errortype == 'rel_error_inf':
-    ax.set_ylabel('Relative error in maximum norm')
-elif errortype == 'rel_error_2':
-    ax.set_ylabel('Relative error in Euclidean norm')
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-plt.subplots_adjust(hspace=0)
-
-savefig(4, save)
-'''
