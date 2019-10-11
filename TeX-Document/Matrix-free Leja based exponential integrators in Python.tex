@@ -152,7 +152,7 @@ Some eigenvalues of $A$ can have an extremely large negative real part. Therefor
 
 In our case the problem is fully linear and therefore $\texttt{exprb2}$ simplifies to the computation of the action of the matrix exponential funcion with the Leja method. We write $\texttt{expleja}$ for the single precision Leja method approximation. Note that reference solution was computed with double precision and therefore uses different nodes.
 
-In order to keep the solution from vanishing, we only consider coefficients $a$, $b\in[0,1]$. The advection-diffusion ratio scaled by the grid size $h$ is represented by the grid P\'eclet number
+In order to keep the solution from vanishing, we fix $b = 1$ and only consider coefficients $a\in[0,1]$. The advection-diffusion ratio scaled by the grid size $h$ is represented by the grid P\'eclet number
 
 
 \section{Appendix}
