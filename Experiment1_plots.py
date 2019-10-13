@@ -84,7 +84,7 @@ for dif in difs:
     Petext = ' for Pe = ' + str(adv/dif)
 
     precisiontext = '\n achieving error ≤ ' + precision
-    title = 'Optimal time step ' + precisiontext + Petext
+
 
 
     def savefig(number, save=False,
@@ -108,7 +108,7 @@ for dif in difs:
     for key in keys:
         df = dataobjdict[key].optimaldata
         df.plot('Nx','mv', label=key[1:], ax=ax)
-    ax.set_title(title)
+    ax.set_title('Achieving error ≤ ' + precision + Petext)
     ''' Optimal in the sense of cost minimizing '''
     ax.set_xlabel('N')
     ax.set_ylabel('Matrix-vector multiplications')
@@ -117,7 +117,7 @@ for dif in difs:
 
     savefig(1, save)
 
-
+    title = 'Optimal time step ' + precisiontext + Petext
     '''
     1.2 Plot matrix dimension (Nx) vs optimal time step size (tau)
     '''
