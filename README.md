@@ -3,7 +3,7 @@ Consider the one-dimensional linear advection-diffusion equation
 dt u = dx u + 1/Pe dxx u, 
 u(0) = u_0
 
-on the interval [0,1] with homogenous Dirichlet boundary conditions. With Pe > 0 we denote the grid Peclet number. 
+on the interval [0,1] with homogenous Dirichlet boundary conditions. With Pe > 0 we denote the Peclet number. 
 After a finite differences space discretization we get 
 
 dt u = Au, 
