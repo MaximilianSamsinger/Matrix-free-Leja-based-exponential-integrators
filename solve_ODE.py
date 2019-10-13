@@ -16,7 +16,7 @@ Nx... discretize x-axis into Nx-1 parts
 s... number of substeps used when integrating
 '''
 
-def compute_errors_and_costs(integrator, inputs, substeps, add_to_row):
+def compute_errors_and_costs(integrator, substeps, add_to_row):
     '''
     Create dataframe
     '''
@@ -48,7 +48,7 @@ def compute_errors_and_costs(integrator, inputs, substeps, add_to_row):
                 since the results would unusable anyways.
                 '''
                 with np.errstate(all='raise'): #Runtime warnings set to errors.
-                    _, error, costs = integrator.solve(*inputs, s)
+                    _, error, costs = integrator.solve(s)
                     row = [s] + add_to_row + [error] + list(costs)
                 if integrator.name in ['cn2','exprb2']:
                     row += [target_error]
@@ -81,12 +81,10 @@ def compute_errors_and_costs(integrator, inputs, substeps, add_to_row):
           1./add_to_row[1], 'time:', time()-begin, flush=True)
     return df, key
 
-def solve_ODE(integrators, integrator_inputs, substeps, add_to_row, filename,
-              lock=None):
+def solve_ODE(integrators, substeps, add_to_row, filename, lock=None):
 
     for integrator in integrators:
-        df, key = compute_errors_and_costs(integrator, integrator_inputs,
-                                           substeps, add_to_row)
+        df, key = compute_errors_and_costs(integrator, substeps, add_to_row)
         '''
         Save dataframe
         '''

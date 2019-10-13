@@ -47,6 +47,7 @@ def Linear_Advection_Diffusion_Equation(Nx, dif, asLinearOp, filename, lock):
             "columns": columns, "substeps": substeps,
             "target_errors": [2**-10,2**-24], }
     """
+
     if asLinearOp is True:
         exprb2.maxsubsteps = 1001
         substeps = [250, 500, 750, 1000]
@@ -63,14 +64,18 @@ def Linear_Advection_Diffusion_Equation(Nx, dif, asLinearOp, filename, lock):
     A, u = AdvectionDiffusion1D(Nx, 1, dif, asLinearOp = asLinearOp)
 
     columns = ['substeps', 'Nx', 'dif', 'rel_error_2norm', 'mv', 'misc']
-    integrators = [Integrator(method, reference_solution, target_errors,
+    inputs = [A, u, t, t_end]
+    """
+    ClassVariables = {"target_errors": [2**-10,2**-24],
+                      "columns": columns,
+                      "inputs": [A, u, t, t_end]}
+    """
+    integrators = [Integrator(method, inputs, reference_solution, target_errors,
                               estKwargsList, columns) for method in methods]
 
-    integrator_inputs = [A, u, t, t_end]
     add_to_row = [Nx, dif]
 
-    solve_ODE(integrators, integrator_inputs, substeps, add_to_row,
-              filename, lock=lock)
+    solve_ODE(integrators, substeps, add_to_row, filename, lock=lock)
 
 
 if __name__ == '__main__':

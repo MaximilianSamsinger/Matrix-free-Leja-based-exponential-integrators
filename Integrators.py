@@ -13,10 +13,10 @@ class Integrator:
     ''' Situation: dt u(t) = M @ u
     Calculate u(t_end), assuming M is a matrix or LinearOperator
     '''
-    def __init__(self, method, reference_solution, target_errors,
+    def __init__(self, method, inputs, reference_solution, target_errors,
                  estKwargsList, columns):
-        def solve(M, u, t, t_end, s):
-            u, functionEvaluations, misc = method(M, u, t, t_end, s)
+        def solve(s):
+            u, functionEvaluations, misc = method(*inputs, s)
 
             abs_error = np.linalg.norm(u - reference_solution, 2)
             rel_error = abs_error / np.linalg.norm(u, 2)
@@ -29,6 +29,7 @@ class Integrator:
 
         assert(name in ['cn2','exprb2','rk2','rk4',])
 
+        ''' Adjust class variables based on the method'''
         self.columns = columns.copy()
         if name in ['rk2','rk4']:
             self.target_errors = [min(target_errors)]

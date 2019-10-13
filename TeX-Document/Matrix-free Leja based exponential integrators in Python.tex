@@ -94,13 +94,33 @@ It can be difficult or impossible to compute $e^A$ in a first step and then the 
 This approach has many advantages. The cost of the computation of $p_n(A)v$ mainly depends on the calculation of $n$ matrix-vector multiplications with $A$. Furthermore the explicit knowledge of $A$ itself is no longer required. $A$ can be replaced by a linear function, which can be more convenient and saves memory.
 
 \section{The Leja method}
-In this section we explore the core concepts of the Leja method for the exponential function. This serves as an introduction for the 
+This section serves as an introduction to the Leja method for the exponential function. All proofs can be found in a more general form in \cite{advdif}. 
 
-\paragraph{Replacing the matrix exponential with a polynomial:}
+\subsection{Leja interpolation}
+Let $K\in\mathbb{C}$ be a compact set in the complex plane and $z_0\in K$ be arbitary. The sequence $(z_k)_{k=0}^{\infty}$ recursively defined as
+\[z_k = \underset{{z\in K}}{\operatorname{arg\,max}}\displaystyle\prod_{j=0}^{k-1}\abs{z-z_j}\]
+is called a Leja sequence. Due to the maximum principles all elements in the sequence realize their maximum on the border $\partial K$. Typically $z_0$ is also chosen on $\partial K$.\\
+For analytical functions $f\!:K\to\mathbb{C}$ the Newton interpolation polynomial $p_m$ with nodes $(z_k)_{k=0}^{m}$ has many beneficial properties. 
+\paragraph{Convergence properties:}
+The sequence $(p_m)_{m=0}^\infty$ converges maximally to $f$: Let $(p_m^{*})_{m=0}^\infty$ be the best uniform approximation polynomials for $f$ in $K$. Then
+\[\limsup\limits_{m \rightarrow \infty}\norm{f-p_m}_{K}^{1/m} = \limsup\limits_{m \rightarrow \infty}\norm{f-p_m^{*}}_{K}^{1/m} \ \overset{{K=\mathbb{C}}}{=} 0. \]
+Furthermore if $f$ is an entire function, then $(p_m)_{m=0}^\infty$ converges superlinearly to $f$. For entire functions $f$ the corresponding matrix polynomials achieves similar superlinear convergence
+\[\limsup\limits_{m \rightarrow \infty}\norm{f(A)v-p_m(A)v}_{2}^{1/m} = 0, \]
+for $A\in\mathbb{C}^{n\times n}, v\in\mathbb{C}^n$.
 
-\paragraph{Exploiting the properties of the matrix exponential functions:}
+\paragraph{Recursive constructability:}
+The Newton interpolation polynomial $p_m$ can be constructed iteratively since the corresponding Leja interpolation points $(z_k)_{k=0}^{m}$ are defined recursively. Therefore if the approximation $p_n \approx f$ is accurate enough for $n<m$ the interpolation can be stopped early to reduce the cost of the interpolation. Note that this is not possible with Chebyshev nodes.
 
-\paragraph{Evaluate the polynomial using precomputed Leja interpolation nodes:}
+\paragraph{Leja sequence can be stored:}
+For a given $K$ the Leja interpolation nodes only need to be computed once and for all. These values can be stored a priori and loaded once they are needed for the interpolation. If $f$ is fixed the same is true for the corresponding divided differences. \\
+
+In summary the Leja points offer convergence properties similar to Chebyshev nodes for interpolation, while having computational advantages. All results hold true for the corresponding matrix interpolation polynomials.
+
+From now on, we will fix 
+\[K=[-2,2], \quad f = e^\cdot, \quad z_0 = 2 \]
+
+\subsection{Exploiting the properties of the matrix exponential functions:}
+
 
 \section{Linear advection diffusion equation}
 
