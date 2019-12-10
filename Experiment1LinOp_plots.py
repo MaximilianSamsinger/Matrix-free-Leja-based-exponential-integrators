@@ -5,12 +5,12 @@ import numpy as np
 import os
 from matplotlib import pyplot as plt
 from itertools import chain, product
-from Experiment1_datapreperation import dataobject, get_optimal_data
+from datapreperation import IntegratorData, get_optimal_data
 
 '''
 DISCRETIZED ONE DIMENSIONAL LINEAR ADVECTION-DIFFUSION EQUATION
 
-Experiment 1LinOP:
+Experiment1 LinOP:
     We study the matrix-free case and determine for which parameter
     (number of power iterations, substeps, etc) expleja still converges
 
@@ -39,53 +39,57 @@ plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
 plt.rcParams['lines.linewidth'] = 3
 
 '''
-Load data
-'''
-filename = 'Experiment1LinOp.h5'
-with pd.HDFStore(filename) as hdf:
-    keys = hdf.keys()
-    dataobjdict = {key:dataobject(filename,key) for key in keys}
-
-'''
 CONFIG
 '''
 maxerror = str(2**-24)
+save = False # Flag: If True, figures will be saved as pdf
+save_path = 'figures' + os.sep + 'Experiment1LinOp' + os.sep
+adv = 1.0 # Coefficient of advection matrix. Do not change.
+difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1
+
+'''
+Load data
+'''
+filelocation = 'HDF5-Files' + os.sep + 'Experiment1LinOp.h5'
+with pd.HDFStore(filelocation) as hdf:
+    keys = hdf.keys()
+    Integrators = {key:IntegratorData(filelocation,key) for key in keys}
+    
+
+'''
+For saving and plotting
+'''
+def savefig(number, save=False, add_to_filename = None):
+    if add_to_filename is None:
+        filename = f'{number}, {precision_type}.pdf'
+    else:
+        filename = f'{number}, {precision_type}, {add_to_filename}.pdf'
+    if save:
+        plt.savefig(save_path + filename
+                    , format='pdf', bbox_inches='tight', transparent=True)
+        print('File saved')
+        plt.close()
+
 if maxerror == str(2**-24):
     precision = '$2^{-24}$'
     precision_type = 'single'
-
 elif maxerror == str(2**-10):
     precision = '$2^{-10}$'
     precision_type = 'half'
 
-errortype = 'rel_error_2norm'
-
-save = True # Flag: If True, figures will be saved as pdf
-save_path = 'figures' + os.sep + 'Experiment1LinOp' + os.sep
-
-adv = 1.0 # Coefficient of advection matrix. Do not change
-difs = [1e0,1e-1,1e-2]
-dif = difs[0]
+errortype = 'relerror'
 
 
-fig, ax = plt.subplots()
+
+
 from copy import deepcopy
 
 Nts = [250, 500, 750, 1000]
 powerits = [2,3,4,6,10,25]
 safetyfactors = [0.75,0.9,1.,1.1,1.5]
-target_error = 2**-24
+tol = 2**-24
 
-dobj = deepcopy(dataobjdict['/exprb2'])
-
-def savefig(number, save=False,
-            add_to_name = ''):
-    if save:
-        plt.savefig(save_path + f'{number}, ' + precision_type
-                    + add_to_name + ".pdf"
-                    , format='pdf', bbox_inches='tight', transparent=True)
-        print('File saved')
-        plt.close()
+Integrator = deepcopy(Integrators['/exprb2'])
 
 '''
 1.1 Experiment 1
@@ -101,13 +105,13 @@ for dif, sf in product(difs, safetyfactors):
 
         for its in powerits:
             ''' Prepare data '''
-            data = dobj.data
-            data = data.loc[(data['misc']==its) & (data.substeps == Nt) &
+            data = Integrator.data
+            data = data.loc[(data['powerits']==its) & (data.substeps == Nt) &
                             (data.dif == dif) & (data.safetyfactor == sf)
-                            & (data.target_error == target_error)]
+                            & (data.tol == tol)]
             data = data.drop_duplicates(subset='Nx', keep='first')
             data = data.sort_values(by='Nx')
-            data.m = (data.mv-data.misc)/data.substeps + data.misc #Assumption: Matrix changes every substep
+            data.m = (data.mv-data.powerits)/data.substeps + data.powerits #Assumption: Matrix changes every substep
             ''' Here we try to plot '''
             try:
                 data.plot('Nx','m',label=str(its) +' it', ax=ax,)

@@ -1,8 +1,8 @@
 import numpy as np
 import pandas as pd
-from Integrators import Integrator, rk2, rk4, cn2, exprb2
+from Integrators import largestEV
 from time import time
-from itertools import product
+
 
 '''
 For different fixed time stepsizes and matrix dimension we calculate the error
@@ -16,31 +16,55 @@ Nx... discretize x-axis into Nx-1 parts
 s... number of substeps used when integrating
 '''
 
-def compute_errors_and_costs(integrator, substeps, add_to_row):
+def Convert(Setting, AllSetting, name):
+    '''
+    Converts Settings to keyword arguments for the respective Integrators
+    '''
+    kwargs = {}
+    if name == 'exprb2':
+        if 'tol' in Setting:
+            kwargs['tol'] = [0,Setting['tol'],2,2]
+        if 'powerits' in Setting:
+            if 'safetyfactor' in Setting:
+                kwargs['normEstimator'] = (
+                        largestEV,
+                        {'powerits': Setting['powerits'],
+                         'safetyfactor': Setting['safetyfactor']
+                        }
+                )
+            else:
+                kwargs['normEstimator'] = (
+                        largestEV,
+                        {'powerits': Setting['powerits']}
+                )
+        if 'dF' in AllSetting:
+            kwargs['dF'] = AllSetting['dF']
+    elif name == 'cn2':
+        if 'tol' in Setting:
+            kwargs['tol'] = Setting['tol']
+        if 'dF' in AllSetting:
+            kwargs['dF'] = AllSetting['dF']
+    return kwargs
+
+def compute_errors_and_costs(Integrator, Settings, add_to_row):
     '''
     Create dataframe
     '''
     begin = time()
     data = [] # Will be filled with rows later on
 
-    target_errors = integrator.target_errors
-    estKwargsList = integrator.estKwargsList
+    for Setting in Settings[Integrator.name]:
+        kwargs = Convert(Setting, Settings['all'], Integrator.name)
 
-    for target_error, estKwargs in product(target_errors, estKwargsList):
-        min_error, skip = 1, False # Indicates if computation can be stopped
-        '''
-        Set tolerances
-        '''
-        if integrator.name == 'cn2':
-            cn2.tol = target_error # rel. tolerance for gmres
-        elif integrator.name == 'exprb2':
-            exprb2.tol = [0,target_error,2,2] # rel. tolerance for expleja
-            exprb2.estKwargs = estKwargs
+        if len(add_to_row) == 2:
+            print(Integrator.name, 'Nx:', add_to_row[0],
+                  'Pe:', 1./add_to_row[1], Setting)
+        else:
+            print(Integrator.name, 'Nx:', add_to_row[0],
+                  'params:', add_to_row[1:], Setting)
 
-        print(integrator.name, target_error, estKwargs, 'Nx:', add_to_row[0],
-              'Pe:', 1./add_to_row[1])
-
-        for s in substeps:
+        for s in Settings["all"]["substeps"]:
+            error = 1
             try: # We skip computation when we encounter runtime errors
                 '''
                 Compute relative errors (2norm) and costs.
@@ -48,43 +72,46 @@ def compute_errors_and_costs(integrator, substeps, add_to_row):
                 since the results would unusable anyways.
                 '''
                 with np.errstate(all='raise'): #Runtime warnings set to errors.
-                    _, error, costs = integrator.solve(s)
+                    _, error, costs = Integrator.solve(s, **kwargs)
                     row = [s] + add_to_row + [error] + list(costs)
-                if integrator.name in ['cn2','exprb2']:
-                    row += [target_error]
-                if integrator.name == 'exprb2' and bool(estKwargs):
-                    row += [estKwargs['safetyfactor']]
-
-                data.append(row)
+                    row += [value for key, value in Setting.items()]
+                    print(Integrator.name, s, error)
+                    data.append(row)
 
                 '''
                 If the error is small enough, skip further calculations
                 '''
-                if integrator.name in ['rk2','rk4','cn2']:
-                    if error < target_error: break
-                elif integrator.name == 'exprb2':
-                    if exprb2.maxsubsteps < s: break
-                    if error < target_error: skip = True
-                    if error < min_error: min_error = min(min_error, error)
-                    elif skip and error > min_error*50: break
+                if Integrator.name in ['rk2','rk4']:
+                    if error < min(Settings["all"]["tol"]): break
+                elif Integrator.name == 'cn2':
+                    if error < Setting['tol']: break
+                elif Integrator.name == 'exprb2':
+                    if Settings['all']['dF'] is not False:
+                        # Otherwise we might mess up Experiment 1
+                        if error < Setting['tol']: break
+                    elif s > 10000: break
                 else:
                     raise NameError('Method name not recognized, therefore it '
                                     + 'unclear when the computation finishes')
             except (FloatingPointError):
                 pass
 
-    df = pd.DataFrame(data, columns=integrator.columns)
-    df = df.astype({'substeps':np.int32,'Nx':np.int32, 'mv':np.int32,
-                        'misc':np.int32})
-    key = '/'+integrator.name # If we don't do that, we get an error.
-    print(integrator.name, 'Nx:', add_to_row[0], 'Pe:',
-          1./add_to_row[1], 'time:', time()-begin, flush=True)
+    df = pd.DataFrame(data, columns=Integrator.columns)
+    df = df.astype(Settings['all']['dftype'])
+    key = '/'+Integrator.name # If we don't do that, we get an error.
+    
+    if len(add_to_row) == 2:
+        print(Integrator.name, 'Nx:', add_to_row[0], 'Pe:',
+              1./add_to_row[1], 'time:', time()-begin, flush=True)
+    else:
+        print(Integrator.name, 'Nx:', add_to_row[0], 'params:',
+              add_to_row[1:], 'time:', time()-begin, flush=True)     
     return df, key
 
-def solve_ODE(integrators, substeps, add_to_row, filename, lock=None):
+def solve_ODE(Integrators, Settings, add_to_row, filename, lock=None):
 
-    for integrator in integrators:
-        df, key = compute_errors_and_costs(integrator, substeps, add_to_row)
+    for Integrator in Integrators:
+        df, key = compute_errors_and_costs(Integrator, Settings, add_to_row)
         '''
         Save dataframe
         '''

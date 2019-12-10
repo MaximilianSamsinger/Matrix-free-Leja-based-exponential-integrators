@@ -328,5 +328,6 @@ def largestEV(A, powerits=100, tol=1e-2):
         y = x/λ
         x = A.dot(y)
         if abs(λ-λ_old)<tol*λ or λ==0:
+            print(mv)
             break
-    return λ, mv
+    return λ, y, mv

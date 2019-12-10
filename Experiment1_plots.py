@@ -5,7 +5,7 @@ import numpy as np
 import os
 from matplotlib import pyplot as plt
 from itertools import chain, product
-from Experiment1_datapreperation import dataobject, get_optimal_data
+from datapreperation import IntegratorData, get_optimal_data
 
 
 '''
@@ -46,59 +46,57 @@ plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
 plt.rcParams['lines.linewidth'] = 3
 
 '''
-Load data
-'''
-
-filename = 'Experiment1.h5'
-with pd.HDFStore(filename) as hdf:
-    keys = hdf.keys()
-    dataobjdict = {key:dataobject(filename,key) for key in keys}
-'''
 CONFIG
 '''
-maxerror = str(2**-24)
+maxerror = str(2**-10)
+save = False # Flag: If True, figures will be saved as pdf
+save_path = 'figures' + os.sep + 'Experiment1' + os.sep
+adv = 1.0 # Coefficient of advection matrix. Do not change.
+difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1
+
+'''
+Load data
+'''
+filelocation = 'HDF5-Files' + os.sep + 'Experiment1.h5'
+with pd.HDFStore(filelocation) as hdf:
+    keys = hdf.keys()
+    Integrators = {key:IntegratorData(filelocation,key) for key in keys}
+    
+
+'''
+For saving and plotting
+'''
 if maxerror == str(2**-24):
     precision = '$2^{-24}$'
     precision_type = 'single'
-
 elif maxerror == str(2**-10):
     precision = '$2^{-10}$'
     precision_type = 'half'
 
-errortype = 'rel_error_2norm'
+errortype = 'relerror'
 
-save = False # Flag: If True, figures will be saved as pdf
-save_path = 'figures' + os.sep + 'Experiment1' + os.sep
+def savefig(number, save=False, add_to_filename = None):
+    if add_to_filename is None:
+        filename = f'{number}, {precision_type}.pdf'
+    else:
+        filename = f'{number}, {precision_type}, {add_to_filename}.pdf'
+    if save:
+        plt.savefig(save_path + filename
+                    , format='pdf', bbox_inches='tight', transparent=True)
+        print('File saved')
+        plt.close()
 
-adv = 1.0 # Coefficient of advection matrix. Do not change
-difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1
 
 
 for dif in difs:
     print(dif)
     assert(dif <= 1)
 
-
-
-    suptitle = 'Pe = ' + str(adv/dif)
-    Petext = ' for Pe = ' + str(adv/dif)
-
-    precisiontext = '\n achieving error ≤ ' + precision
-
-
-
-    def savefig(number, save=False,
-                add_to_name = ', Pe='+str(adv/dif)):
-        if save:
-            plt.savefig(save_path + str(number) + ', ' + precision_type
-                        + add_to_name + ".pdf"
-                        , format='pdf', bbox_inches='tight', transparent=True)
-            print('File saved')
-            plt.close()
-
-
     for key in keys:
-        get_optimal_data(dataobjdict[key], float(maxerror), errortype, dif)
+        get_optimal_data(Integrators[key], float(maxerror), errortype, dif)
+
+    suptitle = f'Pe = {adv/dif}'
+    Petext = f' for Pe = {adv/dif}'
 
 
     '''
@@ -106,24 +104,26 @@ for dif in difs:
     '''
     fig, ax = plt.subplots()
     for key in keys:
-        df = dataobjdict[key].optimaldata
+        df = Integrators[key].optimaldata
         df.plot('Nx','mv', label=key[1:], ax=ax)
-    ax.set_title('Achieving error ≤ ' + precision + Petext)
+    ax.set_title(f'Achieving error ≤ {precision} {Petext}')
     ''' Optimal in the sense of cost minimizing '''
     ax.set_xlabel('N')
     ax.set_ylabel('Matrix-vector multiplications')
     #ax.set_ylim([5e2,1.5e5])
     ax.set_yscale('log')
 
-    savefig(1, save)
-
+    savefig(1, save, f'Pe={adv/dif}')
+    
+    precisiontext = '\n achieving error ≤ ' + precision
     title = 'Optimal time step ' + precisiontext + Petext
+    
     '''
     1.2 Plot matrix dimension (Nx) vs optimal time step size (tau)
     '''
     fig, ax = plt.subplots()
     for key in keys:
-        df = dataobjdict[key].optimaldata
+        df = Integrators[key].optimaldata
         df.plot('Nx','tau', label=key[1:], ax=ax)
 
 
@@ -138,7 +138,7 @@ for dif in difs:
     ax.set_ylabel('Optimal time step')
     ax.set_yscale('log')
 
-    savefig(2, save)
+    savefig(2, save, f'Pe={adv/dif}')
 
     '''
     1.3 Plot matrix dimension (Nx) vs matrix-vector multiplications (mv)
@@ -146,14 +146,43 @@ for dif in difs:
     fig, ax = plt.subplots()
     fig.suptitle(suptitle)
     for key in keys:
-        df = dataobjdict[key].optimaldata
+        df = Integrators[key].optimaldata
         df.plot('Nx','m', label=key[1:], ax=ax)
-    ax.set_title('Minimal costs for ' + precision + ' results')
+    ax.set_title(f'Minimal costs for {precision} results')
     ax.set_xlabel('N')
     ax.set_ylabel('Matrix-vector multiplications per timestep')
     ax.set_ylim([0,120])
 
-    savefig(3, save)
+    savefig(3, save, f'Pe={adv/dif}')
+    
+    '''
+    Experiment 1.5 (Bonus):
+    
+    Compute the error of the expleja method for varying matrix dimensions NxN.
+    Normally this would result would be almost exact, but in this case we fix the
+    number of substeps and assume single precision.
+    '''
+    
+    fig, ax = plt.subplots(1, 1, sharex=True)
+    fig.suptitle(suptitle + '\n Single precision expleja')
+    
+    data = Integrators['/exprb2'].data
+    data = data.loc[(data['dif'] == dif)
+                    & (data[errortype] <= 10)
+                    & (data['tol'] == float(maxerror))]
+    data = data.sort_values(by='substeps')
+    
+    for label, df in data.groupby('Nx'):
+        if label%100 == 0:
+            df.plot('substeps',errortype, ax=ax, label='N = ' + str(label))
+    
+    ax.set_xlabel('Number of substeps')
+    ax.set_ylabel('Relative error')
+    ax.set_xscale('log')
+    ax.set_yscale('log')    
+    
+    savefig(5, save, f'Pe={adv/dif}')
+
 
 '''
 1.4 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
@@ -164,8 +193,8 @@ linestyles = ['solid', 'dotted', 'dashed']
 for k, dif in enumerate([1e0,1e-1,1e-2]):
     plt.gca().set_prop_cycle(None)
     for key in keys:
-        get_optimal_data(dataobjdict[key], float(maxerror), errortype, dif)
-        df = dataobjdict[key].optimaldata
+        get_optimal_data(Integrators[key], float(maxerror), errortype, dif)
+        df = Integrators[key].optimaldata
 
         label = key[1:] if k == 0 else '_nolegend_'
         df.plot('mv','tau', label=label, ax=ax, linestyle = linestyles[k])
@@ -185,7 +214,8 @@ ax.set_ylabel('Optimal time step')
 ax.set_xscale('log')
 ax.set_yscale('log')
 
-savefig(4, save, '')
+savefig(4, save)
+
 
 
 '''
@@ -198,8 +228,8 @@ difs = [1e0,1e-1,1e-2]
 for k, dif in enumerate([1e0,1e-1,1e-2]):
     plt.gca().set_prop_cycle(None)
     for key in keys:
-        get_optimal_data(dataobjdict[key], float(maxerror), errortype, dif)
-        df = dataobjdict[key].optimaldata
+        get_optimal_data(Integrators[key], float(maxerror), errortype, dif)
+        df = Integrators[key].optimaldata
 
         if k == 0:
             df.plot('pe','mv', label=key[1:], ax=ax,
@@ -222,36 +252,4 @@ ax.set_xscale('log')
 ax.set_yscale('log')
 
 savefig(6, save)
-'''
-'''
-Experiment 1.4 (Bonus):
-
-Compute the error of the expleja method for varying matrix dimensions NxN.
-Normally this would result would be almost exact, but in this case we fix the
-number of substeps and assume single precision.
-'''
-'''
-fig, ax = plt.subplots(1, 1, sharex=True)
-fig.suptitle(suptitle + '\n Single precision expleja')
-
-data = dataobjdict['/exprb2'].data
-data = data.loc[((data['dif'] == dif)
-                & (data[errortype] <= 1)
-                & (data['target_error'] == float(maxerror))]
-data = data.sort_values(by='substeps')
-
-for label, df in data.groupby('Nx'):
-    if label%100 == 0:
-        df.plot('substeps',errortype, ax=ax, label='N = ' + str(label))
-ax.set_xlabel('Number of substeps')
-if errortype == 'rel_error_inf':
-    ax.set_ylabel('Relative error in maximum norm')
-elif errortype == 'rel_error_2':
-    ax.set_ylabel('Relative error in Euclidean norm')
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-plt.subplots_adjust(hspace=0)
-
-savefig(4, save)
 '''
