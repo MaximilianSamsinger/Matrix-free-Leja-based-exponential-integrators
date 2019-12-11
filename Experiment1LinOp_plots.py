@@ -41,8 +41,8 @@ plt.rcParams['lines.linewidth'] = 3
 '''
 CONFIG
 '''
-maxerror = str(2**-24)
-save = False # Flag: If True, figures will be saved as pdf
+maxerror = str(2**-10)
+save = True # Flag: If True, figures will be saved as pdf
 save_path = 'figures' + os.sep + 'Experiment1LinOp' + os.sep
 adv = 1.0 # Coefficient of advection matrix. Do not change.
 difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1

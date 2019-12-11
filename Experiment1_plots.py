@@ -49,7 +49,7 @@ plt.rcParams['lines.linewidth'] = 3
 CONFIG
 '''
 maxerror = str(2**-10)
-save = False # Flag: If True, figures will be saved as pdf
+save = True # Flag: If True, figures will be saved as pdf
 save_path = 'figures' + os.sep + 'Experiment1' + os.sep
 adv = 1.0 # Coefficient of advection matrix. Do not change.
 difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1
@@ -155,8 +155,34 @@ for dif in difs:
 
     savefig(3, save, f'Pe={adv/dif}')
     
+
     '''
-    Experiment 1.5 (Bonus):
+    1.4 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
+    '''
+    fig, ax = plt.subplots()
+    linestyles = ['solid', 'dotted', 'dashed']
+    
+    
+    for key in keys:
+        df = Integrators[key].optimaldata
+        df.plot('mv','tau', label=key[1:], ax=ax)
+
+        for i,j in df.Nx.items():
+            if j in [df.Nx.iloc[k] for k in [0,-1]]:
+                ax.annotate('N=' + str(j), xy=(df.mv[i], df.tau[i]))
+    
+    ax.set_title(title)
+    ax.legend()
+    ax.set_xlabel('Matrix-vector multiplications')
+    ax.set_ylabel('Optimal time step')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    
+    savefig(4, save, f'Pe={adv/dif}')
+
+
+    '''
+    Experiment 1.5:
     
     Compute the error of the expleja method for varying matrix dimensions NxN.
     Normally this would result would be almost exact, but in this case we fix the
@@ -182,39 +208,6 @@ for dif in difs:
     ax.set_yscale('log')    
     
     savefig(5, save, f'Pe={adv/dif}')
-
-
-'''
-1.4 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
-'''
-fig, ax = plt.subplots()
-linestyles = ['solid', 'dotted', 'dashed']
-
-for k, dif in enumerate([1e0,1e-1,1e-2]):
-    plt.gca().set_prop_cycle(None)
-    for key in keys:
-        get_optimal_data(Integrators[key], float(maxerror), errortype, dif)
-        df = Integrators[key].optimaldata
-
-        label = key[1:] if k == 0 else '_nolegend_'
-        df.plot('mv','tau', label=label, ax=ax, linestyle = linestyles[k])
-
-        for i,j in df.Nx.items():
-            if j in [df.Nx.iloc[k] for k in [0,-1]]:
-                ax.annotate('N=' + str(j), xy=(df.mv[i], df.tau[i]))
-
-for k, l in enumerate(linestyles):
-    ax.plot([],[], 'k', linestyle = l,
-            label = 'Pe = ' + str((difs[k]/dif)))
-
-ax.set_title(title)
-ax.legend()
-ax.set_xlabel('Matrix-vector multiplications')
-ax.set_ylabel('Optimal time step')
-ax.set_xscale('log')
-ax.set_yscale('log')
-
-savefig(4, save)
 
 
 

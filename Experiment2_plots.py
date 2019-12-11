@@ -57,7 +57,7 @@ pd.set_option('display.width', 1000)  # Easier to investigate data
 '''
 CONFIG
 '''
-maxerror = str(2**-24)
+maxerror = str(2**-10)
 
 if maxerror == str(2**-24):
     precision = '$2^{-24}$'
@@ -69,7 +69,7 @@ elif maxerror == str(2**-10):
 
 errortype = 'relerror'
 
-save = False # Flag: If True, figures will be saved as pdf
+save = True # Flag: If True, figures will be saved as pdf
 save_path = 'figures' + os.sep + 'Experiment2' + os.sep
 
 params = [[α, β, γ] for α in [0.1, 0.01] for β in [1, 0.1, 0.01] for γ in [1]]
@@ -158,4 +158,29 @@ for param in params:
     ax.set_ylim([0,100])
 
     savefig(3, save, paramtext)
+    
+    '''
+    1.4 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
+    '''
+    fig, ax = plt.subplots()
+    
+    for key in keys:
+        df = Integrators[key].optimaldata
+        df.plot('cost','tau', label=key[1:], ax=ax)
+    
+        for i,j in df.Nx.items():
+            if j in [df.Nx.iloc[k] for k in [0,-1]]:
+                ax.annotate('N=' + str(j), xy=(df.cost[i], df.tau[i]))
+    
+    ax.set_title(title)
+    ax.legend()
+    ax.set_xlabel('Matrix-vector multiplications')
+    ax.set_ylabel('Optimal time step')
+    ax.set_xscale('log')
+    ax.set_yscale('log')
+    
+    ax.set_xlim([1e1,1e5])
+    ax.set_ylim([1e-5,1e-1])
+    
+    savefig(4, save, paramtext)
 
