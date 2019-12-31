@@ -2,7 +2,6 @@ from __future__ import print_function, division
 
 import numpy as np
 from scipy.sparse import identity, issparse
-from numpy.linalg import norm
 from scipy.sparse.linalg import LinearOperator
 from scipy.sparse.linalg.interface import IdentityOperator
 from scipy.sparse.linalg._onenormest import _onenormest_core
@@ -188,7 +187,7 @@ def select_interp_para(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
         '''
         Selects the shift mu (Half of (absolutely) largest eigenvalue)
         '''
-        [mu,mv] = largestEV(A) # Poweriteration to estimate the 2-norm of A
+        [mu,_,mv] = largestEV(A) # Poweriteration to estimate the 2-norm of A
         mu = -mu/2.0
         A = A - mu*IdentityOperator((n,n))
         gamma2 = abs(mu)
@@ -223,7 +222,7 @@ def select_interp_para(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
     else:
         m = np.argmin(np.arange(2,mm) * np.ceil((h*gamma2)/theta[2:mm]).T)
         m = m+2
-    nsteps = np.ceil((h*gamma2)/theta[m])
+    nsteps = int(np.ceil((h*gamma2)/theta[m]))
 
     gamma2, dd = theta[m], dd[:,m]
     xi = xi*(gamma2/2)
@@ -324,10 +323,9 @@ def largestEV(A, powerits=100, tol=1e-2):
     λ = float('inf')
 
     for mv in range(1,powerits+1):
-        λ_old, λ = λ, norm(x)
+        λ_old, λ = λ, np.linalg.norm(x)
         y = x/λ
         x = A.dot(y)
         if abs(λ-λ_old)<tol*λ or λ==0:
-            print(mv)
             break
     return λ, y, mv

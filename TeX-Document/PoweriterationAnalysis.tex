@@ -1,0 +1,80 @@
+\documentclass{scrartcl}
+\usepackage[utf8]{inputenc}
+\usepackage[ngerman,english]{babel}
+\usepackage{blindtext}
+\usepackage{color}
+\usepackage{graphicx}
+\usepackage{grffile}
+\usepackage{subcaption}
+\usepackage{upgreek}
+\usepackage{amsmath,amssymb,amsthm,mathtools}
+\usepackage{multirow}
+\usepackage{float}
+\usepackage{hyperref}
+
+\newcommand{\argmax}{\operatornamewithlimits{argmax}}
+\newcommand{\defneq}{\mathrel{\mathop:}=}
+\newcommand{\eqdefn}{=\mathrel{\mathop:}}
+
+\DeclarePairedDelimiter\abs{\lvert}{\rvert}%
+\DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+
+\begin{document}
+\section{Analysis of the power iteration}
+%All eigenvalues of the discretized one-dimensional using the upwind scheme are -1/h.   
+The eigenvalues of discretized one-dimensional Laplace operator $A\in\mathbb{R}^{N\times N}$ on the interval $[0,1]$ with Dirichlet boundary conditions are given by
+\[\lambda_j = -\frac{4}{h^2} \sin^2\left(\frac{\pi j}{2(N+1)}\right) ,\quad j=1,\dots, N\]
+where $h = 1/(N-1)$ is the constant grid size. 
+We investigate the rate of convergence for the power method given $A$ and an initial vector $v$. Consider $v=\frac{1}{N}\sum_{j=1}^N v_{j}$, where each $v_j$ is the normalized eigenvector corresponding to the eigenvalue $\lambda_j$.
+
+After $n$ power iteration we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of
+\[
+	\frac{\norm{A^{n-1}v}_2}{\norm{A^nv}_2}\abs{\lambda_N} = 
+	\sqrt{\frac{\sum_{j=1}^{N}{\lambda_j^{2(n-1)}}}{\sum_{j=1}^{N}{\lambda_j^{2n}}}}\abs{\lambda_N} = 
+	\sqrt{\frac{\sum_{j=1}^{N}\sin^{4(n-1)}
+			\left(\frac{\pi j}{2(N+1)}\right)}{\sum_{j=1}^{N}\sin^{4n}
+			\left(\frac{\pi j}{2(N+1)}\right)}}\sin^2\left(\frac{\pi N}{2(N+1)}\right).
+\] 
+The first equality holds since $A$ is symmetric. Therefore all eigenvectors are orthogonal. In order to continue our analysis and get some asymptotic bounds we interpret the sum of sine functions as an integral approximated by the trapezoidal rule. We use the nodes $j/(N+1)$ for $j=0,\dots,{N+1}$.
+\[
+	\int_{0}^{1}{\sin^{4n}\left(\frac{\pi x}{2}\right)} =
+	\frac{1}{(N+1)}\left(2\sum_{j=1}^{N}\sin^{4n}\left(\frac{\pi j}{(N+1)}\right) + \frac{1}{2}\right)
+	+ \mathcal{O}\left(\frac{1}{12(N+1)^2}\right)
+\]
+Note that the error of the approximation is strictly positive since the second derivative  math.stackexchange\footnote{\url{https://math.stackexchange.com/questions/50447/integration-of-powers-of-the-sin-x}} we can blissfully accept the identity
+\[I_n \defneq \int_{0}^{1}{\sin^{4n}\left(\frac{\pi x}{2}\right)} = \frac{\Gamma(2n+0.5)}{\sqrt{\pi}\ \Gamma(2n+1)}. \]
+In order to simplify our calculations we take the limit of $N$
+\[ 
+	\frac{\norm{A^{n-1}v}}{\norm{A^{n}v}}\abs{\lambda_N} \xrightarrow[]{N\to\infty}
+	\sqrt{\frac{I_n}{I_{n-1}}}, 
+\]
+where
+
+\begin{align*}
+	\frac{I_n}{I_{n-1}} &= 
+	\frac{\Gamma(2n - 1)\Gamma(2n + 0.5)}{\Gamma(2n + 1)\Gamma(2n - 1.5)} \\&=   
+	\frac{(2n - 2)!}{(2n)!}
+	\frac{\Gamma(2n + 0.5)}{\Gamma(2n - 1.5)}
+	\frac{\Gamma(2n)}{\Gamma(2n)}
+	\frac{\Gamma(2n-2)}{\Gamma(2n-2)} \\&=
+	\frac{1}{2n(2n-1)} 
+	\frac{2^{1-4n}\sqrt\pi}{2^{5-4n}\sqrt\pi}
+	\frac{\Gamma(4n)}{\Gamma(4n-4)}
+	\frac{\Gamma(2n-2)}{\Gamma(2n)} \\&=
+	\frac{1}{32n(2n-1)} 
+	\frac{(4n-1)!}{(4n-5)!}
+	\frac{(2n-3)!}{(2n-1)!} \\&=
+	\frac{(4n-1)(4n-2)(4n-3)(4n-4)}{32n(2n-1)^2(2n-2)} \\&=
+	\frac{(4n-1)(4n-3)}{8n(2n-1)} \\&=
+	\frac{4n-1}{4n}\frac{4n-3}{4n-2} \\&=
+	\left(1-\frac{1}{4n}\right)\left(1-\frac{1}{4n-2}\right)
+	%%\\&=1 - \frac{1}{2n}\frac{8n-3}{8n-4} 
+\end{align*}
+For the third equality we applied the duplication formula for the gamma function. All in all we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of 
+\[
+	\lim_{N\to\infty}\frac{\norm{A^{n-1}v}}{\norm{A^{n}v}}\abs{\lambda_N} =
+	\sqrt{\left(1-\frac{1}{4n}\right)\left(1-\frac{1}{4n-2}\right)} \approx
+	1-\frac{1}{4n-1}
+\]
+at the limit $N\to\infty$. 
+\end{document}

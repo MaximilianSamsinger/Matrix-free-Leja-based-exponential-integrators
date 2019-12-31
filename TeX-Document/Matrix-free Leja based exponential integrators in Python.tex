@@ -1,4 +1,4 @@
-% !TeX spellcheck = <none>
+% !TeX spellcheck = en_GB
 \documentclass{scrartcl}
 \usepackage[utf8]{inputenc}
 \usepackage[ngerman,english]{babel}
@@ -33,6 +33,8 @@
 \newtheorem*{rem}{Remark}
 \DeclarePairedDelimiter\abs{\lvert}{\rvert}%
 \DeclarePairedDelimiter\norm{\lVert}{\rVert}%
+\DeclarePairedDelimiter\ceil{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
 
 
 %\title{The Leja method in Python}
@@ -90,7 +92,7 @@ Ich erkläre mich mit der Archivierung der vorliegenden Bachelorarbeit einversta
 %%%%%%%%%%
 Consider the action of the matrix exponential function 
 	\[e^Av,\quad A\in\mathbb{C}^{N\times N}, v\in\mathbb{C}^N.\] 
-Due to computational constraints it can be difficult or impossible to compute $e^A$ in a first step and then the action $e^Av$ in a seperate step. This is especially true in applications where $N>10000$ is not uncommon. Furthermore the matrix exponential of a sparse matrix is in general no longer sparse. Therefore it is more feasable to compute the action of the matrix exponential in a single step. This can be done by approximating the matrix exponential with a matrix polynomial $p_m$ of degree $m$ in $A$
+Due to computational constraints it can be difficult or impossible to compute $e^A$ in a first step and then the action $e^Av$ in a separate step. This is especially true in applications where $N>10000$ is not uncommon. Furthermore the matrix exponential of a sparse matrix is in general no longer sparse. Therefore it is more feasible to compute the action of the matrix exponential in a single step. This can be done by approximating the matrix exponential with a matrix polynomial $p_m$ of degree $m$ in $A$
 	\[e^Av \approx p_m(A)v.\]
 This approach has many advantages. The cost of the computation of $p_m(A)v$ mainly depends on the calculation of $n$ matrix-vector multiplications with $A$. Furthermore the explicit knowledge of $A$ itself is no longer required. $A$ can be replaced by a linear operator, which can be more convenient and saves memory.
 
@@ -98,7 +100,7 @@ This approach has many advantages. The cost of the computation of $p_m(A)v$ main
 This section serves as an introduction to the Leja method for the exponential function. All proofs can be found in a more general form in \cite{advdif}. 
 
 \subsection{Leja interpolation}
-Let $K\in\mathbb{C}$ be a compact set in the complex plane and $\xi_0\in K$ be arbitary. The sequence $(\xi_k)_{k=0}^{\infty}$ recursively defined as
+Let $K\in\mathbb{C}$ be a compact set in the complex plane and $\xi_0\in K$ be arbitrary. The sequence $(\xi_k)_{k=0}^{\infty}$ recursively defined as
 \[\xi_k = \underset{{z\in K}}{\operatorname{arg\,max}}\displaystyle\prod_{j=0}^{k-1}\abs{\xi-\xi_j}\]
 is called a Leja sequence. Due to the maximum principles all elements in the sequence realize their maximum on the border $\partial K$. Typically $\xi_0$ is also chosen on $\partial K$.\\
 For analytical functions $f\!:K\to\mathbb{C}$ the Newton interpolation polynomial $p_m$ with nodes $(\xi_k)_{k=0}^{m}$ has many beneficial properties. 
@@ -109,7 +111,7 @@ Furthermore if $f$ is an entire function, then $(p_m)_{m=0}^\infty$ converges su
 \[\limsup\limits_{m \rightarrow \infty}\norm{f(A)v-p_m(A)v}_{2}^{1/m} = 0, \]
 for $A\in\mathbb{C}^{n\times n}, v\in\mathbb{C}^n$.
 
-\paragraph{Recursive constructability:}
+\paragraph{Recursive constructibility:}
 The Newton interpolation polynomial $p_m$ can be constructed iteratively since the corresponding Leja interpolation points $(\xi_k)_{k=0}^{m}$ are defined recursively. Therefore if the approximation $p_n \approx f$ is accurate enough after $n<m$ steps the interpolation can be stopped early to reduce the cost of the interpolation. Note that this is not possible with Chebyshev nodes.
 
 \paragraph{Leja sequence can be stored:}
@@ -117,17 +119,106 @@ For a given $K$ the Leja interpolation nodes only need to be computed once and f
 
 In summary the Leja points offer convergence properties similar to Chebyshev nodes for interpolation, while having computational advantages. All results hold true for the corresponding matrix interpolation polynomials.
 
-\section{Matrix-free Leja based exponential integratos}
+\subsection{Approximating the matrix exponential function:}
+Inspired by the previous subsection we try to find a low-cost approximation of the action of the matrix exponential $e^Av$ using Leja interpolation polynomials. From now on, we will fix 
+\[K=[-c,c], \quad f = e^\cdot, \quad \xi_0 = c \]
+for $c>0$. With $L_{m,c}$ we denote the Leja interpolation polynomial on the interval $[-c,c]$ with Leja points $(\xi_j)_{j=0}^{m}$. We use the well-known property of the exponential function
+\[e^Av = (e^{s^{-1}A})^sv, \quad s\in\mathbb{N}.\]
+Now we can approximate the action of the matrix exponential in $s$ substeps
+\[v_0\defneq v,\quad v_{j+1}\defneq L_{m,c}(s^{-1}A)v_j,\quad v_s \approx e^Av.\]
+This setup was used in \cite{lejarev}. We summarize some key results. 
+\paragraph{Bounding the backward error} For a given matrix $A$ we interpret the Leja interpolation polynomial as the exact solution of a perturbation matrix exponential function
+\[
+L_{m,c}(s^{-1}A)^sv \eqdefn e^{A + \Delta A}v\\
+\]
+Our goal is to bound the backward error 
+\[
+\frac{\norm{\Delta A}}{\norm{A}} \le \operatorname{tol}, 
+\]
+for a given tolerance $\operatorname{tol}$. Furthermore we want to minimize the cost of the interpolation. A priori it is unclear for which values $m$, $s$ and $c$ the inequality is satisfied. The authors of \cite{lejarev} conducted a backward error analysis and chose an approach which favors normal matrices. For various tolerances $\operatorname{tol}$ they precomputed values $\theta_m$ which satisfy
+\begin{align*}
+\text{If}\ \norm{s^{-1}A}\le \theta_m\ \text{and}\ 0 < c < \theta_m\ \text{then}\ \frac{\norm{\Delta A}}{\norm{A}} \le \operatorname{tol}.
+\end{align*}
+\begin{table}[tbp]
+	\begin{tabular}{r|rrrrrrr}
+		$m$ &        5 &       10 &       15 &       20 &       25 &       30 &       35 \\\hline
+		half & 6.43e-01 & 2.12e+00 & 3.55e+00 & 5.00e+00 & 6.37e+00 & 7.51e+00 & 8.91e+00 \\
+		single & 9.62e-02 & 8.33e-01 & 1.96e+00 & 3.26e+00 & 4.69e+00 & 5.96e+00 & 7.44e+00 \\
+		double & 1.74e-03 & 1.14e-01 & 5.31e-01 & 1.23e+00 & 2.16e+00 & 3.18e+00 & 4.34e+00 \\
+		\\
+		$m$ &       40 &       45 &       50 &       55 &       60 &       65 &       70 \\\hline
+		half & 1.00e+01 & 1.10e+01 & 1.23e+01 & 1.35e+01 & 1.48e+01 & 1.59e+01 & 1.71e+01 \\
+		single & 8.71e+00 & 1.00e+01 & 1.15e+01 & 1.27e+01 & 1.40e+01 & 1.52e+01 & 1.64e+01 \\
+		double & 5.48e+00 & 6.67e+00 & 7.99e+00 & 9.24e+00 & 1.06e+01 & 1.18e+01 & 1.32e+01 \\
+		\\
+		$m$ &       75 &       80 &       85 &       90 &       95 &      100 \\ \hline
+		half & 1.84e+01 & 1.94e+01 & 2.07e+01 & 2.20e+01 & 2.30e+01 & 2.42e+01 \\
+		single & 1.76e+01 & 1.87e+01 & 1.99e+01 & 2.12e+01 & 2.23e+01 & 2.35e+01 \\
+		double & 1.46e+01 & 1.58e+01 & 1.71e+01 & 1.86e+01 & 1.99e+01 & 2.13e+01
+	\end{tabular}
+	\label{thetam}
+	\caption{Samples of the (rounded) values $\theta_m$ with tolerances half, single and double for the real Leja interpolation. (Table taken from \cite[Table 1]{lejarev}.)}
+\end{table}	
+
+For our purposes it is important to note that the optimal choice for $c$ is given by $c = \rho(A)$, where $\rho(A)$ is the spectral radius of $A$. However, computing $\rho(A)$ introduces additional costs for the algorithms proposed in \cite{lejarev}. This will not be the case for our matrix-free implementation.
+
+\paragraph{Choosing cost-minimizing parameters}
+The cost of the Leja interpolation mainly depends on the the number of matrix-vector products
+\[
+C_{m} = sm. 
+\]
+In order to minimize the costs of the interpolation we select the smallest $m$ such that
+\[
+\norm{s^{-1}A} \le \theta_m
+\]
+is satisfied for a given $s$. This leads to the optimal choice for $m_*$ and $s_*$ 
+\[
+m_* = \underset{2\le m\le m_{max}}{\operatorname{arg\ min}}  \left\{{\left\lceil{\frac{\norm{A}}{\theta_m}}\right\rceil}m\right\}, \quad
+s_* =  \left\lceil{\frac{\norm{A}}{\theta_m}}\right\rceil.
+\]
+In our algorithm we set $m_{max} = 100$ in order to avoid over- and underflow errors.
+
+\paragraph{Shifting the matrix}
+The cost of the interpolation can be decreased by employing a shift $\mu\in\mathbb{C}$. Let $I$ be the identity matrix. We replace the matrix $A$ with $A-\mu I$ for all computations. If the shifted matrix $A-\mu I$ satisfies $\norm{A -\mu I} < \norm A$ then the cost $C_{m_*}$ of the interpolation decreases.
+We compensate for the shift by multiplying with $e^\mu$ since
+\[
+	e^{A} = e^{\mu}e^{A-\mu I}.
+\]
+A well-chosen shift centers the eigenvalues of $A-\mu I$ around $0$. Such a shift can be found by using Gerschgorin's circle theorem.
+
+\paragraph{Early termination criterion}
+The Newton interpolation can be interrupted early if a sufficient accuracy has been reached. INSERT TEXT INSERT TEXT INSERT TEXT
+
+\subsection{Matrix-free implementation}
+For the backward error analysis in \cite{lejarev} the matrix norm was not specified. Furthermore we can minimize the costs of the interpolation by choosing a norm such that $\norm{A}$ is as small as possible.
+
+A well know result from matrix analysis states that for every $A$ and for every $\varepsilon>0$ exists a induced matrixnorm $\norm{\cdot}_{A,\varepsilon}$, such that
+\[\rho(A) \le \norm{A}_{A,\varepsilon} \le \rho(A) + \varepsilon. \]
+The first inequality holds true for every matrix norm. We will choose $\varepsilon$ small enough, such that
+\[\hat\theta_m \defneq \underset{\begin{subarray}{c}m=0,\dots,100\\\rho(A) < \theta_m\end{subarray}}{\min}\theta_m\]
+\[\norm{A}_{A,\varepsilon} \le \hat\theta_m\]
+Using this construction the explicit knowledge of $\norm{\cdot}_{A,\varepsilon}$ is no longer required. $\rho(A)$ can be cheaply approximated using power iterations. However, this procedure underestimates the largest eigenvalue and therefore we have to compensate for that by multiplying the estimate with a safety factor. 
+
+For matrix-free linear operators we cannot directly compute the matrix norm $\norm A$. However, we can compute (under-)estimate the spectral radius $\rho(A)$ of $A$ with the power iteration algorithm. 
+%\begin{align*}
+%	w_{k+1} = \frac{Aw_k}{\norm{Aw_k}},
+%\end{align*}
+
+\[\rho(A) \le \norm A\]
+
+
+
+\section{Matrix-free Leja based exponential integrators}
 Exponential integrators are a class of numerical integrators which excel at solving stiff differential equations. Unlike most numerical ordinary differential equation (ODE) solvers their construction is based on the variation-of-constants formula. Consider the semilinear initial value problem
 \begin{align*}
 	\partial_tu &= Au + N(u) = F(u) \\ 
 	u(0) &= u_0
 \end{align*}
-where $A = \partial_uF$ and $N(u) = F(u)-Au$ is the linear and nonlinear part of $F$ respectivly. The solution of the ODE is given by the variation-of-constants formula
+where $A = \partial_uF$ and $N(u) = F(u)-Au$ is the linear and nonlinear part of $F$ respectively. The solution of the ODE is given by the variation-of-constants formula
 \[
 u(t) = e^{Lt}u_0 + \int_{0}^{t}e^{(t-\tau)A}N(u(\tau))d\tau.
 \]
-Similar to Runge-Kutta methods, we replace the integrant with a polynomial approximation. Unlike Runge-Kutta methods, we leave the matrix-exponential untouched and only replace $N$. The most well-known Rosenbrock-type exponential integrator, the exponential Rosenbrock-Euler method, can be obtained by using the left hand rule. By replacing $N$ with $N(u_0)$ we get
+Similar to Runge-Kutta methods, we replace the integrand with a polynomial approximation. Unlike Runge-Kutta methods, we leave the matrix-exponential untouched and only replace $N$. The most well-known Rosenbrock-type exponential integrator, the exponential Rosenbrock-Euler method, can be obtained by using the left hand rule. By replacing $N$ with $N(u_0)$ we get
 \[
 u(t) \approx e^{Lt}u_0 + \int_{0}^{t}e^{(t-\tau)A}N(u_0)d\tau = e^{Lt}u_0 + \varphi_1(tA)N(u_0),
 \]
@@ -141,33 +232,6 @@ This can be done by slightly modifying $A$. For matrices $A$ we have
 \end{array}\right]
 \end{align*}
 In the matrix-free case
-
-\subsection{Approximating the matrix exponential function:}
-Inspired by the previous section we try to find a low-cost approximation of the action of the matrix exponential $e^Av$ using Leja interpolation polynomials. From now on, we will fix 
-\[K=[-c,c], \quad f = e^\cdot, \quad \xi_0 = 2 \]
-for $c>0$. With $L_{m,c}$ we denote the Leja interpolation polynomial on the interval $[-c,c]$ with Leja points $(\xi_j)_{j=0}^{m}$. We use the well-known property of the exponential function
-\[e^Av = (e^{s^{-1}A})^sv.\]
-for $s\in\mathbb{N}$. By choosing $s$ large enough, we can bound the backward error of  This allows us to savely interpolate $e^{s^{-1}A} \approx L_{m,c}(s^{-1}A)$. Now we can approximate the action of the matrix exponential in $s$ substeps
-\[v_0\defneq v,\quad v_{j+1}\defneq L_{m,c}(s^{-1}A)v_j,\quad v_s \approx e^Av.\]
-
-%This setup was used in \cite{lejarev}. After choosing a fixed tolerance $\operatorname{tol}$ they perform a backward error analysis to determine when $\norm{L_{m,c}(s^{-1}A) - e^{s^{-1}A}} < \operatorname{tol}/s$. We summarize the key takeaways.
-
-
-This setup was used in \cite{lejarev}.
-
-After choosing a fixed tolerance $\operatorname{tol}$ they perform a backward error analysis to determine when $\norm{L_{m,c}(s^{-1}A) - e^{s^{-1}A}} < \operatorname{tol}/s$. This leads to an optimal choice for $s$, $m$ and $c$ depending on $A$, which minimizes the costs of the interpolation.
-
-INSERT TEXT INSERT TEXT INSERT TEXT
-
-For matrix-free linear operators we cannot directly compute the matrix norm $\norm A$. 
-In general we have
-\[\rho(A) \le \norm A\]
-
-
-\paragraph{Shifting the matrix}
-In order to speed up the calculation, we use the relation
-\[ e^{A} = e^{\mu}e^{A-\mu I}, \quad\mu\in\mathbb{C} \]
-where $I$ is the identity matrix. to center the spectrum of $A$ around $0$. For 
 
 
 
@@ -228,7 +292,7 @@ For the first experiments we will discretize multiple one-dimensional advection-
 \paragraph{Explicit midpoint method:}
 	We refer to the explicit midpoint method of order 2 as \texttt{rk2}. 
 
-\paragraph{Classical Runge kutta:}
+\paragraph{Classical Runge-Kutta method:}
 	We refer to the classical Runge-Kutta method of order 4 as \texttt{rk4}.\\
 
 
@@ -257,7 +321,7 @@ Some eigenvalues of $A$ can have an extremely large negative real part. Therefor
 
 
 
-In our case the problem is fully linear and therefore $\texttt{exprb2}$ simplifies to the computation of the action of the matrix exponential funcion with the Leja method. We write $\texttt{expleja}$ for the single precision Leja method approximation. Note that reference solution was computed with double precision and therefore uses different nodes.
+In our case the problem is fully linear and therefore $\texttt{exprb2}$ simplifies to the computation of the action of the matrix exponential function with the Leja method. We write $\texttt{expleja}$ for the single precision Leja method approximation. Note that reference solution was computed with double precision and therefore uses different nodes.
 
 In order to keep the solution from vanishing, we fix $b = 1$ and only consider coefficients $a\in[0,1]$. The advection-diffusion ratio scaled by the grid size $h$ is represented by the grid P\'eclet number
 
@@ -268,6 +332,9 @@ In order to keep the solution from vanishing, we fix $b = 1$ and only consider c
 We discretize, solve again with rk2, rk4, cn2 and exprb2.
 
 \section{Appendix}
+Matrix analysis, Horn and Johnson, Lemma 5.6.10
+\[\rho(A) = \inf\{\norm{A} : \norm{\cdot} \text{ is an induced matrix norm} \} \]
+
 %
 %\subsection{CFL Condition} \label{CFL}
 %We conduct a Von Neumann stability analysis for the diffusion equation
@@ -307,13 +374,13 @@ We discretize, solve again with rk2, rk4, cn2 and exprb2.
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{4, \precision}.pdf}
+	\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{4, \precision, \Pe}.pdf}
 %	\caption{A picture of a gull.}
 \end{figure}
 
 
 \subsection{Experiment 1.5}
-In the matrix-free case the linear operator $A$ is not explicitly given. In order to compute the matrix norm ${\norm A}_2$ we use power iterations to estimate the absolutely largest eigenvalue of $A$. A priory it is not clear how many power iterations $it$ are neccessary for a good approximation. 
+In the matrix-free case the linear operator $A$ is not explicitly given. In order to compute the matrix norm ${\norm A}_2$ we use power iterations to estimate the absolutely largest eigenvalue of $A$. A priory it is not clear how many power iterations $it$ are necessary for a good approximation. 
 
 \begin{figure}[h!]
 	\centering
@@ -324,8 +391,8 @@ In the matrix-free case the linear operator $A$ is not explicitly given. In orde
 \newpage
 \subsection{Experiment 2}
 \newcommand{\adv}{\detokenize{α}=0.01}
-\newcommand{\dif}{\detokenize{β}=1}
-\renewcommand{\precision}{half}
+\newcommand{\dif}{\detokenize{β}=0.01}
+\renewcommand{\precision}{single}
 {1, \precision, \adv, \dif}
 \begin{figure}[H]
 	\centering
@@ -344,6 +411,13 @@ In the matrix-free case the linear operator $A$ is not explicitly given. In orde
 	\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{3, \precision, \adv, \dif}.pdf}
 	%	\caption{A picture of a gull.}
 \end{figure}
+
+\begin{figure}[H]
+	\centering
+	\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{4, \precision, \adv, \dif}.pdf}
+	%	\caption{A picture of a gull.}
+\end{figure}
+
 
 
 %DESCRIPTION OF THE EXPERIMENT, NUMBER OF POWERITS, SAFETYFACTOR, HOW STABLE IS THE COMPUTATION???

@@ -51,13 +51,14 @@ filelocation = 'HDF5-Files' + os.sep + 'Experiment2.h5'
 with pd.HDFStore(filelocation) as hdf:
     keys = hdf.keys()
     Integrators = {key:IntegratorData(filelocation,key) for key in keys}
+keys = [keys[k] for k in [0,1,4,5,2,3]]
 
 pd.set_option('display.max_columns', 500) # Easier to investigate data  
 pd.set_option('display.width', 1000)  # Easier to investigate data  
 '''
 CONFIG
 '''
-maxerror = str(2**-10)
+maxerror = str(2**-24)
 
 if maxerror == str(2**-24):
     precision = '$2^{-24}$'
@@ -69,7 +70,7 @@ elif maxerror == str(2**-10):
 
 errortype = 'relerror'
 
-save = True # Flag: If True, figures will be saved as pdf
+save = False # Flag: If True, figures will be saved as pdf
 save_path = 'figures' + os.sep + 'Experiment2' + os.sep
 
 params = [[α, β, γ] for α in [0.1, 0.01] for β in [1, 0.1, 0.01] for γ in [1]]

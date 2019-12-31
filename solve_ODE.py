@@ -21,7 +21,7 @@ def Convert(Setting, AllSetting, name):
     Converts Settings to keyword arguments for the respective Integrators
     '''
     kwargs = {}
-    if name == 'exprb2':
+    if 'exprb' in name:
         if 'tol' in Setting:
             kwargs['tol'] = [0,Setting['tol'],2,2]
         if 'powerits' in Setting:
@@ -84,8 +84,8 @@ def compute_errors_and_costs(Integrator, Settings, add_to_row):
                 if Integrator.name in ['rk2','rk4']:
                     if error < min(Settings["all"]["tol"]): break
                 elif Integrator.name == 'cn2':
-                    if error < Setting['tol']: break
-                elif Integrator.name == 'exprb2':
+                    if error < Setting['tol'] and s > 1000 : break
+                elif 'exprb' in Integrator.name:
                     if Settings['all']['dF'] is not False:
                         # Otherwise we might mess up Experiment 1
                         if error < Setting['tol']: break

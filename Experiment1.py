@@ -4,7 +4,7 @@ import numpy as np
 import scipy as sp
 import pandas as pd
 from scipy import integrate
-from Integrators import Integrator, rk2, rk4, cn2, exprb2
+from Integrators import Integrator, rk2, rk4, cn2, exprb2, exprb3, exprb4
 from time import time, sleep
 from itertools import product
 from multiprocessing import Process, Lock
@@ -106,6 +106,7 @@ def Nonlinear_Advection_Diffusion_Equation(Nx, param, asLinearOp, filename, lock
     Settings["exprb2"] = [
             {"tol":te, "powerits": 4, "safetyfactor": 1.1}
             for te in Settings["all"]["tol"]]
+    Settings["exprb4"] = Settings["exprb3"] = Settings["exprb2"]
     substeps = (1.10**np.array(range(1,122))).astype('int')
     Settings['all']['substeps'] = np.unique(substeps)
     Settings['all']['dftype'] = {
@@ -115,7 +116,7 @@ def Nonlinear_Advection_Diffusion_Equation(Nx, param, asLinearOp, filename, lock
     }
 
     ''' Define Integrators '''
-    methods = [exprb2, cn2, rk2, rk4]
+    methods = [exprb2, exprb3, exprb4, cn2, rk2, rk4]
     columns = ['substeps', 'Nx', 'α','β','γ', 'relerror',
                'Feval', 'dFeval', 'mv']
 
