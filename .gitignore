@@ -12,3 +12,8 @@ Resources/PecletNumber.pdf
 Resources/Transport (peclet number).pdf
 Resources/Versteeg_Malalasekera_2ed.pdf
 DELETE3.py
+
+HDF5-Files - Copy/Experiment1.h5
+HDF5-Files - Copy/Experiment1LinOp.h5
+HDF5-Files - Copy/Experiment2.h5
+HDF5-Files/Experiment2 - nosubstepping.h5

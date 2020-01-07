@@ -11,7 +11,7 @@
 \usepackage{amsmath,amssymb,amsthm,mathtools}
 \usepackage{multirow}
 \usepackage{float}
-
+\usepackage{hyperref}
 
 \newcommand{\argmax}{\operatornamewithlimits{argmax}}
 \newcommand{\defneq}{\mathrel{\mathop:}=}
@@ -19,6 +19,24 @@
 
 %\newcommand{\myparagraph}[1]{\paragraph{#1}\mbox{}\}
 %\setlength{\parindent}{0em}
+
+\newcount\colveccount
+\newcommand*\colvec[1]{
+	\global\colveccount#1
+	\begin{bmatrix}
+		\colvecnext
+	}
+	\def\colvecnext#1{
+		#1
+		\global\advance\colveccount-1
+		\ifnum\colveccount>0
+		\\
+		\expandafter\colvecnext
+		\else
+	\end{bmatrix}
+	\fi
+}
+
 
 \begin{document}
 
@@ -94,7 +112,7 @@ Consider the action of the matrix exponential function
 	\[e^Av,\quad A\in\mathbb{C}^{N\times N}, v\in\mathbb{C}^N.\] 
 Due to computational constraints it can be difficult or impossible to compute $e^A$ in a first step and then the action $e^Av$ in a separate step. This is especially true in applications where $N>10000$ is not uncommon. Furthermore the matrix exponential of a sparse matrix is in general no longer sparse. Therefore it is more feasible to compute the action of the matrix exponential in a single step. This can be done by approximating the matrix exponential with a matrix polynomial $p_m$ of degree $m$ in $A$
 	\[e^Av \approx p_m(A)v.\]
-This approach has many advantages. The cost of the computation of $p_m(A)v$ mainly depends on the calculation of $n$ matrix-vector multiplications with $A$. Furthermore the explicit knowledge of $A$ itself is no longer required. $A$ can be replaced by a linear operator, which can be more convenient and saves memory.
+This approach has many advantages. The cost of the computation of $p_m(A)v$ mainly depends on the calculation of $m$ matrix-vector multiplications with $A$. Furthermore the explicit knowledge of $A$ itself is no longer required. $A$ can be replaced by a linear operator, which can be more convenient and save memory.
 
 \section{The Leja method}
 This section serves as an introduction to the Leja method for the exponential function. All proofs can be found in a more general form in \cite{advdif}. 
@@ -111,7 +129,7 @@ Furthermore if $f$ is an entire function, then $(p_m)_{m=0}^\infty$ converges su
 \[\limsup\limits_{m \rightarrow \infty}\norm{f(A)v-p_m(A)v}_{2}^{1/m} = 0, \]
 for $A\in\mathbb{C}^{n\times n}, v\in\mathbb{C}^n$.
 
-\paragraph{Recursive constructibility:}
+\paragraph{Early termination:}
 The Newton interpolation polynomial $p_m$ can be constructed iteratively since the corresponding Leja interpolation points $(\xi_k)_{k=0}^{m}$ are defined recursively. Therefore if the approximation $p_n \approx f$ is accurate enough after $n<m$ steps the interpolation can be stopped early to reduce the cost of the interpolation. Note that this is not possible with Chebyshev nodes.
 
 \paragraph{Leja sequence can be stored:}
@@ -127,7 +145,7 @@ for $c>0$. With $L_{m,c}$ we denote the Leja interpolation polynomial on the int
 Now we can approximate the action of the matrix exponential in $s$ substeps
 \[v_0\defneq v,\quad v_{j+1}\defneq L_{m,c}(s^{-1}A)v_j,\quad v_s \approx e^Av.\]
 This setup was used in \cite{lejarev}. We summarize some key results. 
-\paragraph{Bounding the backward error} For a given matrix $A$ we interpret the Leja interpolation polynomial as the exact solution of a perturbation matrix exponential function
+\paragraph{Bounding the backward error} For a given matrix $A$ we interpret the Leja interpolation polynomial as the exact solution of a perturbed matrix exponential function
 \[
 L_{m,c}(s^{-1}A)^sv \eqdefn e^{A + \Delta A}v\\
 \]
@@ -136,9 +154,9 @@ Our goal is to bound the backward error
 \frac{\norm{\Delta A}}{\norm{A}} \le \operatorname{tol}, 
 \]
 for a given tolerance $\operatorname{tol}$. Furthermore we want to minimize the cost of the interpolation. A priori it is unclear for which values $m$, $s$ and $c$ the inequality is satisfied. The authors of \cite{lejarev} conducted a backward error analysis and chose an approach which favors normal matrices. For various tolerances $\operatorname{tol}$ they precomputed values $\theta_m$ which satisfy
-\begin{align*}
-\text{If}\ \norm{s^{-1}A}\le \theta_m\ \text{and}\ 0 < c < \theta_m\ \text{then}\ \frac{\norm{\Delta A}}{\norm{A}} \le \operatorname{tol}.
-\end{align*}
+\[
+\text{If}\ \norm{s^{-1}A}\le \theta_m\ \text{and}\ 0 < c \le \theta_m\ \text{then}\ \frac{\norm{\Delta A}}{\norm{A}} \le \operatorname{tol}.
+\]
 \begin{table}[tbp]
 	\begin{tabular}{r|rrrrrrr}
 		$m$ &        5 &       10 &       15 &       20 &       25 &       30 &       35 \\\hline
@@ -156,10 +174,9 @@ for a given tolerance $\operatorname{tol}$. Furthermore we want to minimize the 
 		single & 1.76e+01 & 1.87e+01 & 1.99e+01 & 2.12e+01 & 2.23e+01 & 2.35e+01 \\
 		double & 1.46e+01 & 1.58e+01 & 1.71e+01 & 1.86e+01 & 1.99e+01 & 2.13e+01
 	\end{tabular}
-	\label{thetam}
 	\caption{Samples of the (rounded) values $\theta_m$ with tolerances half, single and double for the real Leja interpolation. (Table taken from \cite[Table 1]{lejarev}.)}
+	\label{table:thetam}
 \end{table}	
-
 For our purposes it is important to note that the optimal choice for $c$ is given by $c = \rho(A)$, where $\rho(A)$ is the spectral radius of $A$. However, computing $\rho(A)$ introduces additional costs for the algorithms proposed in \cite{lejarev}. This will not be the case for our matrix-free implementation.
 
 \paragraph{Choosing cost-minimizing parameters}
@@ -186,94 +203,182 @@ We compensate for the shift by multiplying with $e^\mu$ since
 \]
 A well-chosen shift centers the eigenvalues of $A-\mu I$ around $0$. Such a shift can be found by using Gerschgorin's circle theorem.
 
-\paragraph{Early termination criterion}
-The Newton interpolation can be interrupted early if a sufficient accuracy has been reached. INSERT TEXT INSERT TEXT INSERT TEXT
-
 \subsection{Matrix-free implementation}
-For the backward error analysis in \cite{lejarev} the matrix norm was not specified. Furthermore we can minimize the costs of the interpolation by choosing a norm such that $\norm{A}$ is as small as possible.
+For matrix-free linear operators it can be expensive to compute the matrix norm $\norm A$. We will circumvent this problem by replacing $\norm{A}$ with the spectral radius $\rho(A)$. 
 
-A well know result from matrix analysis states that for every $A$ and for every $\varepsilon>0$ exists a induced matrixnorm $\norm{\cdot}_{A,\varepsilon}$, such that
-\[\rho(A) \le \norm{A}_{A,\varepsilon} \le \rho(A) + \varepsilon. \]
-The first inequality holds true for every matrix norm. We will choose $\varepsilon$ small enough, such that
-\[\hat\theta_m \defneq \underset{\begin{subarray}{c}m=0,\dots,100\\\rho(A) < \theta_m\end{subarray}}{\min}\theta_m\]
-\[\norm{A}_{A,\varepsilon} \le \hat\theta_m\]
-Using this construction the explicit knowledge of $\norm{\cdot}_{A,\varepsilon}$ is no longer required. $\rho(A)$ can be cheaply approximated using power iterations. However, this procedure underestimates the largest eigenvalue and therefore we have to compensate for that by multiplying the estimate with a safety factor. 
-
-For matrix-free linear operators we cannot directly compute the matrix norm $\norm A$. However, we can compute (under-)estimate the spectral radius $\rho(A)$ of $A$ with the power iteration algorithm. 
-%\begin{align*}
-%	w_{k+1} = \frac{Aw_k}{\norm{Aw_k}},
-%\end{align*}
-
-\[\rho(A) \le \norm A\]
-
-
-
-\section{Matrix-free Leja based exponential integrators}
-Exponential integrators are a class of numerical integrators which excel at solving stiff differential equations. Unlike most numerical ordinary differential equation (ODE) solvers their construction is based on the variation-of-constants formula. Consider the semilinear initial value problem
-\begin{align*}
-	\partial_tu &= Au + N(u) = F(u) \\ 
-	u(0) &= u_0
-\end{align*}
-where $A = \partial_uF$ and $N(u) = F(u)-Au$ is the linear and nonlinear part of $F$ respectively. The solution of the ODE is given by the variation-of-constants formula
+First of all note that the backward error analysis in \cite{lejarev} holds true for every matrix norm. Furthermore we can minimize the costs of the interpolation by choosing a norm such that $\norm{A}$ is as small as possible.
+We use a well-known result from the matrix analysis literature \cite[Lemma 5.6.10.]{matrixanalysis}. For every $A$ and for every $\varepsilon>0$ exists an induced matrix norm $\norm{\cdot}_{A,\varepsilon}$ such that
 \[
-u(t) = e^{Lt}u_0 + \int_{0}^{t}e^{(t-\tau)A}N(u(\tau))d\tau.
+	\rho(A) \le \norm{A}_{A,\varepsilon} \le \rho(A) + \varepsilon. 
 \]
-Similar to Runge-Kutta methods, we replace the integrand with a polynomial approximation. Unlike Runge-Kutta methods, we leave the matrix-exponential untouched and only replace $N$. The most well-known Rosenbrock-type exponential integrator, the exponential Rosenbrock-Euler method, can be obtained by using the left hand rule. By replacing $N$ with $N(u_0)$ we get
+The first inequality holds true for every matrix norm. We choose $\varepsilon$ small enough, such that
 \[
-u(t) \approx e^{Lt}u_0 + \int_{0}^{t}e^{(t-\tau)A}N(u_0)d\tau = e^{Lt}u_0 + \varphi_1(tA)N(u_0),
+	\norm{s^{-1}A}_{A,\varepsilon} \le \underset{\rho(s^{-1}A) < \theta_m}{\min}\theta_m.
 \]
-where $\varphi_1(z) = \frac{e^z-1}z$. Higher order exponential integrators rely on the efficient computation of the entire functions 
-\[\varphi_{k+1}(z) = \frac{\varphi_k(z)-1}z, \quad \varphi_0(z) = e^z, \quad k\in\mathbb{N}.\]
-This can be done by slightly modifying $A$. For matrices $A$ we have
-\begin{align*}
-\varphi_1(tA)v = 
-\left[ \begin{array}
-{rr}e^{tA}& v \\0 & 0\\
-\end{array}\right]
-\end{align*}
-In the matrix-free case
+For this choice of $\norm{\cdot}_{A,\varepsilon}$ the cost-minimizing parameters are given by
+\[
+	m_* = \underset{2\le m\le m_{max}}{\operatorname{arg\ min}}  \left\{{\left\lceil{\frac{\rho(A)}{\theta_m}}\right\rceil}m\right\}, \quad
+	s_* =  \left\lceil{\frac{\rho(A)}{\theta_m}}\right\rceil.
+\]
+The explicit knowledge of $\norm{\cdot}_{A,\varepsilon}$ is no longer required. Furthermore we can choose $c=\rho(A)$ without introducing additional costs, since we have to compute $\rho(A)$ anyway to determine $m_*$ and $s_*$. 
+For positive and negative semi-definite operators $A$ we can choose the shift $\mu = -\rho(A)/2$ and $\mu = \rho(A)/2$ respectively. This shift works particularly well if the absolutely smallest eigenvalue of $A$ is close to $0$.\\
+This approach has some drawbacks though. While we able to bound the backward error
+\[
+	\frac{\norm{\Delta A}_{A,\varepsilon}}{\norm{A}_{A,\varepsilon}} \le \operatorname{tol}  
+\]
+we can no longer specify in which norm this error has to be bound. Furthermore it is hard to find a good shift $\mu$ for non-semi-definite operators.\\
+$\rho(A)$ can be cheaply approximated using the power iteration algorithm. However, this procedure underestimates the largest eigenvalue and therefore we have to compensate for that by multiplying the estimate with a safety factor. 
 
 
 
+From now on we denote the Leja method for the matrix exponential function as \texttt{expleja}. Depending on the chosen tolerance (see ~\ref{table:thetam}) we will refer to the algorithm as half, single or double precision \texttt{expleja} respectively.
 
-
-\section{Linear advection diffusion equation}
+\section{Linear advection-diffusion equation}
 Consider the one-dimensional advection-diffusion equation
 \begin{align*}
 \partial_tu &= a\partial_{xx}u + b\partial_xu \quad a,b\ge 0\\
 u_0(t) &= e^{-80\cdot(t-0,45)^2} \quad t\in[0,0.1]
 \end{align*}
-on the domain $\Omega = [0,1]$. For a fixed $N\in\mathbb N$ we approximate the diffusive part with second-order central differences on an equidistant grid with grid size $h = \frac{1}{N}$ and grid points $x_i = ih$, $i=0\dots,N$.
-\[\partial_{xx}u(x_i) = \frac{u(x_{i+1}) - 2u(x_i) + u(x_{i-1})}{{h}^2} + \mathcal{O}({h}^2)\]
-In order to avoid numerical instabilities we discretize the advective part with forward differences, similar to the upwind scheme.
-\[\partial_{x}u(x_i) = \frac{u(x_{i+1}) - u(x_i)}{h} + \mathcal{O}(h)\]
+on the domain $\Omega = [0,1]$. For a fixed $N\in\mathbb N$ we approximate the diffusive part of the differential equation with second-order central differences on an equidistant grid with grid size $h = \frac{1}{N-1}$ and grid points $x_i = ih$, $i=0\dots,N-1$
+\[\partial_{xx}u(x_i) = \frac{u(x_{i+1}) - 2u(x_i) + u(x_{i-1})}{{h}^2} + \mathcal{O}({h}^2).\]
+In order to avoid numerical instabilities we discretize the advective part with forward differences, similar to the upwind scheme
+\[\partial_{x}u(x_i) = \frac{u(x_{i+1}) - u(x_i)}{h} + \mathcal{O}(h).\]
 The resulting system of ordinary differential equation is given by
 \begin{align*}
 \partial_tu &= Au.
-\end{align*} 
-
-\begin{figure}[H]
-	\newcommand{\boundary}{periodic}
-	\centering
-	\includegraphics[width=1.\columnwidth]{{../figures/Spectrum/\boundary}.pdf}
-	\caption{Visualization of the spectrum of $A$. We assume \boundary\ boundary conditions.}
-\end{figure}
-
-
-
-
-\begin{figure}[H]
+\end{align*}
+In order to measure the stiffness of the differential equation we employ the P\'eclet number $\operatorname{Pe} = \frac{b}{a}$.
+The P\'eclet number is a dimensionless quantities representing the ratio of the advective velocity $b$ to the diffusive velocity $a$.\\
+\begin{figure}[ht]
 	\newcommand{\precision}{single}
 	\newcommand{\Pe}{Pe=10.0}
 	\centering
 	\includegraphics[width=1.\columnwidth]{../figures/Experiment1/{5, \precision, \Pe}.pdf}
-	\caption{Approximation of $e^Av$}
+	\caption{Approximation of $e^{0.1A}u_0$ using single precision \texttt{expleja} for a fixed interpolation degree $m=100$ and varying number of substeps $s$. The relative error is measured in the Eucledian norm. The reference solution was computed using the double precision \texttt{expleja} algorithm.}
+\end{figure}Even though $A$ can be represented as a sparse matrix, it is more memory-efficient to treat it as a matrix-free linear operator. The solution of the differential equation is given by $e^{0.1A}u_0$, which can be approximated using the Leja method. For the matrix-free case we need to compute the spectral radius of $A$, which can be done using the power method.
+
+
+\subsection{Power iteration analysis}
+\begin{figure}[t]
+	\newcommand{\boundary}{periodic}
+	\centering
+	\includegraphics[width=1.\columnwidth]{{../figures/Spectrum/\boundary}.pdf}
+	\caption{The spectrum of $A$. For this visualization we assume \boundary\ boundary conditions. For Dirichlet boundary conditions all eigenvalues are negative real numbers.}
 \end{figure}
+
+%All eigenvalues of the discretized one-dimensional using the upwind scheme are -1/h.   
+The eigenvalues of discretized one-dimensional Laplace operator $A\in\mathbb{R}^{N\times N}$ on the interval $[0,1]$ with Dirichlet boundary conditions are given by
+\[\lambda_j = -\frac{4}{h^2} \sin^2\left(\frac{\pi j}{2(N+1)}\right) ,\quad j=1,\dots, N.\]
+We investigate the rate of convergence for the power method given $A$ and an initial vector $v$. Consider $v=\frac{1}{N}\sum_{j=1}^N v_{j}$, where each $v_j$ is the normalized eigenvector corresponding to the eigenvalue $\lambda_j$.
+
+After $n$ power iteration we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of
+\[
+\frac{\norm{A^{n-1}v}_2}{\norm{A^nv}_2}\abs{\lambda_N} = 
+\sqrt{\frac{\sum_{j=1}^{N}{\lambda_j^{2(n-1)}}}{\sum_{j=1}^{N}{\lambda_j^{2n}}}}\abs{\lambda_N} = 
+\sqrt{\frac{\sum_{j=1}^{N}\sin^{4(n-1)}
+		\left(\frac{\pi j}{2(N+1)}\right)}{\sum_{j=1}^{N}\sin^{4n}
+		\left(\frac{\pi j}{2(N+1)}\right)}}\sin^2\left(\frac{\pi N}{2(N+1)}\right).
+\] 
+The first equality holds since $A$ is symmetric. Therefore all eigenvectors are orthogonal. In order to continue our analysis and get some asymptotic bounds we interpret the sum of sine functions as an integral approximated by the trapezoidal rule. We use the nodes $j/(N+1)$ for $j=0,\dots,{N+1}$.
+\[
+\int_{0}^{1}{\sin^{4n}\left(\frac{\pi x}{2}\right)} =
+\frac{1}{(N+1)}\left(2\sum_{j=1}^{N}\sin^{4n}\left(\frac{\pi j}{(N+1)}\right) + \frac{1}{2}\right)
++ \mathcal{O}\left(\frac{1}{12(N+1)^2}\right)
+\]
+Note that the error of the approximation is strictly positive since the second derivative  math.stackexchange\footnote{\url{https://math.stackexchange.com/questions/50447/integration-of-powers-of-the-sin-x}} we can blissfully accept the identity
+\[I_n \defneq \int_{0}^{1}{\sin^{4n}\left(\frac{\pi x}{2}\right)} = \frac{\Gamma(2n+0.5)}{\sqrt{\pi}\ \Gamma(2n+1)}. \]
+In order to simplify our calculations we take the limit of $N$
+\[ 
+\frac{\norm{A^{n-1}v}}{\norm{A^{n}v}}\abs{\lambda_N} \xrightarrow[]{N\to\infty}
+\sqrt{\frac{I_n}{I_{n-1}}}, 
+\]
+where
+
+\begin{align*}
+\frac{I_n}{I_{n-1}} &= 
+\frac{\Gamma(2n - 1)\Gamma(2n + 0.5)}{\Gamma(2n + 1)\Gamma(2n - 1.5)} \\&=   
+\frac{(2n - 2)!}{(2n)!}
+\frac{\Gamma(2n + 0.5)}{\Gamma(2n - 1.5)}
+\frac{\Gamma(2n)}{\Gamma(2n)}
+\frac{\Gamma(2n-2)}{\Gamma(2n-2)} \\&=
+\frac{1}{2n(2n-1)} 
+\frac{2^{1-4n}\sqrt\pi}{2^{5-4n}\sqrt\pi}
+\frac{\Gamma(4n)}{\Gamma(4n-4)}
+\frac{\Gamma(2n-2)}{\Gamma(2n)} \\&=
+\frac{1}{32n(2n-1)} 
+\frac{(4n-1)!}{(4n-5)!}
+\frac{(2n-3)!}{(2n-1)!} \\&=
+\frac{(4n-1)(4n-2)(4n-3)(4n-4)}{32n(2n-1)^2(2n-2)} \\&=
+\frac{(4n-1)(4n-3)}{8n(2n-1)} \\&=
+\frac{4n-1}{4n}\frac{4n-3}{4n-2} \\&=
+\left(1-\frac{1}{4n}\right)\left(1-\frac{1}{4n-2}\right)
+%%\\&=1 - \frac{1}{2n}\frac{8n-3}{8n-4} 
+\end{align*}
+For the third equality we applied the duplication formula for the gamma function. All in all we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of 
+\[
+\lim_{N\to\infty}\frac{\norm{A^{n-1}v}}{\norm{A^{n}v}}\abs{\lambda_N} =
+\sqrt{\left(1-\frac{1}{4n}\right)\left(1-\frac{1}{4n-2}\right)} \approx
+1-\frac{1}{4n-1}
+\]
+at the limit $N\to\infty$. 
+
+\section{Matrix-free Leja based exponential integrators}
+Exponential integrators are a class of numerical integrators which excel at solving stiff differential equations. Unlike most numerical ordinary differential equation (ODE) solvers their construction is based on the variation-of-constants formula. Consider the semilinear initial value problem
+\begin{align*}
+	\partial_tu &= F(u) = Au + g(u) \\ 
+	u(0) &= u_0
+\end{align*}
+where $A = \partial_uF$ and $g(u) = F(u)-Au$ is the linear and nonlinear part of $F$ respectively. The solution of the ODE is given by the variation-of-constants formula
+\[
+u(t) = e^{At}u_0 + \int_{0}^{t}e^{(t-\tau)A}g(u(\tau))d\tau.
+\]
+Similar to Runge-Kutta methods we replace the integrand with a polynomial approximation. Unlike Runge-Kutta methods we leave the matrix exponential untouched and only replace $g$. The most well-known Rosenbrock-type exponential integrator, the exponential Rosenbrock-Euler method, can be obtained by using the left hand rule. By replacing $g$ with $g(u_0)$ we get
+\[
+u(t) \approx e^{At}u_0 + \int_{0}^{t}e^{(t-\tau)A}g(u_0)d\tau = e^{Lt}u_0 + \varphi_1(tA)g(u_0),
+\]
+where $\varphi_1(z) = \frac{e^z-1}z$. Higher order exponential integrators rely on the efficient computation of the entire functions 
+\[\varphi_{k+1}(z) = \frac{\varphi_k(z)-1}z, \quad \varphi_0(z) = e^z, \quad k\in\mathbb{N}.\]
+This can be done by slightly expanding $A$, see \cite[Theorem 2.1]{action}.
+\paragraph{Computing the action of the $\varphi$ functions}
+Let $A\in\mathbb{C}^{N\times N}$, $U = [U_p\dots U_2, U_1]\in\mathbb{C}^{N\times p}$, $u\in\mathbb{C}^{N\times 1}$, $\uptau\in\mathbb{C}$ and
+
+\begin{align*}
+	\tilde{A} = 
+		\left[ \begin{array}
+		{cc}A& U \\0 & J\\
+		\end{array}\right],  \quad
+	J = 
+		\left[ \begin{array}
+		{cc}0& I_{p-1} \\0 & 0\\
+		\end{array}\right],
+\end{align*}
+where $I_{n}$ is the $n\times n$ identity matrix. Let $e_n$ denote the $n$-th $p\times 1$ unity vector. Then
+\begin{align*}
+	\begin{bmatrix}I_N & 0\end{bmatrix} e^{\uptau\tilde{A}}\colvec{2}{u}{e_j} =
+	e^{\tau A}u +
+	\displaystyle\sum_{k=1}^{j}\uptau^k\varphi_k(\uptau A)U_{p-j+k}, 
+	\quad j\in\{1,\dots,p\}. 
+\end{align*}
+In particular for $j=p$ we have
+\begin{align*}
+	\begin{bmatrix}I_N & 0\end{bmatrix} e^{\uptau\tilde{A}}\colvec{2}{u}{e_p} =
+	e^{\tau A}u +
+	\displaystyle\sum_{k=1}^{p}\uptau^k\varphi_k(\uptau A)U_{k}
+	\hphantom{U_{-1}, \quad j\in\{1,\dots,p\}.}
+\end{align*}
+Many exponential Rosenbrock methods can use this relation to reduce computational costs. For most practical integrators each stage only requires a single action of an expanded matrix exponential has to be evaluated. This is in particular true for the exponential Rosenbrock-Euler methods which can be solved in a single step.
+
+For a matrix-free implementation of $\tilde A$ given an operator $A$ we can simply compute the action of $\tilde{A}$ as follows
+\[
+	\tilde{A}\colvec{2}{v}{w} = \colvec{2}{Av}{0} + \colvec{2}{Uw}{Jw}, \quad v\in\mathbb{C}^{N\times 1}, w\in\mathbb{C}^{p\times 1}
+\]
+The Leja method only relies on matrix-vector multiplications with $\tilde{A}$ and therefore the explicit knowledge of $A$ is not required.
+
 
 \section{Nonlinear Advection-Diffusion-Reaction Equation}
 Consider the one-dimensional advection-diffusion-reaction equation
 \begin{align*}
-\partial_tu &= \alpha\partial_x((u+\partial_xu)) + \beta\partial_x(u^2) + \gamma u(u-0.5) \quad \alpha,\beta,\gamma\ge 0\\
+\partial_tu &= \alpha\partial_x((u+\partial_xu)) + \beta\partial_x(u^2) + u(u-0.5) \quad \alpha,\beta,\ge 0\\
 u_0(t) &= e^{-80\cdot(t-0,45)^2} \quad t\in[0,0.1]
 \end{align*}
 on the domain $\Omega = [0,1]$.
@@ -436,6 +541,8 @@ In the matrix-free case the linear operator $A$ is not explicitly given. In orde
     \bibitem{python} Python Software Foundation. Python Language Reference, version 2.7. Available at http://www.python.org. Manual at https://docs.python.org/2/. [Online; accessed 2015-12-14]
     %\bibitem{numpy} S. v. d. Walt, C. Colbert, G Varoquaux, The NumPy Array: A Structure for Efficient Numerical Computation, Computing in Science & Engineering, 13, 22-30 (2011)
     \bibitem{scipy} E. Jones, E. Oliphant, P. Peterson, SciPy: Open Source Scientific Tools for Python, Available at http://www.scipy.org/. [Online; accessed 2015-12-14]
+    \bibitem{matrixanalysis} R. Horn, C. Johnson, Matrix Analysis, Cambridge University Press (2012).
+    
 \end{thebibliography}
 
 
