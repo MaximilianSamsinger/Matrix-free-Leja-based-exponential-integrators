@@ -37,7 +37,6 @@
 	\fi
 }
 
-
 \begin{document}
 
 
@@ -267,19 +266,26 @@ The P\'eclet number is a dimensionless quantities representing the ratio of the 
 \end{figure}
 
 %All eigenvalues of the discretized one-dimensional using the upwind scheme are -1/h.   
-The eigenvalues of discretized one-dimensional Laplace operator $A\in\mathbb{R}^{N\times N}$ on the interval $[0,1]$ with Dirichlet boundary conditions are given by
-\[\lambda_j = -\frac{4}{h^2} \sin^2\left(\frac{\pi j}{2(N+1)}\right) ,\quad j=1,\dots, N.\]
-We investigate the rate of convergence for the power method given $A$ and an initial vector $v$. Consider $v=\frac{1}{N}\sum_{j=1}^N v_{j}$, where each $v_j$ is the normalized eigenvector corresponding to the eigenvalue $\lambda_j$.
+The eigenvalues of discretized one-dimensional Laplace operator $A_{Dif}\in\mathbb{R}^{N\times N}$ on the interval $[0,1]$ with periodic boundary conditions are given by
 
-After $n$ power iteration we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of
 \[
-\frac{\norm{A^{n-1}v}_2}{\norm{A^nv}_2}\abs{\lambda_N} = 
-\sqrt{\frac{\sum_{j=1}^{N}{\lambda_j^{2(n-1)}}}{\sum_{j=1}^{N}{\lambda_j^{2n}}}}\abs{\lambda_N} = 
-\sqrt{\frac{\sum_{j=1}^{N}\sin^{4(n-1)}
-		\left(\frac{\pi j}{2(N+1)}\right)}{\sum_{j=1}^{N}\sin^{4n}
-		\left(\frac{\pi j}{2(N+1)}\right)}}\sin^2\left(\frac{\pi N}{2(N+1)}\right).
-\] 
-The first equality holds since $A$ is symmetric. Therefore all eigenvectors are orthogonal. In order to continue our analysis and get some asymptotic bounds we interpret the sum of sine functions as an integral approximated by the trapezoidal rule. We use the nodes $j/(N+1)$ for $j=0,\dots,{N+1}$.
+	\lambda_j =
+	\begin{cases*}
+	-\frac{4}{h^2} \sin^2\left(\frac{\pi (j-1)}{2(N+1)}\right),\quad\text{if j is odd}\\
+	-\frac{4}{h^2} \sin^2\left(\frac{\pi j}{2(N+1)}\right),\quad\text{if j is even}
+	\end{cases*} 
+	,\quad j=1,\dots, N.
+\]
+We investigate the rate of convergence for the power method given $A_{Dif}$ and an initial vector $v$. Consider $v=\frac{1}{N}\sum_{j=1}^N v_{j}$, where each $v_j$ is the normalized eigenvector corresponding to the eigenvalue $\lambda_j$. Let $N$ be even.
+After $n$ power iteration we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of
+\begin{align*}
+\frac{\norm{A_{Dif}^{n-1}v}_2}{\norm{A_{Dif}^nv}_2}\abs{\lambda_N} &= 
+\sqrt{\frac{\sum_{j=1}^{N}{\lambda_j^{2(n-1)}}}{\sum_{j=1}^{N}{\lambda_j^{2n}}}}\abs{\lambda_N} \\
+&= \sqrt{\frac{\sum_{j=1}^{N/2}\sin^{4(n-1)}
+		\left(\frac{\pi j}{N+1}\right)}{\sum_{j=1}^{N/2}\sin^{4n}
+		\left(\frac{\pi j}{N+1}\right)}}\sin^2\left(\frac{\pi N}{2(N+1)}\right).
+\end{align*}
+The first equality holds since $A_{Dif}$ is symmetric. Therefore all eigenvectors are orthogonal. In order to continue our analysis and get some asymptotic bounds we interpret the sum of sine functions as an integral approximated by the trapezoidal rule. We use the nodes $j/(N+1)$ for $j=0,\dots,{N+1}$.
 \[
 \int_{0}^{1}{\sin^{4n}\left(\frac{\pi x}{2}\right)} =
 \frac{1}{(N+1)}\left(2\sum_{j=1}^{N}\sin^{4n}\left(\frac{\pi j}{(N+1)}\right) + \frac{1}{2}\right)
@@ -289,7 +295,7 @@ Note that the error of the approximation is strictly positive since the second d
 \[I_n \defneq \int_{0}^{1}{\sin^{4n}\left(\frac{\pi x}{2}\right)} = \frac{\Gamma(2n+0.5)}{\sqrt{\pi}\ \Gamma(2n+1)}. \]
 In order to simplify our calculations we take the limit of $N$
 \[ 
-\frac{\norm{A^{n-1}v}}{\norm{A^{n}v}}\abs{\lambda_N} \xrightarrow[]{N\to\infty}
+\frac{\norm{A_{Dif}^{n-1}v}}{\norm{A_{Dif}^{n}v}}\abs{\lambda_N} \xrightarrow[]{N\to\infty}
 \sqrt{\frac{I_n}{I_{n-1}}}, 
 \]
 where
@@ -316,7 +322,7 @@ where
 \end{align*}
 For the third equality we applied the duplication formula for the gamma function. All in all we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of 
 \[
-\lim_{N\to\infty}\frac{\norm{A^{n-1}v}}{\norm{A^{n}v}}\abs{\lambda_N} =
+\lim_{N\to\infty}\frac{\norm{A_{Dif}^{n-1}v}}{\norm{A_{Dif}^{n}v}}\abs{\lambda_N} =
 \sqrt{\left(1-\frac{1}{4n}\right)\left(1-\frac{1}{4n-2}\right)} \approx
 1-\frac{1}{4n-1}
 \]

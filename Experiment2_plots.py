@@ -73,7 +73,7 @@ errortype = 'relerror'
 save = False # Flag: If True, figures will be saved as pdf
 save_path = 'figures' + os.sep + 'Experiment2' + os.sep
 
-params = [[α, β, γ] for α in [0.1, 0.01] for β in [1, 0.1, 0.01] for γ in [1]]
+params = [[α, β, γ] for α in [0.1] for β in [1] for γ in [1]]
 
 
 def savefig(number, save=False, add_to_filename = None):
