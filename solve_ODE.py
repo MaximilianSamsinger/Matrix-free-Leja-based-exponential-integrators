@@ -3,7 +3,6 @@ import pandas as pd
 from Integrators import largestEV
 from time import time
 
-
 '''
 For different fixed time stepsizes and matrix dimension we calculate the error
 and the cost for each integration method
@@ -63,8 +62,14 @@ def compute_errors_and_costs(Integrator, Settings, add_to_row):
             print(Integrator.name, 'Nx:', add_to_row[0],
                   'params:', add_to_row[1:], Setting)
 
-        for s in Settings["all"]["substeps"]:
-            error = 1
+
+
+        error = 1
+        s_max = max(Settings['all']['substeps'])
+        if Integrator.name in 'exprb' or Integrator.name == 'cn2':
+            s_max = 10000
+        s_break = s_max
+        for s in Settings['all']['substeps']:
             try: # We skip computation when we encounter runtime errors
                 '''
                 Compute relative errors (2norm) and costs.
@@ -81,19 +86,22 @@ def compute_errors_and_costs(Integrator, Settings, add_to_row):
                 '''
                 If the error is small enough, skip further calculations
                 '''
-                if Integrator.name in ['rk2','rk4']:
+                if s > s_break:
+                    break
+                elif Integrator.name in ['rk2','rk4']:
                     if error < min(Settings["all"]["tol"]): break
                 elif Integrator.name == 'cn2':
-                    if error < Setting['tol'] and s > 1000 : break
+                    if error < Setting['tol'] and s_break == s_max:
+                        s_break = 2*s
                 elif 'exprb' in Integrator.name:
                     if Settings['all']['dF'] is not False:
                         # Otherwise we might mess up Experiment 1
-                        if error < Setting['tol']: break
-                    elif s > 10000: break
+                        if error < Setting['tol'] and s_break == s_max:
+                            s_break = 2*s
                 else:
                     raise NameError('Method name not recognized, therefore it '
                                     + 'unclear when the computation finishes')
-            except (FloatingPointError):
+            except (FloatingPointError, MemoryError):
                 pass
 
     df = pd.DataFrame(data, columns=Integrator.columns)

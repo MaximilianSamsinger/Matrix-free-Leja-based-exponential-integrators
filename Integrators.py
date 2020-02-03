@@ -6,6 +6,10 @@ from scipy.sparse.linalg.interface import IdentityOperator
 from expleja import expleja, normAmp
 import scipy.io as sio
 from copy import deepcopy
+try:
+    import cupy as cp
+except ModuleNotFoundError:
+    pass
 
 #functionEvaluations ~= Matrix-Vector Multiplications
 #s... substeps
@@ -15,13 +19,13 @@ class Integrator:
     Situation: dt u(t) = F(u)
     Calculate u(t_end)
     '''
-    def __init__(self, method, inputs, reference_solution, columns):
-
+    def __init__(self, method, inputs, reference_solution, columns):        
         def solve(s, **kwargs):
             u, cost = method(*deepcopy(inputs),s,**kwargs)
 
             abs_error = np.linalg.norm(u - reference_solution, 2)
             rel_error = abs_error / np.linalg.norm(u, 2)
+
             return u, rel_error, cost
 
         self.method = method
@@ -31,6 +35,12 @@ class Integrator:
         assert(name in ['cn2','exprb2','rk2','rk4'] or 'exprb' in name)
 
 def rk2(F, u, t, t_end, linearCase, s):
+    if len(u) >= 40000:
+        try:
+            u = cp.array(u)
+        except NameError:
+            pass
+    
     ''' Midpoint rule '''
     τ = (t_end-t)/s # time step size
     for _ in range(s):
@@ -51,9 +61,20 @@ def rk2(F, u, t, t_end, linearCase, s):
         mv = 0
         cost = (functionEvaluations, derivativeEvaluations, mv)
 
+    if len(u) >= 40000:
+        try:
+            u = cp.asnumpy(u)
+        except NameError:
+            pass   
     return u, cost
 
 def rk4(F, u, t, t_end, linearCase, s):
+    if len(u) >= 40000:
+        try:
+            u = cp.array(u)
+        except NameError:
+            pass
+    
     ''' Classical Runge-Kutta method '''
     τ = (t_end-t)/s # time step size
     for _ in range(s):
@@ -76,6 +97,11 @@ def rk4(F, u, t, t_end, linearCase, s):
         mv = 0
         cost = (functionEvaluations, derivativeEvaluations, mv)
 
+    if len(u) >= 40000:
+        try:
+            u = cp.asnumpy(u)
+        except NameError:
+            pass   
     return u, cost
 
 def cn2(F, u, t, t_end, linearCase, s, tol=None, dF=None):
@@ -213,68 +239,15 @@ def exprb2(F, u, t, t_end, linearCase, s,
     
     return u, (functionEvaluations, derivativeEvaluations, mv)
 
-def exprb2v2(F, u, t, t_end, linearCase, s, 
-           tol=None, normEstimator=None, dF=None):
-    ''' Exponential Rosenbrock-Euler method
-    If dF is False, then we assume the derivative of F is a constant Matrix M,
-    which can be returned with M = F(u, returnMatrix=True)'''
-    functionEvaluations = 0
-    derivativeEvaluations = 0
-    mv = 0
-    
-    u = u.copy()
-    τ = (t_end-t)/s
-    Nx = len(u)
-    ''' Linear Case '''
-    if linearCase:
-        M = F(u, returnMatrix=True)
-        ''' We force s = s and m = 99 '''
-        para = select_interp_para_for_fixed_m_and_s(
-                t_end-t, M, u, tol, s=s, normEstimator = normEstimator)
-
-        expMu, _, info, c, m, _, _ = expleja(
-                t_end-t, M, u, tol, p=0, interp_para=para)
-
-        mv = int(sum(info) + c) # Total matrix-vector multiplications
-        return expMu, (mv,)
-
-    ''' Nonlinear Case '''
-    def LinOpX(u, Fu, J):
-        def mv(v):
-            w = np.zeros(v.shape)
-            if v.ndim == 2:
-                w[:-1] = J@v[:-1] + Fu*v[-1]
-            else:
-                w[:-1] = J@v[:-1] + Fu.flatten()*v[-1]
-            return w
-        return LinearOperator((Nx+1,Nx+1), matvec = mv)
-
-    v = np.vstack((np.zeros((Nx,1)),1))
-    
-    for k in range(s):
-        X = LinOpX(u, F(u), dF(u))
-        
-        if k==0:
-            kwargs = normEstimator[1]
-            [λ, EV, its] = normEstimator[0](X,**kwargs)
-        else:
-            kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ, 1.1
-            [λ, EV, its] = normEstimator[0](X,**kwargs)
-
-
-        u, t, mvstep = exprbstepv2(u, t, τ, X, v, s, tol, normEstimate=λ)
-        mv += mvstep + its # Number of matrix-vector multiplications
-    assert(abs(t - t_end) < τ)
-    functionEvaluations = s
-    derivativeEvaluations = s
-    
-    return u, (functionEvaluations, derivativeEvaluations, mv)
-
-
 def exprbstep(u, t, τ, X, v, s, tol, normEstimate):
     para = select_interp_para_tmp(
         τ, X, v, tol, normEstimate = normEstimate)
 
+    
+    if para[0] > 10**10:
+        raise MemoryError("I don't have that much RAM. " +
+                          "Furthermore we prevent some ValueErrors later on ")
+
     expXv, _, info, c, _, _, _ = expleja(
         τ, X, v, tol, p=0, interp_para=para)
 
@@ -282,18 +255,6 @@ def exprbstep(u, t, τ, X, v, s, tol, normEstimate):
     mv = int(sum(info))
     assert(c==0)
     return u + expXv[:len(u)], t + τ, mv
-
-def exprbstepv2(u, t, τ, X, v, s, tol, normEstimate):
-    para = select_interp_para_for_fixed_s(
-        τ, X, v, tol, s=1, normEstimate = normEstimate)
-
-    expXv, _, info, c, _, _, _ = expleja(
-        τ, X, v, tol, p=0, interp_para=para)
-
-    mv = int(sum(info))
-    assert(c==0)
-    return u + expXv[:len(u)], t + τ, mv
-
 
 
 def exprb3(F, u, t, t_end, linearCase, s, 
@@ -493,65 +454,6 @@ def select_interp_para_for_fixed_m_and_s(
 
     return s, γ2, ξ.flatten(), dd, A, μ, mv, m
 
-def select_interp_para_for_fixed_s(h, A, v, tol, s=1, normEstimate = None):
-    '''
-    The code is shortened version select_interp_para from expleja
-    and forces
-        a fixed interpolation degree m,
-        a fixed number of substeps s,
-        no hump reduction.
-    '''
-    n = v.shape[0]
-
-    '''
-    Load interpolation parameter depending on chosen precision
-    '''
-    sampletol = [2**-10,2**-24,2**-53]
-
-    t = max(tol[0],2**-53) if len(tol) == 1 else max(min(tol[0],tol[1]),2**-53)
-    if t >= sampletol[0]:
-        data = sio.loadmat('data_leja_half_u.mat')
-    elif t >= sampletol[1]:
-        data = sio.loadmat('data_leja_single_u.mat')
-    else:
-        data = sio.loadmat('data_leja_double_u.mat')
-
-    θ, ξ, dd = data['theta'], data['xi'], data['dd']
-
-    if isinstance(A,LinearOperator):
-        '''
-        Selects the shift μ (Half of (absolutely) largest eigenvalue)
-        '''
-        if normEstimate is None:
-            μ, _, mv = largestEV(A, powerits=100)
-        else:
-            μ = normEstimate
-            mv = 0
-
-        μ = -μ/2.0
-        A -= μ*IdentityOperator((n,n))
-        γ2 = abs(μ)
-
-    else:
-        '''
-        Selects the shift μ = trace(A)/n
-        '''
-        μ = sum(A.diagonal())/float(n)
-        A -= μ*identity(n)
-
-        if not issparse(A):
-            A = np.asarray(A)
-        γ2, mv = normAmp(A,1,tol[3])
-        
-    m = np.searchsorted(θ.flatten(), γ2)
-    m = m if m <= 99 else 99
-
-    γ2, dd = θ[m], dd[:,m]
-    ξ = ξ*(γ2/2)
-
-    return 1, γ2, ξ.flatten(), dd, A, μ, mv, m
-
-
 def select_interp_para_tmp(h, A, v, tol, normEstimate = None, m_max=99):
     '''
     The code is shortened version select_interp_para from expleja
@@ -609,9 +511,6 @@ def select_interp_para_tmp(h, A, v, tol, normEstimate = None, m_max=99):
         m = np.argmin(np.arange(2,mm) * np.ceil((h*γ2)/θ[2:mm]).T)
         m = m+2
     nsteps = int(np.ceil((h*γ2)/θ[m]))
-        
-    m = np.searchsorted(θ.flatten(), γ2)
-    m = m if m <= 99 else 99
 
     γ2, dd = θ[m], dd[:,m]
     ξ = ξ*(γ2/2)

@@ -1,15 +1,22 @@
 from expleja import expleja
-from AdvectionDiffusion1D import AdvectionDiffusion1D
+from AdvectionDiffusion import AdvectionDiffusion1D, AdvectionDiffusion2D
 import numpy as np
 import scipy as sp
 import pandas as pd
 from scipy import integrate
+from scipy.sparse import diags
 from Integrators import Integrator, rk2, rk4, cn2, exprb2, exprb3, exprb4
 from time import time, sleep
 from itertools import product
 from multiprocessing import Process, Lock
 from solve_ODE import solve_ODE
 import os
+try:
+    import cupy as cp
+    from cupyx.scipy.sparse import csr_matrix as csr_gpu
+except:
+    pass
+
 
 '''
 Linear Case: dt u = adv dxx u + dif dx u
@@ -27,17 +34,80 @@ Nx... discretize x-axis into Nx-1 parts
 s... number of substeps used when integrating
 '''
 
-'''
-TODO:
-    - Adapt the code to handle the nonlinear case as well
-'''
+def Nonlinear_Advection_Diffusion_Equation2D(Nx, param, asLinearOp, filename, 
+                                             lock):
+    t = 0 # Start time
+    t_end = 1e-1 # Final time
+
+
+    Adv, u = AdvectionDiffusion2D(Nx, 1, 0)
+    Dif, u = AdvectionDiffusion2D(Nx, 0, 1)
+    
+    def F_cpu(u, param=param):
+        f = 0.5*Dif@(u*(u+2))
+        g = 2*u*(Adv@u)
+        h = u*(u-0.5)
+        return param[0]*f + param[1]*g + param[2]*h
+    
+    if Nx >= 200:
+        try:
+            Adv_gpu = csr_gpu(Adv)
+            Dif_gpu = csr_gpu(Dif)
+        
+            def F_gpu(u, param=param):
+                f = 0.5*Dif_gpu.dot(u*(u+2))
+                g = 2*u*(Adv_gpu.dot(u))
+                h = u*(u-0.5)
+                return param[0]*f + param[1]*g + param[2]*h
+        
+            def F(u, param=param):
+                if type(u) == cp.core.core.ndarray:
+                    return F_gpu(u, param)
+                elif Nx >= 200:
+                    return cp.asnumpy(F_gpu(cp.array(u), param))
+                else:
+                    return F_cpu(u,param)
+            
+        except:
+            F = F_cpu
+    else:
+        F = F_cpu
+            
+    def dF(u, param=param):
+        u = u.flatten()
+        df = Dif@diags((u+1))
+        dg = 2*(diags(Adv@u) + diags(u)@Adv)
+        dh = diags(2*u-0.5)
+        return sp.sparse.csr_matrix(param[0]*df + param[1]*dg + param[2]*dh)
+    
+
+    ''' Compute reference solution '''
+    solver = sp.integrate.ode(lambda t,u: F(u))
+    solver.set_integrator('vode', method='bdf', order=5, atol=1e-16,
+                          rtol=1e-16, nsteps=100000, with_jacobian=False)
+    solver.set_initial_value(u.copy(), 0)
+
+    while solver.successful() and solver.t<t_end:
+        solver.integrate(t_end)
+    reference_solution = solver.y
+
+    ''' Get Settings '''
+    Settings, methods = SettingsNonlinear(dF)
+
+    columns = ['substeps', 'Nx', 'α','β','γ', 'relerror',
+               'Feval', 'dFeval', 'mv']
+
+    inputs = [F, u, t, t_end, False]
+    Integrators = [Integrator(
+            method, inputs, reference_solution,
+            columns + list(Settings[method.__name__][0].keys()))
+            for method in methods]
+
+    add_to_row = [Nx, *param]
+    solve_ODE(Integrators, Settings, add_to_row, filename, lock=lock)
+
+
 def Nonlinear_Advection_Diffusion_Equation(Nx, param, asLinearOp, filename, lock):
-    '''
-    SEEMS LIKE WE OVERWRITE u SOMEHOW AND THE CALCULATION NEVER FINISHES (GUESS)
-    ALSO OVERFLOW ERRORS OFTEN HAPPEN FOR SOME REASON (FACT) FOR SMALL SUBSTEPS
-
-    '''
-
     t = 0 # Start time
     t_end = 1e-1 # Final time
 
@@ -98,25 +168,8 @@ def Nonlinear_Advection_Diffusion_Equation(Nx, param, asLinearOp, filename, lock
     reference_solution = solver.y
 
     ''' Get Settings '''
-    Settings = {}
-    Settings['all'] = {'tol':[2**-10,2**-24], "dF": dF}
-    Settings['rk2'] = [{}]
-    Settings['rk4'] = [{}]
-    Settings['cn2'] = [{'tol': te} for te in Settings['all']['tol']]
-    Settings["exprb2"] = [
-            {"tol":te, "powerits": 4, "safetyfactor": 1.1}
-            for te in Settings["all"]["tol"]]
-    Settings["exprb4"] = Settings["exprb3"] = Settings["exprb2"]
-    substeps = (1.10**np.array(range(1,122))).astype('int')
-    Settings['all']['substeps'] = np.unique(substeps)
-    Settings['all']['dftype'] = {
-        'substeps':np.int32, 'Nx':np.int32, 
-        'α':np.float64, 'β':np.float64, 'γ':np.float64, 
-        'Feval':np.int32, 'dFeval':np.int32, 'mv':np.int32,
-    }
+    Settings, methods = SettingsNonlinear(dF)
 
-    ''' Define Integrators '''
-    methods = [exprb2, exprb3, exprb4, cn2, rk2, rk4]
     columns = ['substeps', 'Nx', 'α','β','γ', 'relerror',
                'Feval', 'dFeval', 'mv']
 
@@ -128,6 +181,29 @@ def Nonlinear_Advection_Diffusion_Equation(Nx, param, asLinearOp, filename, lock
 
     add_to_row = [Nx, *param]
     solve_ODE(Integrators, Settings, add_to_row, filename, lock=lock)
+
+def SettingsNonlinear(dF):
+    Settings = {}
+    Settings['all'] = {'tol':[2**-24], "dF": dF} 
+    Settings['rk2'] = [{}]
+    Settings['rk4'] = [{}]
+    Settings['cn2'] = [{'tol': te} for te in Settings['all']['tol']]
+    Settings['exprb2'] = [
+            {'tol':te, 'powerits': 4, 'safetyfactor': 1.1}
+            for te in Settings['all']['tol']]
+    Settings['exprb4'] = Settings['exprb3'] = Settings['exprb2']
+    substeps = (1.10**np.array(range(1,122))).astype('int')
+    Settings['all']['substeps'] = np.unique(substeps)
+    Settings['all']['dftype'] = {
+        'substeps':np.int32, 'Nx':np.int32, 
+        'α':np.float64, 'β':np.float64, 'γ':np.float64, 
+        'Feval':np.int32, 'dFeval':np.int32, 'mv':np.int32,
+    }
+
+    ''' Define Integrators '''
+    methods = [exprb2, exprb3, exprb4]
+    
+    return Settings, methods
 
 def SettingsLinear(asLinearOp):
     Settings = {}
@@ -141,37 +217,27 @@ def SettingsLinear(asLinearOp):
     }
 
     if asLinearOp:
+        ''' Define Integrators '''
         methods = [exprb2]
         substeps = [250, 500, 750, 1000]
         normEstimatorParams = [{"powerits": it, "safetyfactor": sf}
                                 for it in [2,3,4,6,8,10,25,50]
                                 for sf in [0.5,0.75,0.9,1,1.1,1.5,2]]
-        Settings["exprb2"] = [{"tol":te, **ne}
-                        for te in Settings["all"]["tol"]
+        Settings['exprb2'] = [{'tol':te, **ne}
+                        for te in Settings['all']['tol']
                         for ne in normEstimatorParams]
     else:
+        ''' Define Integrators '''
         methods = [exprb2, cn2, rk2, rk4]
         substeps = (1.10**np.array(range(1,122))).astype('int')
-        Settings["exprb2"] = [{"tol":te} for te in Settings["all"]["tol"]]
+        Settings['exprb2'] = [{'tol':te} for te in Settings['all']['tol']]
 
     Settings['all']['substeps'] = np.unique(substeps)
 
     return Settings, methods
 
 
-def Linear_Advection_Diffusion_Equation(Nx, dif, asLinearOp, filename, lock):
-    '''
-    if filename in ['Experiment1.h5','Experiment1LinOp.h5']:
-        Settings, methods = SettingsLinear(asLinearOp)
-    elif filename == 'Experiment1expleja':
-        methods = [exprb2]
-        substeps = (1.10**np.array(range(1,122))).astype('int')
-        Settings = {'tol':[2**-53], "dF": False}
-        Settings['all']['substeps'] = np.unique(substeps)
-        Settings["exprb2"] = [{"tol":te} for te in Settings["all"]["tol"]]
-    
-    '''
-    
+def Linear_Advection_Diffusion_Equation(Nx, dif, asLinearOp, filename, lock):    
     Settings, methods = SettingsLinear(asLinearOp)
 
     t = 0 # Start time
@@ -199,16 +265,27 @@ def Linear_Advection_Diffusion_Equation(Nx, dif, asLinearOp, filename, lock):
 
 if __name__ == '__main__':
     multiprocessing = True # On Windows use a seperate console, not IPython
-    asLinearOp = True
-    LinearCase = False
+    asLinearOp = True  # Calculations use LinearOperators instead of matrices
+    LinearCase = False # Switches between linear and nonlinear case
+    isproblem2D = True # Switches between 1D and 2D case
+   
+    if isproblem2D:
+        assert(not LinearCase)
+        assert(asLinearOp)
+        Nxlist = list(range(350,401,50))
+        params = [[α, β, γ] for α in 
+                  [0.1, 0.01] for β in [1, 0.1, 0.01] for γ in [1]]
+        problem_to_solve = Nonlinear_Advection_Diffusion_Equation2D
+        filename = 'Experiment_2D.h5'
 
-    if LinearCase:
+    elif LinearCase:
         Nxlist = list(range(50,401,50))
         params = [1e0, 1e-1, 1e-2] # Diffusion coefficient. Should be <= 1
         problem_to_solve = Linear_Advection_Diffusion_Equation
         filename = 'Experiment1LinOp.h5' if asLinearOp else 'Experiment1.h5'
+    
     else:
-        assert(asLinearOp == True) # Probably unnecessary
+        assert(asLinearOp) # Probably unnecessary
         Nxlist = list(range(50,401,50))
         params = [[α, β, γ] for α in 
                   [0.1, 0.01] for β in [1, 0.1, 0.01] for γ in [1]]
