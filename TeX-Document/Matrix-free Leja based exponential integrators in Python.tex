@@ -12,6 +12,7 @@
 \usepackage{multirow}
 \usepackage{float}
 \usepackage{hyperref}
+\usepackage{mathdots}
 
 \newcommand{\argmax}{\operatornamewithlimits{argmax}}
 \newcommand{\defneq}{\mathrel{\mathop:}=}
@@ -38,8 +39,8 @@
 }
 
 \begin{document}
-
-
+	
+	
 \theoremstyle{definition}
 \newtheorem{defn}{Definition}[section]
 \newtheorem{bsp}{Beispiel}[section]
@@ -62,34 +63,34 @@
 \noindent\makebox[\textwidth][l]{\includegraphics{universitaet-innsbruck-logo-cmyk-farbe.pdf}}
 \vspace{3cm}
 \begin{center}
-{\Large Master Thesis}
-\vspace{50pt}\\
-\textbf{\Huge Matrix-free Leja based exponential integrators in Python}
-\vspace{40pt}\\
-\textbf{\Large Maximilian Samsinger}\vspace{20pt}\\
-{\large\today}
-\vspace{120pt}\\
-{\Large Supervised by Lukas Einkemmer and\\
-Alexander Ostermann\vspace{10pt}}
+	{\Large Master Thesis}
+	\vspace{50pt}\\
+	\textbf{\Huge Matrix-free Leja based exponential integrators in Python}
+	\vspace{40pt}\\
+	\textbf{\Large Maximilian Samsinger}\vspace{20pt}\\
+	{\large\today}
+	\vspace{120pt}\\
+	{\Large Supervised by Lukas Einkemmer and\\
+		Alexander Ostermann\vspace{10pt}}
 \end{center}
 \end{titlepage}
 \textsf{
-{\hspace{-16pt}\large\textbf{Leopold-Franzens-Universität Innsbruck}}
-\begin{figure}[!htp]
-\begin{flushright}
-	\includegraphics[scale=0.1]{./uni_logo}
-\end{flushright}
-\end{figure}\\\\
-{\Large\textbf{Eidesstattliche Erklärung}}\\\\
-Ich erkläre hiermit an Eides statt durch meine eigenhändige Unterschrift, dass ich die\\ vorliegende Arbeit selbständig verfasst und keine anderen als die angegebenen Quellen und\\ Hilfsmittel verwendet habe. Alle Stellen, die wörtlich oder inhaltlich den angegebenen Quellen \\entnommen wurden, sind als solche kenntlich gemacht.\\\\
-Ich erkläre mich mit der Archivierung der vorliegenden Masterarbeit einverstanden.
-\vspace{40pt}\\
-\begin{center}
-\ensuremath{\overline{\mbox{Datum}\hspace{8em}}
-    \hspace{10em}
-    \overline{\mbox{Unterschrift}\hspace{10em}}
-}
-\thispagestyle{empty}
+	{\hspace{-16pt}\large\textbf{Leopold-Franzens-Universität Innsbruck}}
+	\begin{figure}[!htp]
+		\begin{flushright}
+			\includegraphics[scale=0.1]{./uni_logo}
+		\end{flushright}
+	\end{figure}\\\\
+	{\Large\textbf{Eidesstattliche Erklärung}}\\\\
+	Ich erkläre hiermit an Eides statt durch meine eigenhändige Unterschrift, dass ich die\\ vorliegende Arbeit selbständig verfasst und keine anderen als die angegebenen Quellen und\\ Hilfsmittel verwendet habe. Alle Stellen, die wörtlich oder inhaltlich den angegebenen Quellen \\entnommen wurden, sind als solche kenntlich gemacht.\\\\
+	Ich erkläre mich mit der Archivierung der vorliegenden Masterarbeit einverstanden.
+	\vspace{40pt}\\
+	\begin{center}
+		\ensuremath{\overline{\mbox{Datum}\hspace{8em}}
+			\hspace{10em}
+			\overline{\mbox{Unterschrift}\hspace{10em}}
+		}
+		\thispagestyle{empty}
 \end{center}}
 \pagebreak
 
@@ -176,7 +177,7 @@ for a given tolerance $\operatorname{tol}$. Furthermore we want to minimize the 
 		single & 1.76e+01 & 1.87e+01 & 1.99e+01 & 2.12e+01 & 2.23e+01 & 2.35e+01 \\
 		double & 1.46e+01 & 1.58e+01 & 1.71e+01 & 1.86e+01 & 1.99e+01 & 2.13e+01
 	\end{tabular}
-	\caption{Samples of the (rounded) values $\theta_m$ with tolerances half, single and double for the real Leja interpolation \cite[Table 1]{lejarev}.}
+	\caption{Samples of the precomputed values $\theta_m$. The backward error of the Leja interpolation is bounded if $c\le\theta_m$, where $[-c,c]$ is the interpolation interval and $m$ the interpolation degree. Half, single and double correspond to the tolerances $2^{-10}$, $2^{-24}$ and $2^{-53}$ respectively \cite[Table 1]{lejarev}.}
 	\label{table:thetam}
 \end{table}	
 For our purposes it is important to note that the optimal choice for $c$ is given by $c=\rho(s^{-1}A)$, where $\rho(A)$ is the spectral radius of $A$. However, computing $\rho(A)$ introduces additional costs for the algorithms proposed in \cite{lejarev}. Our matrix-free implementation relies on the computations of the spectral radius, but it does not need to compute the matrix norm $\norm{A}$, see section \ref{matrixfreeimplementation}.
@@ -280,11 +281,11 @@ The eigenvalues of discretized one-dimensional Laplace operator $A_{Dif}\in\math
 We investigate the rate of convergence for the power method given $A_{Dif}$ and an initial vector $v$. Consider $v=\frac{1}{N}\sum_{j=1}^N v_{j}$, where each $v_j$ is the normalized eigenvector corresponding to the eigenvalue $\lambda_j$. Let $N$ be even.
 After $n$ power iteration we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of
 \begin{align*}
-\frac{\norm{A_{Dif}^{n-1}v}_2}{\norm{A_{Dif}^nv}_2}\abs{\lambda_N} &= 
-\sqrt{\frac{\sum_{j=1}^{N}{\lambda_j^{2(n-1)}}}{\sum_{j=1}^{N}{\lambda_j^{2n}}}}\abs{\lambda_N} \\
-&= \sqrt{\frac{\sum_{j=1}^{N/2}\sin^{4(n-1)}
-		\left(\frac{\pi j}{N+1}\right)}{\sum_{j=1}^{N/2}\sin^{4n}
-		\left(\frac{\pi j}{N+1}\right)}}\sin^2\left(\frac{\pi N}{2(N+1)}\right).
+	\frac{\norm{A_{Dif}^{n-1}v}_2}{\norm{A_{Dif}^nv}_2}\abs{\lambda_N} &= 
+	\sqrt{\frac{\sum_{j=1}^{N}{\lambda_j^{2(n-1)}}}{\sum_{j=1}^{N}{\lambda_j^{2n}}}}\abs{\lambda_N} \\
+	&= \sqrt{\frac{\sum_{j=1}^{N/2}\sin^{4(n-1)}
+			\left(\frac{\pi j}{N+1}\right)}{\sum_{j=1}^{N/2}\sin^{4n}
+			\left(\frac{\pi j}{N+1}\right)}}\sin^2\left(\frac{\pi N}{2(N+1)}\right).
 \end{align*}
 The first equality holds since $A_{Dif}$ is symmetric. Therefore all eigenvectors are orthogonal. In order to continue our analysis and get some asymptotic bounds we interpret the sum of sine functions as an integral approximated by the trapezoidal rule. We use the nodes $j/(N+1)$ for $j=0,\dots,{N+1}$.
 \[
@@ -331,10 +332,12 @@ at the limit $N\to\infty$.
 
 \section{Matrix-free Leja based exponential integrators}
 Exponential integrators are a class of numerical integrators which excel at solving stiff differential equations. Unlike most numerical ordinary differential equation (ODE) solvers their construction is based on the variation-of-constants formula. Consider the semilinear initial value problem
-\begin{align*}
+\begin{align}
+	\begin{split}
 	\partial_tu &= F(u) = Au + g(u) \\ 
 	u(0) &= u_0
-\end{align*}
+	\end{split}\label{semilinear}
+\end{align}
 where $A = \partial_uF$ and $g(u) = F(u)-Au$ is the linear and nonlinear part of $F$ respectively. The solution of the ODE is given by the variation-of-constants formula
 \[
 u(t) = e^{At}u_0 + \int_{0}^{t}e^{(t-\tau)A}g(u(\tau))d\tau.
@@ -343,21 +346,62 @@ Similar to Runge-Kutta methods we replace the integrand with a polynomial approx
 \[
 u(t) \approx e^{At}u_0 + \int_{0}^{t}e^{(t-\tau)A}g(u_0)d\tau = e^{Lt}u_0 + \varphi_1(tA)g(u_0),
 \]
-where $\varphi_1(z) = \frac{e^z-1}z$. Higher order exponential integrators rely on the efficient computation of the entire functions 
+where $\varphi_1(z) = \frac{e^z-1}z$. 
+\subsection{Higher order Rosenbrock methods}
+Exponential Rosenbrock methods are a special class of exponential integrators which efficiently solve semi-linear problems \ref{semilinear}. Their numerical schemes are given by
+\begin{align*}
+U_{i} &= e^{c_i \tau A} + \tau\sum_{j=1}^{i-1}a_{ij}(\tau A)g(U_{j}), \quad \\
+u_{1} &= e^{c_i \tau A} + \tau\sum_{i=1}^{s}b_i(\tau A)g(U_{i}),
+\end{align*}
+where $\tau$ is the time step size. The functions $a_{ij}$ and $b_{i}$ are typically given as linear combinations of the $\varphi_k$-functions, which in turn are recursively defined as 
 \[\varphi_{k+1}(z) = \frac{\varphi_k(z)-1}z, \quad \varphi_0(z) = e^z, \quad k\in\mathbb{N}.\]
-This can be done by slightly expanding $A$, see \cite[Theorem 2.1]{action}.
-\paragraph{Computing the action of the $\varphi$ functions}
+Exponential Rosenbrock methods can represented as a Butcher tableau
+\begin{table}[H]
+	\centering
+	\begin{tabular}{c|ccccc}
+		$c_1$ &  &  &  & \\
+		$c_2$ & $a_{21}(\tau A)$ &  &  & \\
+		$\vdots$ & &  $\ddots$  &  & \\
+		$c_s$ & $a_{s1}(\tau A)$ & $\ldots$ & $a_{s,s-1}(\tau A)$  & \\
+		\hline
+		&$b_1(\tau A)$ & $\ldots$ & $b_{s-1}(\tau A)$ & $b_s(\tau A)$
+	\end{tabular}
+\end{table}INSERT POINT AFTER TABLE
+\noindent For example consider the embedded method
+\begin{table}[H]
+	\centering
+	\[
+	\renewcommand\arraystretch{1.2}
+	\begin{array}
+	{c|ccc}
+	0\\
+	\frac{1}{2} & \frac{1}{2}\varphi_1(\frac{1}{2}\cdot)\\
+	1& 0& \varphi_1\\
+	\hline
+	\texttt{exprb3} & \varphi_1 - 14\varphi_3 & 16\varphi_3 & -2\varphi_3  \\
+	\texttt{exprb4} & \varphi_1 - 14\varphi_3 + 36\varphi_4 & 16\varphi_3 -48\varphi_4 & -2\varphi_3 + 12\varphi_4  
+	\end{array}
+	\]
+\end{table} INSERT POINT AFTER TABLE
+\noindent This scheme is known as $\texttt{exprb43}$. It uses \texttt{exprb3} as a third-order estimator for its fourth-order method \texttt{exprb4}. \cite[Example 2.24]{expintbible}.
+
+
+Many exponential integrators need to compute the action of the $\varphi$-functions 
+
+
+\subsection{Computing the action of the $\varphi$ functions}
+Exponential integrators rely on the efficient computation of $\varphi_k$-functions. In the non-matrix-free case this can be done by slightly expanding $A$, see \cite[Theorem 2.1]{action}.
 Let $A\in\mathbb{C}^{N\times N}$, $U = [U_p\dots U_2, U_1]\in\mathbb{C}^{N\times p}$, $u\in\mathbb{C}^{N\times 1}$, $\uptau\in\mathbb{C}$ and
 
 \begin{align*}
 	\tilde{A} = 
-		\left[ \begin{array}
-		{cc}A& U \\0 & J\\
-		\end{array}\right],  \quad
+	\left[ \begin{array}
+	{cc}A& U \\0 & J\\
+	\end{array}\right],  \quad
 	J = 
-		\left[ \begin{array}
-		{cc}0& I_{p-1} \\0 & 0\\
-		\end{array}\right],
+	\left[ \begin{array}
+	{cc}0& I_{p-1} \\0 & 0\\
+	\end{array}\right],
 \end{align*}
 where $I_{n}$ is the $n\times n$ identity matrix. Let $e_n$ denote the $n$-th $p\times 1$ unity vector. Then
 \begin{align*}
@@ -377,7 +421,7 @@ Many exponential Rosenbrock methods can use this relation to reduce computationa
 
 For a matrix-free implementation of $\tilde A$ given an operator $A$ we can simply compute the action of $\tilde{A}$ as follows
 \[
-	\tilde{A}\colvec{2}{v}{w} = \colvec{2}{Av}{0} + \colvec{2}{Uw}{Jw}, \quad v\in\mathbb{C}^{N\times 1}, w\in\mathbb{C}^{p\times 1}
+	\tilde{A}\colvec{2}{v}{w} = \colvec{2}{Av}{0} + \colvec{2}{Uw}{Jw}, \quad v\in\mathbb{C}^{N\times 1}, w\in\mathbb{C}^{p\times 1}.
 \]
 The Leja method only relies on matrix-vector multiplications with $\tilde{A}$ and therefore the explicit knowledge of $A$ is not required.
 
@@ -394,24 +438,24 @@ on the domain $\Omega = [0,1]$.
 For the first experiments we will discretize multiple one-dimensional advection-diffusion-reaction equations with hybrid difference schemes.\footnote{Need a source, https://en.wikipedia.org/wiki/Hybrid\_difference\_scheme} We will always choose an equidistant grid with grid size $h = \frac{1}{N}$, $N\in\mathbb{N}$ and grid points $x_i = ih$ for $i=0\dots,N$ on the domain $\Omega = [0,1]$. The resulting ordinary differential equations (ODEs) will be solved with four different integrators. Our goal is to investigate the respective computational costs of these methods while achieving a prescribed relative tolerance \texttt{tol}.
 
 \paragraph{Crank-Nicolson method:}
-	We refer to the Crank-Nicolson method of order 2 as \texttt{cn2}. 
-	In our implementation of \texttt{cn2}, we used the SciPy\cite{scipy} package \texttt{scipy.sparse.linalg.gmres} to solve linear equations. We set the relative tolerance to $\texttt{tol}/s$, where $s$ is the total number of substeps taken for solving the ODE. This choice guarantees that the sum of errors made by \texttt{gmres} is always lower than our specified tolerance \texttt{tol}, since we have to solve exactly one linear equation per substep. No preconditioner was used for \texttt{gmres}. The Crank-Nicolson method is unconditionally stable and therefore does not have to satisfy the Courant-Friedrichs-Lewy (CFL) conditions imposed by the advective and diffusive part of the differential equations.
-	
+We refer to the Crank-Nicolson method of order 2 as \texttt{cn2}. 
+In our implementation of \texttt{cn2}, we used the SciPy\cite{scipy} package \texttt{scipy.sparse.linalg.gmres} to solve linear equations. We set the relative tolerance to $\texttt{tol}/s$, where $s$ is the total number of substeps taken for solving the ODE. This choice guarantees that the sum of errors made by \texttt{gmres} is always lower than our specified tolerance \texttt{tol}, since we have to solve exactly one linear equation per substep. No preconditioner was used for \texttt{gmres}. The Crank-Nicolson method is unconditionally stable and therefore does not have to satisfy the Courant-Friedrichs-Lewy (CFL) conditions imposed by the advective and diffusive part of the differential equations.
+
 \paragraph{Exponential Rosenbrock-Euler method:}
-	We refer to the Exponential Rosenbrock-Euler method of order 2 as \texttt{exprb2}.
-	The approximate the action of the matrix exponential with the Leja method. No hump reduction is used. The maximal interpolation degree is set to 100. Note that the total number of matrix-vector multiplication per time step can still exeed 100 since we have to compute a single matrix norm. This typically happens for $s=1$. 
+We refer to the Exponential Rosenbrock-Euler method of order 2 as \texttt{exprb2}.
+The approximate the action of the matrix exponential with the Leja method. No hump reduction is used. The maximal interpolation degree is set to 100. Note that the total number of matrix-vector multiplication per time step can still exeed 100 since we have to compute a single matrix norm. This typically happens for $s=1$. 
 
 \paragraph{Explicit midpoint method:}
-	We refer to the explicit midpoint method of order 2 as \texttt{rk2}. 
+We refer to the explicit midpoint method of order 2 as \texttt{rk2}. 
 
 \paragraph{Classical Runge-Kutta method:}
-	We refer to the classical Runge-Kutta method of order 4 as \texttt{rk4}.\\
+We refer to the classical Runge-Kutta method of order 4 as \texttt{rk4}.\\
 
 
 \noindent For our experiments we will often fix one of two different P\'eclet numbers
 \[\texttt{Pe} = \frac{b}{a}, \quad \texttt{pe} = \frac{hb}{2a},\]
 The P\'eclet numbers are dimensionless quantities representing the ratio of the advective velocity $b$ to the diffusive velocity $a$. While \texttt{Pe} characterizes the original partial differential equation, the grid P\'eclet number \texttt{pe} is the dimensionless quantity for the resulting ODE after discretization. Note that by fixing \texttt{pe} for varying grid sizes, we have to change the original partial differential equantion. Unless otherwise noted we accomplish that by replacing $b$ with $2b$ and $a$ with $ah$.
-   
+
 
 \subsection{Experiment 1: Linear advection diffusion equation}
 Consider the one-dimensional advection-diffusion equation
@@ -462,32 +506,32 @@ Matrix analysis, Horn and Johnson, Lemma 5.6.10
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{1, \precision, \Pe}.pdf}
-%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{1, \precision, \Pe}.pdf}
+	%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{2, \precision, \Pe}.pdf}
-%	\caption{A picture of a gull.}
-\end{figure}
-
-\begin{figure}[H]
-	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{3, \precision, \Pe}.pdf}
-%	\caption{A picture of a gull.}
-\end{figure}
-
-\begin{figure}[H]
-	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{5, \precision, \Pe}.pdf}
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{2, \precision, \Pe}.pdf}
 	%	\caption{A picture of a gull.}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{4, \precision, \Pe}.pdf}
-%	\caption{A picture of a gull.}
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{3, \precision, \Pe}.pdf}
+	%	\caption{A picture of a gull.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{5, \precision, \Pe}.pdf}
+	%	\caption{A picture of a gull.}
+\end{figure}
+
+\begin{figure}[H]
+	\centering
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{4, \precision, \Pe}.pdf}
+	%	\caption{A picture of a gull.}
 \end{figure}
 
 
@@ -496,7 +540,7 @@ In the matrix-free case the linear operator $A$ is not explicitly given. In orde
 
 \begin{figure}[h!]
 	\centering
-	\includegraphics[width=1.\columnwidth]{../figures/Experiment1LinOp/{1, \precision, \Pe, \safe}.pdf}
+	%	\includegraphics[width=1.\columnwidth]{../figures/Experiment1LinOp/{1, \precision, \Pe, \safe}.pdf}
 	\caption{Space dimension $N$ vs costs \texttt{mv} per timestep \texttt{s} for the exponential Rosenbrock method \texttt{exprb2}. Results are only shown if they achieve \precision\ precision.}
 \end{figure}
 
@@ -508,25 +552,25 @@ In the matrix-free case the linear operator $A$ is not explicitly given. In orde
 {1, \precision, \adv, \dif}
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{1, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{1, \precision, \adv, \dif}.pdf}
 	%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{2, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{2, \precision, \adv, \dif}.pdf}
 	%	\caption{A picture of a gull.}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{3, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{3, \precision, \adv, \dif}.pdf}
 	%	\caption{A picture of a gull.}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{4, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{4, \precision, \adv, \dif}.pdf}
 	%	\caption{A picture of a gull.}
 \end{figure}
 
@@ -534,25 +578,25 @@ In the matrix-free case the linear operator $A$ is not explicitly given. In orde
 {1, \precision, \adv, \dif}
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment_2D/{1, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment_2D/{1, \precision, \adv, \dif}.pdf}
 	%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment_2D/{2, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment_2D/{2, \precision, \adv, \dif}.pdf}
 	%	\caption{A picture of a gull.}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment_2D/{3, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment_2D/{3, \precision, \adv, \dif}.pdf}
 	%	\caption{A picture of a gull.}
 \end{figure}
 
 \begin{figure}[H]
 	\centering
-	\includegraphics[width=.8\columnwidth]{../figures/Experiment_2D/{4, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../figures/Experiment_2D/{4, \precision, \adv, \dif}.pdf}
 	%	\caption{A picture of a gull.}
 \end{figure}
 
@@ -568,16 +612,16 @@ In the matrix-free case the linear operator $A$ is not explicitly given. In orde
 	\bibitem{rosenbr} M. Caliari, A. Ostermann. Implementation of exponential Rosenbrock-type integrators, Applied Numerical Mathematics 59 (2009), 568-581.
 	\bibitem{action} A. Al-Mohy, N. Higham. Computing the action of the matrix exponential, with an application to exponential integrators, SIAM Journal on Scientific Computing 33 (2011), 488-511.
 	\bibitem{newt} L. Reichel. Newton interpolation at Leja points, BIT Numerical Mathematics 30 (1990), 332-346.
-    \bibitem{advdif} M. Caliari, M. Vianello, L. Bergamaschi. Interpolating discrete advection-diffusion propagators at Leja sequences, Journal of Computational and Applied Mathematics 172 (2004), 79-99.
-    \bibitem{lejarev} M. Caliari, P. Kandolf, A. Ostermann, S. Rainer. The Leja method revisited: backward error analysis for the matrix exponential, SIAM Journal on Scientific Computation, Accepted for publication (2016). arXiv:1506.08665.
-    \bibitem{python} Python Software Foundation. Python Language Reference, version 2.7. Available at http://www.python.org. Manual at https://docs.python.org/2/. [Online; accessed 2015-12-14]
-    %\bibitem{numpy} S. v. d. Walt, C. Colbert, G Varoquaux, The NumPy Array: A Structure for Efficient Numerical Computation, Computing in Science & Engineering, 13, 22-30 (2011)
-    \bibitem{polynomialmethods} P. Novati, Polynomial methods for the computation of functions of large unsymmetric matrices, Ph.D. Thesis in Computational Mathematics, University of Trieste, advisor I. Moret, 2000.
-    \bibitem{newtoninterpolation} L. Reichel, Newton interpolation at Leja points, BIT 30 (2) (1990) 332–346.
-    \bibitem{scipy} E. Jones, E. Oliphant, P. Peterson, SciPy: Open Source Scientific Tools for Python, Available at http://www.scipy.org/. [Online; accessed 2015-12-14]
-    \bibitem{matrixanalysis} R. Horn, C. Johnson, Matrix Analysis, Cambridge University Press (2012).
-    
+	\bibitem{advdif} M. Caliari, M. Vianello, L. Bergamaschi. Interpolating discrete advection-diffusion propagators at Leja sequences, Journal of Computational and Applied Mathematics 172 (2004), 79-99.
+	\bibitem{lejarev} M. Caliari, P. Kandolf, A. Ostermann, S. Rainer. The Leja method revisited: backward error analysis for the matrix exponential, SIAM Journal on Scientific Computation, Accepted for publication (2016). arXiv:1506.08665.
+	\bibitem{python} Python Software Foundation. Python Language Reference, version 2.7. Available at http://www.python.org. Manual at https://docs.python.org/2/. [Online; accessed 2015-12-14]
+	%\bibitem{numpy} S. v. d. Walt, C. Colbert, G Varoquaux, The NumPy Array: A Structure for Efficient Numerical Computation, Computing in Science & Engineering, 13, 22-30 (2011)
+	\bibitem{polynomialmethods} P. Novati, Polynomial methods for the computation of functions of large unsymmetric matrices, Ph.D. Thesis in Computational Mathematics, University of Trieste, advisor I. Moret, 2000.
+	\bibitem{newtoninterpolation} L. Reichel, Newton interpolation at Leja points, BIT 30 (2) (1990) 332–346.
+	\bibitem{scipy} E. Jones, E. Oliphant, P. Peterson, SciPy: Open Source Scientific Tools for Python, Available at http://www.scipy.org/. [Online; accessed 2015-12-14]
+	\bibitem{matrixanalysis} R. Horn, C. Johnson, Matrix Analysis, Cambridge University Press (2012).
+	
 \end{thebibliography}
-
-
+	
+	
 \end{document}
