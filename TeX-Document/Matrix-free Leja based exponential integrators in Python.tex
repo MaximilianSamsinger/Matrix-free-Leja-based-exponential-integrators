@@ -344,30 +344,32 @@ u(t) = e^{At}u_0 + \int_{0}^{t}e^{(t-\tau)A}g(u(\tau))d\tau.
 \]
 Similar to Runge-Kutta methods we replace the integrand with a polynomial approximation. Unlike Runge-Kutta methods we leave the matrix exponential untouched and only replace $g$. The most well-known Rosenbrock-type exponential integrator, the exponential Rosenbrock-Euler method, can be obtained by using the left hand rule. By replacing $g$ with $g(u_0)$ we get
 \[
-u(t) \approx e^{At}u_0 + \int_{0}^{t}e^{(t-\tau)A}g(u_0)d\tau = e^{Lt}u_0 + \varphi_1(tA)g(u_0),
+u(t) \approx e^{At}u_0 + \int_{0}^{t}e^{(t-\tau)A}g(u_0)d\tau = e^{At}u_0 + \varphi_1(tA)g(u_0),
 \]
-where $\varphi_1(z) = \frac{e^z-1}z$. 
+where $\varphi_1(z) = \frac{e^z-1}z$. The exponential Rosenbrock-Euler method is of order 2 and is exact for fully linear problems. We will refer to it as \texttt{exprb2} in section \ref{sec:NE}.
 \subsection{Higher order Rosenbrock methods}
-Exponential Rosenbrock methods are a special class of exponential integrators which efficiently solve semi-linear problems \ref{semilinear}. Their numerical schemes are given by
-\begin{align*}
-U_{i} &= e^{c_i \tau A} + \tau\sum_{j=1}^{i-1}a_{ij}(\tau A)g(U_{j}), \quad \\
-u_{1} &= e^{c_i \tau A} + \tau\sum_{i=1}^{s}b_i(\tau A)g(U_{i}),
-\end{align*}
-where $\tau$ is the time step size. The functions $a_{ij}$ and $b_{i}$ are typically given as linear combinations of the $\varphi_k$-functions, which in turn are recursively defined as 
-\[\varphi_{k+1}(z) = \frac{\varphi_k(z)-1}z, \quad \varphi_0(z) = e^z, \quad k\in\mathbb{N}.\]
-Exponential Rosenbrock methods can represented as a Butcher tableau
+Exponential Rosenbrock methods are a special class of exponential integrators which efficiently solve semi-linear problems \ref{semilinear}. For a given time step size $\uptau$ the numerical solution $u_1$ is given by
+\begin{align}
+\begin{split}
+U_{i} &= e^{c_i \uptau A}u_0 + \uptau\sum_{j=1}^{i-1}a_{ij}(\uptau A)g(U_{j}), \quad \\
+u_{1} &= e^{    \uptau A}u_0 + \uptau\sum_{i=1}^{s}b_i(\uptau A)g(U_{i}),
+\end{split}\label{exprbscheme}
+\end{align}
+where $a_{ij}$, $b_{i}$ are functions. The numerical scheme can be represented as a Butcher tableau
 \begin{table}[H]
 	\centering
 	\begin{tabular}{c|ccccc}
 		$c_1$ &  &  &  & \\
-		$c_2$ & $a_{21}(\tau A)$ &  &  & \\
+		$c_2$ & $a_{21}(\uptau A)$ &  &  & \\
 		$\vdots$ & &  $\ddots$  &  & \\
-		$c_s$ & $a_{s1}(\tau A)$ & $\ldots$ & $a_{s,s-1}(\tau A)$  & \\
+		$c_s$ & $a_{s1}(\uptau A)$ & $\ldots$ & $a_{s,s-1}(\uptau A)$  & \\
 		\hline
-		&$b_1(\tau A)$ & $\ldots$ & $b_{s-1}(\tau A)$ & $b_s(\tau A)$
+		&$b_1(\uptau A)$ & $\ldots$ & $b_{s-1}(\uptau A)$ & $b_s(\uptau A)$
 	\end{tabular}
-\end{table}INSERT POINT AFTER TABLE
-\noindent For example consider the embedded method
+	.
+\end{table} \noindent The functions $a_{ij}$ and $b_{i}$ are typically given as linear combinations of the $\varphi_k$-functions, which in turn are recursively defined as 
+\[\varphi_{k+1}(z) = \frac{\varphi_k(z)-1}z, \quad \varphi_0(z) = e^z, \quad k\in\mathbb{N}.\]
+For example consider the embedded method
 \begin{table}[H]
 	\centering
 	\[
@@ -380,23 +382,33 @@ Exponential Rosenbrock methods can represented as a Butcher tableau
 	\hline
 	\texttt{exprb3} & \varphi_1 - 14\varphi_3 & 16\varphi_3 & -2\varphi_3  \\
 	\texttt{exprb4} & \varphi_1 - 14\varphi_3 + 36\varphi_4 & 16\varphi_3 -48\varphi_4 & -2\varphi_3 + 12\varphi_4  
-	\end{array}
+	\end{array}.
 	\]
-\end{table} INSERT POINT AFTER TABLE
-\noindent This scheme is known as $\texttt{exprb43}$. It uses \texttt{exprb3} as a third-order estimator for its fourth-order method \texttt{exprb4}. \cite[Example 2.24]{expintbible}.
+\end{table}
+\noindent This scheme is known as $\texttt{exprb43}$ \cite[Example 2.24]{bible}. It uses \texttt{exprb3} as a third-order estimator for its fourth-order method \texttt{exprb4}. Both integrators are well suited for numerical computations since all internal stages can be cheaply computed using the exponential Euler method. \\
+Under the simplifying assumptions
+\[
+	\sum_{j=1}^s b_j = \varphi_1, \quad  \sum_{j=1}^s a_{ij} = c_i\varphi_1(c_i\cdot) 
+\]
+for $1\le i\le s$ the scheme \ref{exprbscheme} can be expressed as 
+\begin{align}
+\begin{split}
+	U_i &= u_0 + c_i\uptau\varphi_1(c_i \uptau A)F(u_0) + \uptau\sum_{j=2}^{i-1}a_{ij}(\uptau A)D_j, \\
+	D_j &= g(U_j) - g(u_0), \quad 2\le j\le s, \\
+	u_1 &= u_0 +    \uptau\varphi_1(    \uptau A)F(u_0) + \uptau\sum_{i=2}^{s}     b_i(\uptau A)D_i.
+\end{split}\label{Djscheme}
+\end{align}
+The main advantage of this reformulation lies in the fact that the norm of all $D_j$ is expected to be small. This can be exploited by the Leja method by allowing an early termination of the Newton interpolation. \\
+For an efficient implementation of exponential Rosenbrock integrators it is crucial to compute only a single action of a matrix function per stage $U_i$ and for solution $u_1$. Since the most frequently employed methods depend on linear combinations of $\varphi_k$-functions this can be done using the matrix exponential function.
 
-
-Many exponential integrators need to compute the action of the $\varphi$-functions 
-
-
-\subsection{Computing the action of the $\varphi$ functions}
-Exponential integrators rely on the efficient computation of $\varphi_k$-functions. In the non-matrix-free case this can be done by slightly expanding $A$, see \cite[Theorem 2.1]{action}.
-Let $A\in\mathbb{C}^{N\times N}$, $U = [U_p\dots U_2, U_1]\in\mathbb{C}^{N\times p}$, $u\in\mathbb{C}^{N\times 1}$, $\uptau\in\mathbb{C}$ and
+\subsection{Computing the action of the $\varphi$-functions}
+Exponential integrators rely on the efficient computation of $\varphi_k$-functions. In the matrix case $A\in\mathbb{C}^{N\times N}$ this can be done by slightly expanding $A$, see \cite[Theorem 2.1]{action}.\\
+Let $V = [V_p\dots V_2, V_1]\in\mathbb{C}^{N\times p}$, $u\in\mathbb{C}^{N\times 1}$, $\uptau\in\mathbb{C}$ and
 
 \begin{align*}
 	\tilde{A} = 
 	\left[ \begin{array}
-	{cc}A& U \\0 & J\\
+	{cc}A& V \\0 & J\\
 	\end{array}\right],  \quad
 	J = 
 	\left[ \begin{array}
@@ -406,19 +418,19 @@ Let $A\in\mathbb{C}^{N\times N}$, $U = [U_p\dots U_2, U_1]\in\mathbb{C}^{N\times
 where $I_{n}$ is the $n\times n$ identity matrix. Let $e_n$ denote the $n$-th $p\times 1$ unity vector. Then
 \begin{align*}
 	\begin{bmatrix}I_N & 0\end{bmatrix} e^{\uptau\tilde{A}}\colvec{2}{u}{e_j} =
-	e^{\tau A}u +
-	\displaystyle\sum_{k=1}^{j}\uptau^k\varphi_k(\uptau A)U_{p-j+k}, 
+	e^{\uptau A}u +
+	\displaystyle\sum_{k=1}^{j}\uptau^k\varphi_k(\uptau A)V_{p-j+k}, 
 	\quad j\in\{1,\dots,p\}. 
 \end{align*}
 In particular for $j=p$ we have
 \begin{align*}
 	\begin{bmatrix}I_N & 0\end{bmatrix} e^{\uptau\tilde{A}}\colvec{2}{u}{e_p} =
-	e^{\tau A}u +
-	\displaystyle\sum_{k=1}^{p}\uptau^k\varphi_k(\uptau A)U_{k}
-	\hphantom{U_{-1}, \quad j\in\{1,\dots,p\}.}
+	e^{\uptau A}u +
+	\displaystyle\sum_{k=1}^{p}\uptau^k\varphi_k(\uptau A)V_{k}
+	\hphantom{V_{-1}, \quad j\in\{1,\dots,p\}.}
 \end{align*}
-Many exponential Rosenbrock methods can use this relation to reduce computational costs. For most practical integrators each stage only requires a single action of an expanded matrix exponential has to be evaluated. This is in particular true for the exponential Rosenbrock-Euler methods which can be solved in a single step.
-
+This formulation can be directly applied to each stage in \ref{Djscheme} assuming $a_{ij}$ and $b_j$ are linear combinations of $\varphi_k$-functions. 
+%Many exponential Rosenbrock methods can use this relation to reduce computational costs. For most practical integrators each stage only requires a single action of an expanded matrix exponential has to be evaluated. This is in particular true for the exponential Rosenbrock-Euler methods which can be solved in a single step.
 For a matrix-free implementation of $\tilde A$ given an operator $A$ we can simply compute the action of $\tilde{A}$ as follows
 \[
 	\tilde{A}\colvec{2}{v}{w} = \colvec{2}{Av}{0} + \colvec{2}{Uw}{Jw}, \quad v\in\mathbb{C}^{N\times 1}, w\in\mathbb{C}^{p\times 1}.
@@ -614,6 +626,7 @@ In the matrix-free case the linear operator $A$ is not explicitly given. In orde
 	\bibitem{newt} L. Reichel. Newton interpolation at Leja points, BIT Numerical Mathematics 30 (1990), 332-346.
 	\bibitem{advdif} M. Caliari, M. Vianello, L. Bergamaschi. Interpolating discrete advection-diffusion propagators at Leja sequences, Journal of Computational and Applied Mathematics 172 (2004), 79-99.
 	\bibitem{lejarev} M. Caliari, P. Kandolf, A. Ostermann, S. Rainer. The Leja method revisited: backward error analysis for the matrix exponential, SIAM Journal on Scientific Computation, Accepted for publication (2016). arXiv:1506.08665.
+	\bibitem{bible} M. Hochbruck, A. Ostermann. Exponential integrators, Acta Numerica 19 (2010), 209-286
 	\bibitem{python} Python Software Foundation. Python Language Reference, version 2.7. Available at http://www.python.org. Manual at https://docs.python.org/2/. [Online; accessed 2015-12-14]
 	%\bibitem{numpy} S. v. d. Walt, C. Colbert, G Varoquaux, The NumPy Array: A Structure for Efficient Numerical Computation, Computing in Science & Engineering, 13, 22-30 (2011)
 	\bibitem{polynomialmethods} P. Novati, Polynomial methods for the computation of functions of large unsymmetric matrices, Ph.D. Thesis in Computational Mathematics, University of Trieste, advisor I. Moret, 2000.
