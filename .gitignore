@@ -1,8 +1,6 @@
 __pycache__/AdvectionDiffusion1D.cpython-36.pyc
 *.pyc
 DELETE.py
-TeX-Document/leiste.png
-TeX-Document/uni_logo.jpg
 *.aux
 TeX-Document/Matrix-free Leja based exponential integrators in Python.log
 *.gz
