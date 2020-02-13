@@ -254,7 +254,7 @@
 		\newcommand{\precision}{single}
 		\newcommand{\Pe}{Pe=10.0}
 		\centering
-		\includegraphics[width=1.\columnwidth]{../figures/Experiment1/{5, \precision, \Pe}.pdf}
+		\includegraphics[width=1.\columnwidth]{../Figures/Experiment1/{5, \precision, \Pe}.pdf}
 		\caption{Approximation of $e^{0.1A}u_0$ using single precision \texttt{expleja} for a fixed interpolation degree $m=100$ and varying number of substeps $s$. The relative error is measured in the Eucledian norm. The reference solution was computed using the double precision \texttt{expleja} algorithm.}
 	\end{figure}Even though $A$ can be represented as a sparse matrix, it is more memory-efficient to treat it as a matrix-free linear operator. The solution of the differential equation is given by $e^{0.1A}u_0$, which can be approximated using the Leja method. For the matrix-free case we need to compute the spectral radius of $A$, which can be done using the power method.
 	
@@ -263,7 +263,7 @@
 	\begin{figure}[t]
 		\newcommand{\boundary}{periodic}
 		\centering
-		\includegraphics[width=1.\columnwidth]{{../figures/Spectrum/\boundary}.pdf}
+		\includegraphics[width=1.\columnwidth]{{../Figures/Spectrum/\boundary}.pdf}
 		\caption{The spectrum of $A$. For this visualization we assume \boundary\ boundary conditions. For Dirichlet boundary conditions all eigenvalues are negative real numbers.}
 	\end{figure}
 	
@@ -518,31 +518,31 @@
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{1, \precision, \Pe}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/{1, \precision, \Pe}.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{2, \precision, \Pe}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/{2, \precision, \Pe}.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{3, \precision, \Pe}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/{3, \precision, \Pe}.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{5, \precision, \Pe}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/{5, \precision, \Pe}.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment1/{4, \precision, \Pe}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/{4, \precision, \Pe}.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
@@ -552,7 +552,7 @@
 	
 	\begin{figure}[h!]
 		\centering
-		%	\includegraphics[width=1.\columnwidth]{../figures/Experiment1LinOp/{1, \precision, \Pe, \safe}.pdf}
+		\includegraphics[width=1.\columnwidth]{../Figures/Experiment1LinOp/{1, \precision, \Pe, \safe}.pdf}
 		\caption{Space dimension $N$ vs costs \texttt{mv} per timestep \texttt{s} for the exponential Rosenbrock method \texttt{exprb2}. Results are only shown if they achieve \precision\ precision.}
 	\end{figure}
 	
@@ -564,25 +564,25 @@
 	{1, \precision, \adv, \dif}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{1, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment2/{1, \precision, \adv, \dif}.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{2, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment2/{2, \precision, \adv, \dif}.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{3, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment2/{3, \precision, \adv, \dif}.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment2/{4, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment2/{4, \precision, \adv, \dif}.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
@@ -590,25 +590,25 @@
 	{1, \precision, \adv, \dif}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment_2D/{1, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment_2D/{1, \precision, \adv, \dif}.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment_2D/{2, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment_2D/{2, \precision, \adv, \dif}.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment_2D/{3, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment_2D/{3, \precision, \adv, \dif}.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../figures/Experiment_2D/{4, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment_2D/{4, \precision, \adv, \dif}.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
