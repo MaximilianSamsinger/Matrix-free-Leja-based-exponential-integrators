@@ -237,13 +237,13 @@
 	\section{Linear advection-diffusion equation}
 	Consider the one-dimensional advection-diffusion equation
 	\begin{align*}
-	\partial_tu &= a\partial_{xx}u + b\partial_xu \quad a,b\ge 0\\
-	u_0(t) &= e^{-80\cdot(t-0,45)^2} \quad t\in[0,0.1]
+	\partial_tu &= a\partial_{xx}u + b\partial_xu ~~\text{with}~~ a,b\ge 0 ~~\text{and}\\
+	u_0(t) &= e^{-80\cdot(t-0,45)^2}\hphantom{1} ~~\text{with}~~ t\in[0,0.1]
 	\end{align*}
-	on the domain $\Omega = [0,1]$. For a fixed $N\in\mathbb N$ we approximate the diffusive part of the differential equation with second-order central differences on an equidistant grid with grid size $h = \frac{1}{N-1}$ and grid points $x_i = ih$, $i=0\dots,N-1$
-	\[\partial_{xx}u(x_i) = \frac{u(x_{i+1}) - 2u(x_i) + u(x_{i-1})}{{h}^2} + \mathcal{O}({h}^2).\]
+	on the domain $\Omega = [0,1]$. For a fixed $N\in\mathbb N$ we approximate the diffusive part of the differential equation with second-order central differences on an equidistant grid with grid size $h = \frac{1}{N-1}$ and grid points $x_k = kh$, $k=0\dots,N-1$
+	\[\partial_{xx}u(x_k) = \frac{u(x_{k+1}) - 2u(x_k) + u(x_{k-1})}{{h}^2} + \mathcal{O}({h}^2).\]
 	In order to avoid numerical instabilities we discretize the advective part with forward differences, similar to the upwind scheme
-	\[\partial_{x}u(x_i) = \frac{u(x_{i+1}) - u(x_i)}{h} + \mathcal{O}(h).\]
+	\[\partial_{x}u(x_k) = \frac{u(x_{k+1}) - u(x_k)}{h} + \mathcal{O}(h).\]
 	The resulting system of ordinary differential equation is given by
 	\begin{align*}
 	\partial_tu &= Au.
@@ -254,9 +254,12 @@
 		\newcommand{\precision}{single}
 		\newcommand{\Pe}{Pe=10.0}
 		\centering
-		\includegraphics[width=1.\columnwidth]{../Figures/Experiment1/{5, \precision, \Pe}.pdf}
+		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/{5, \precision, \Pe}.pdf}
 		\caption{Approximation of $e^{0.1A}u_0$ using single precision \texttt{expleja} for a fixed interpolation degree $m=100$ and varying number of substeps $s$. The relative error is measured in the Eucledian norm. The reference solution was computed using the double precision \texttt{expleja} algorithm.}
-	\end{figure}Even though $A$ can be represented as a sparse matrix, it is more memory-efficient to treat it as a matrix-free linear operator. The solution of the differential equation is given by $e^{0.1A}u_0$, which can be approximated using the Leja method. For the matrix-free case we need to compute the spectral radius of $A$, which can be done using the power method.
+		\label{table:Experiment1}
+	\end{figure} 
+\noindent The solution of the differential equation is given by $e^{0.1A}u_0$, which can be approximated using the Leja method \ref{table:Experiment1}. For the matrix-free case we need to compute the spectral radius of $A$, which can be done using the power method.
+%Even though $A$ can be represented as a sparse matrix, it is more memory-efficient to treat it as a matrix-free linear operator.
 	
 	
 	\subsection{Power iteration analysis}
@@ -264,71 +267,162 @@
 		\newcommand{\boundary}{periodic}
 		\centering
 		\includegraphics[width=1.\columnwidth]{{../Figures/Spectrum/\boundary}.pdf}
-		\caption{The spectrum of $A$. For this visualization we assume \boundary\ boundary conditions. For Dirichlet boundary conditions all eigenvalues are negative real numbers.}
+		\caption{The spectrum of $A$. We assume \boundary\ boundary conditions.}
 	\end{figure}
-	
 	%All eigenvalues of the discretized one-dimensional using the upwind scheme are -1/h.   
-	The eigenvalues of discretized one-dimensional Laplace operator $A_{Dif}\in\mathbb{R}^{N\times N}$ on the interval $[0,1]$ with periodic boundary conditions are given by
+	%	The eigenvalues of discretized one-dimensional Laplace operator $A_{Dif}\in\mathbb{R}^{N\times N}$ on the interval $[0,1]$ with periodic boundary conditions are given by
+	%\[
+	%\lambda_j =
+	%\begin{cases*}
+	%-\frac{4}{h^2} \sin^2\left(\frac{\pi (j-1)}{2(N+1)}\right),\quad\text{if j is odd}\\
+	%-\frac{4}{h^2} \sin^2\left(\frac{\pi j}{2(N+1)}\right),\quad\text{if j is even}
+	%\end{cases*} 
+	%,\quad j=1,\dots, N.
+	%\]
+In this section we investigate the rate of convergence of the power method to the absolutely largest eigenvalue $\lambda_{max}$ of $A$.
+For our analysis we assume periodic boundary conditions
+\[ A = \frac{a}{h^2}
+\begin{bmatrix}
+-2     & 1  & 0      & \cdots & 0  & 1      \\
+1      & -2 & 1      &        &    & 0      \\
+0      & 1  & \ddots & \ddots &    & \vdots \\
+\vdots &    & \ddots & \ddots & 1  & 0      \\
+0      &    &        & 1      & -2 & 1      \\
+1      & 0  & \cdots & 0      & 1  & -2
+\end{bmatrix}
++\frac{b}{h}
+\begin{bmatrix}
+-1     & 1  & 0      & \cdots & 0  & 1      \\
+0      & -1 & 1      &        &    & 0      \\
+\vdots & 0  & \ddots & \ddots &    & \vdots \\
+\vdots &    & \ddots & \ddots & 1  & 0      \\
+0      &    &        & 0      & -1 & 1      \\
+1      & 0  & \cdots & \cdots & 0  & -1
+\end{bmatrix}.
+\]
+Consider the discrete Fourier basis
+\[
+v_j = \frac{1}{\sqrt N}\colvec{4}{e^{i\frac{2\pi}{N}j 0}}{e^{i\frac{2\pi}{N}j 1}}{\vdots}{e^{i\frac{2\pi}{N}j(N-1)}}, \quad j\in{0\dots N-1}.
+\]
+Each $v_j$ is an eigenvector of $A$
+\[
+	Av_j = \lambda_jv_j, 
+\]
+where
+\begin{align*}
+\lambda_j &= \frac{a}{h^2}\left(e^{i\frac{2\pi}{N}j} - 2 + e^{-i\frac{2\pi}{N}j}\right)-\frac{b}{h}\left(e^{i\frac{2\pi}{N}j}-1\right) \\ 
+&=-\left(\frac{4a}{h^2}-\frac{2b}{h}\right) \sin^2\left(\frac{\pi j}{N}\right) + i\frac{b}{h}\sin\left(\frac{2\pi j}{N}\right).
+\end{align*}
+From now on we study the behaviour of $v = \sum_{j=0}^{N-1} v_j$, the sum of all normalized eigenvectors. Let $n\in\mathbb{N}$ be the number of power iterations. We begin our analysis with the following auxiliary calculation.
 	
-	\[
-	\lambda_j =
-	\begin{cases*}
-	-\frac{4}{h^2} \sin^2\left(\frac{\pi (j-1)}{2(N+1)}\right),\quad\text{if j is odd}\\
-	-\frac{4}{h^2} \sin^2\left(\frac{\pi j}{2(N+1)}\right),\quad\text{if j is even}
-	\end{cases*} 
-	,\quad j=1,\dots, N.
-	\]
-	We investigate the rate of convergence for the power method given $A_{Dif}$ and an initial vector $v$. Consider $v=\frac{1}{N}\sum_{j=1}^N v_{j}$, where each $v_j$ is the normalized eigenvector corresponding to the eigenvalue $\lambda_j$. Let $N$ be even.
-	After $n$ power iteration we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of
-	\begin{align*}
-	\frac{\norm{A_{Dif}^{n-1}v}_2}{\norm{A_{Dif}^nv}_2}\abs{\lambda_N} &= 
-	\sqrt{\frac{\sum_{j=1}^{N}{\lambda_j^{2(n-1)}}}{\sum_{j=1}^{N}{\lambda_j^{2n}}}}\abs{\lambda_N} \\
-	&= \sqrt{\frac{\sum_{j=1}^{N/2}\sin^{4(n-1)}
-			\left(\frac{\pi j}{N+1}\right)}{\sum_{j=1}^{N/2}\sin^{4n}
-			\left(\frac{\pi j}{N+1}\right)}}\sin^2\left(\frac{\pi N}{2(N+1)}\right).
-	\end{align*}
-	The first equality holds since $A_{Dif}$ is symmetric. Therefore all eigenvectors are orthogonal. In order to continue our analysis and get some asymptotic bounds we interpret the sum of sine functions as an integral approximated by the trapezoidal rule. We use the nodes $j/(N+1)$ for $j=0,\dots,{N+1}$.
-	\[
-	\int_{0}^{1}{\sin^{4n}\left(\frac{\pi x}{2}\right)} =
-	\frac{1}{(N+1)}\left(2\sum_{j=1}^{N}\sin^{4n}\left(\frac{\pi j}{(N+1)}\right) + \frac{1}{2}\right)
-	+ \mathcal{O}\left(\frac{1}{12(N+1)^2}\right)
-	\]
-	Note that the error of the approximation is strictly positive since the second derivative  math.stackexchange\footnote{\url{https://math.stackexchange.com/questions/50447/integration-of-powers-of-the-sin-x}} we can blissfully accept the identity
-	\[I_n \defneq \int_{0}^{1}{\sin^{4n}\left(\frac{\pi x}{2}\right)} = \frac{\Gamma(2n+0.5)}{\sqrt{\pi}\ \Gamma(2n+1)}. \]
-	In order to simplify our calculations we take the limit of $N$
-	\[ 
-	\frac{\norm{A_{Dif}^{n-1}v}}{\norm{A_{Dif}^{n}v}}\abs{\lambda_N} \xrightarrow[]{N\to\infty}
-	\sqrt{\frac{I_n}{I_{n-1}}}, 
-	\]
-	where
-	
-	\begin{align*}
-	\frac{I_n}{I_{n-1}} &= 
-	\frac{\Gamma(2n - 1)\Gamma(2n + 0.5)}{\Gamma(2n + 1)\Gamma(2n - 1.5)} \\&=   
-	\frac{(2n - 2)!}{(2n)!}
-	\frac{\Gamma(2n + 0.5)}{\Gamma(2n - 1.5)}
+\begin{align*}
+\frac{h^{4n}}{N}\norm{A^nv}_2^2 
+&= \frac{h^{4n}}{N}\sum_{j=0}^{N-1}{\abs{\lambda_j}^{2n}}
+= \frac{1}{N}\sum_{j=0}^{N-1}{\abs{h^2\lambda_j}^{2n}} \\
+&= \frac{1}{N}\sum_{j=0}^{N-1} \left(\left(4a-2bh\right)^2 \sin^4\left(\frac{\pi j}{N}\right) + bh\sin^2\left(\frac{2\pi j}{N-1}\right)\right)^n \\
+&\xrightarrow[]{N\to\infty} (4a)^{2n} \int_{0}^{1} \sin^{4n}(\pi x)dx \\
+&= (4a)^{2n} \frac{2}{\pi} \int_{0}^{\frac\pi 2} \sin^{4n}(x)dx \\
+&= (4a)^{2n} \frac{1}{\pi} \operatorname{B}(2n+0.5,0.5),
+\end{align*}
+where $\operatorname{B}$ is the beta function. The first equality holds since all eigenvectors are orthogonal. When the limit is taken all terms depending on $h$ vanish. The remaining sum is a left Riemann sum of the integrable function $x\to (4a)^{2n}\sin^{4n}(\pi x)$. 
+In the limit we underestimate the absolutely largest eigenvalue $\lambda_{max}$ after $n\ge2$ power iterations by a factor of
+
+\begin{align*}
+\lim\limits_{N\to\infty} \frac{\norm{A^{n-1}v}_2}{\norm{A^nv}_2}\abs{\lambda_{max}} &= 
+\lim\limits_{N\to\infty}\frac{\frac{h^{2n-2}}{\sqrt{N}}\norm{A^{n-1}v}_2}{\frac{h^{2n}}{\sqrt{N}}\norm{A^nv}_2}\abs{h^2\lambda_N} \\
+&= \sqrt{
+	\frac{(4a)^{2n-2} \operatorname{B}(2n-1.5,0.5)}
+		{(4a)^{2n} \operatorname{B}(2n+0.5,0.5)}}4a\\
+&= \sqrt{\frac{\operatorname{B}(2n-1.5,0.5)}{\operatorname{B}(2n+0.5,0.5)}}
+\end{align*}
+We have
+\begin{align*}
+\frac{\operatorname{B}(2n-1.5,0.5)}{\operatorname{B}(2n+0.5,0.5)} &= 
+\frac{\Gamma(2n + 1)\Gamma(2n - 1.5)}{\Gamma(2n - 1)\Gamma(2n + 0.5)} \\&= 
+\frac{(2n)!}{(2n-2)!}
+	\frac{\Gamma(2n - 1.5)}{\Gamma(2n + 0.5)}
 	\frac{\Gamma(2n)}{\Gamma(2n)}
 	\frac{\Gamma(2n-2)}{\Gamma(2n-2)} \\&=
-	\frac{1}{2n(2n-1)} 
-	\frac{2^{1-4n}\sqrt\pi}{2^{5-4n}\sqrt\pi}
-	\frac{\Gamma(4n)}{\Gamma(4n-4)}
-	\frac{\Gamma(2n-2)}{\Gamma(2n)} \\&=
-	\frac{1}{32n(2n-1)} 
-	\frac{(4n-1)!}{(4n-5)!}
-	\frac{(2n-3)!}{(2n-1)!} \\&=
-	\frac{(4n-1)(4n-2)(4n-3)(4n-4)}{32n(2n-1)^2(2n-2)} \\&=
-	\frac{(4n-1)(4n-3)}{8n(2n-1)} \\&=
-	\frac{4n-1}{4n}\frac{4n-3}{4n-2} \\&=
-	\left(1-\frac{1}{4n}\right)\left(1-\frac{1}{4n-2}\right)
-	%%\\&=1 - \frac{1}{2n}\frac{8n-3}{8n-4} 
-	\end{align*}
-	For the third equality we applied the duplication formula for the gamma function. All in all we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of 
-	\[
-	\lim_{N\to\infty}\frac{\norm{A_{Dif}^{n-1}v}}{\norm{A_{Dif}^{n}v}}\abs{\lambda_N} =
-	\sqrt{\left(1-\frac{1}{4n}\right)\left(1-\frac{1}{4n-2}\right)} \approx
-	1-\frac{1}{4n-1}
-	\]
-	at the limit $N\to\infty$. 
+2n(2n-1) 
+	\frac{2^{5-4n}\sqrt\pi}{2^{1-4n}\sqrt\pi}
+	\frac{\Gamma(4n-4)}{\Gamma(4n)}
+	\frac{\Gamma(2n)}{\Gamma(2n-2)} \\&=
+32n(2n-1)
+	\frac{(4n-5)!}{(4n-1)!}
+	\frac{(2n-2)!}{(2n-4)!} \\&=
+\frac{32n(2n-1)(2n-2)(2n-3)}{(4n-1)(4n-2)(4n-3)(4n-4)}\\&=
+\frac{4n(4n-6)}{(4n-1)(4n-3)}\\&=
+\left(1+\frac{1}{4n-1}\right)\left(1-\frac{3}{4n-3}\right)
+\end{align*}
+For the third equality we applied the duplication formula for the gamma function. All in all we underestimate the absolutely largest eigenvalue $\lambda_{max}$ by a factor of 
+\[
+\lim_{N\to\infty}\frac{\norm{A^{n-1}v}}{\norm{A^{n}v}}\abs{\lambda_{max}} =
+\sqrt{\left(1+\frac{1}{4n-1}\right)\left(1-\frac{3}{4n-3}\right)}
+\]
+at the limit $N\to\infty$. 
+\begin{table}[h]
+	\centering
+	\begin{tabular}{|c|ccccc|}
+		\hline 
+		n & 2 & 3 & 4 & 5 & 6 \\ 
+		\hline 
+		formula & 0.6761 & 0.7273 & 0.9058 & 0.9310 & 0.9457 \\ 
+		\hline 
+	\end{tabular} 
+\end{table}
+
+
+%	We investigate the rate of convergence for the power method given $A$ and an initial vector $v$. Consider $v=\frac{1}{N}\sum_{j=1}^N v_{j}$, where each $v_j$ is the normalized eigenvector corresponding to the eigenvalue $\lambda_j$. Let $N$ be even.
+%	After $n$ power iteration we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of
+%	\begin{align*}
+%	\frac{\norm{A^{n-1}v}_2}{\norm{A^nv}_2}\abs{\lambda_N} &= 
+%	\sqrt{\frac{\sum_{j=1}^{N}{\lambda_j^{2(n-1)}}}{\sum_{j=1}^{N}{\lambda_j^{2n}}}}\abs{\lambda_N} \\
+%	&= \sqrt{\frac{\sum_{j=1}^{N/2}\sin^{4(n-1)}
+%			\left(\frac{\pi j}{N+1}\right)}{\sum_{j=1}^{N/2}\sin^{4n}
+%			\left(\frac{\pi j}{N+1}\right)}}\sin^2\left(\frac{\pi N}{2(N+1)}\right).
+%	\end{align*}
+%	The first equality holds since all eigenvectors are orthogonal. In order to continue our analysis and get some asymptotic bounds we interpret the sum of sine functions as an integral approximated by the trapezoidal rule. We use the nodes $j/(N+1)$ for $j=0,\dots,{N+1}$.
+%	\[
+%	\int_{0}^{1}{\sin^{4n}\left(\frac{\pi x}{2}\right)} =
+%	\frac{1}{(N+1)}\left(2\sum_{j=1}^{N}\sin^{4n}\left(\frac{\pi j}{(N+1)}\right) + \frac{1}{2}\right)
+%	+ \mathcal{O}\left(\frac{1}{12(N+1)^2}\right)
+%	\]
+%	Note that the error of the approximation is strictly positive since the second derivative  math.stackexchange\footnote{\url{https://math.stackexchange.com/questions/50447/integration-of-powers-of-the-sin-x}} we can blissfully accept the identity
+%	\[I_n \defneq \int_{0}^{1}{\sin^{4n}\left(\frac{\pi x}{2}\right)} = \frac{\Gamma(2n+0.5)}{\sqrt{\pi}\ \Gamma(2n+1)}. \]
+%	In order to simplify our calculations we take the limit of $N$
+%	\[ 
+%	\frac{\norm{A^{n-1}v}}{\norm{A^{n}v}}\abs{\lambda_N} \xrightarrow[]{N\to\infty}
+%	\sqrt{\frac{I_n}{I_{n-1}}}, 
+%	\]
+%	where
+%	
+%	\begin{align*}
+%	\frac{I_n}{I_{n-1}} &= 
+%	\frac{\Gamma(2n - 1)\Gamma(2n + 0.5)}{\Gamma(2n + 1)\Gamma(2n - 1.5)} \\&=   
+%	\frac{(2n - 2)!}{(2n)!}
+%	\frac{\Gamma(2n + 0.5)}{\Gamma(2n - 1.5)}
+%	\frac{\Gamma(2n)}{\Gamma(2n)}
+%	\frac{\Gamma(2n-2)}{\Gamma(2n-2)} \\&=
+%	\frac{1}{2n(2n-1)} 
+%	\frac{2^{1-4n}\sqrt\pi}{2^{5-4n}\sqrt\pi}
+%	\frac{\Gamma(4n)}{\Gamma(4n-4)}
+%	\frac{\Gamma(2n-2)}{\Gamma(2n)} \\&=
+%	\frac{1}{32n(2n-1)} 
+%	\frac{(4n-1)!}{(4n-5)!}
+%	\frac{(2n-3)!}{(2n-1)!} \\&=
+%	\frac{(4n-1)(4n-2)(4n-3)(4n-4)}{32n(2n-1)^2(2n-2)} \\&=
+%	\frac{(4n-1)(4n-3)}{8n(2n-1)} \\&=
+%	\frac{4n-1}{4n}\frac{4n-3}{4n-2} \\&=
+%	\left(1-\frac{1}{4n}\right)\left(1-\frac{1}{4n-2}\right)
+%	%%\\&=1 - \frac{1}{2n}\frac{8n-3}{8n-4} 
+%	\end{align*}
+%	For the third equality we applied the duplication formula for the gamma function. All in all we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of 
+%	\[
+%	\lim_{N\to\infty}\frac{\norm{A^{n-1}v}}{\norm{A^{n}v}}\abs{\lambda_N} =
+%	\sqrt{\left(1-\frac{1}{4n}\right)\left(1-\frac{1}{4n-2}\right)} \approx
+%	1-\frac{1}{4n-1}
+%	\]
+%	at the limit $N\to\infty$. 
 	
 	\section{Matrix-free Leja based exponential integrators}
 	Exponential integrators are a class of numerical integrators which excel at solving stiff differential equations. Unlike most numerical ordinary differential equation (ODE) solvers their construction is based on the variation-of-constants formula. Consider the semilinear initial value problem
@@ -348,11 +442,11 @@
 	\]
 	where $\varphi_1(z) = \frac{e^z-1}z$. The exponential Rosenbrock-Euler method is of order 2 and is exact for fully linear problems. We will refer to it as \texttt{exprb2} in section \ref{sec:NE}.
 	\subsection{Higher order Rosenbrock methods}
-	Exponential Rosenbrock methods are a special class of exponential integrators which efficiently solve semi-linear problems \eqref{semilinear}. For a given time step size $\uptau$ the numerical solution $u_1$ is given by
+	Exponential Rosenbrock methods are a special class of exponential integrators which efficiently solve semi-linear problems \eqref{semilinear}. For a given time step size $\tau$ the numerical solution $u_1$ is given by
 	\begin{align}
 	\begin{split}
-	U_{i} &= e^{c_i \uptau A}u_0 + \uptau\sum_{j=1}^{i-1}a_{ij}(\uptau A)g(U_{j}), \quad \\
-	u_{1} &= e^{    \uptau A}u_0 + \uptau\sum_{i=1}^{s}b_i(\uptau A)g(U_{i}),
+	U_{i} &= e^{c_i \tau A}u_0 + \tau\sum_{j=1}^{i-1}a_{ij}(\tau A)g(U_{j}), \quad \\
+	u_{1} &= e^{    \tau A}u_0 + \tau\sum_{i=1}^{s}b_i(\tau A)g(U_{i}),
 	\end{split}\label{exprbscheme}
 	\end{align}
 	where $s\in\mathbb{N}$ and $a_{ij}$, $b_{i}$ are matrix functions. The numerical scheme can be represented as a Butcher tableau
@@ -360,11 +454,11 @@
 		\centering
 		\begin{tabular}{c|ccccc}
 			$c_1$ &  &  &  & \\
-			$c_2$ & $a_{21}(\uptau A)$ &  &  & \\
+			$c_2$ & $a_{21}(\tau A)$ &  &  & \\
 			$\vdots$ & &  $\ddots$  &  & \\
-			$c_s$ & $a_{s1}(\uptau A)$ & $\ldots$ & $a_{s,s-1}(\uptau A)$  & \\
+			$c_s$ & $a_{s1}(\tau A)$ & $\ldots$ & $a_{s,s-1}(\tau A)$  & \\
 			\hline
-			&$b_1(\uptau A)$ & $\ldots$ & $b_{s-1}(\uptau A)$ & $b_s(\uptau A)$
+			&$b_1(\tau A)$ & $\ldots$ & $b_{s-1}(\tau A)$ & $b_s(\tau A)$
 		\end{tabular}
 		.
 	\end{table} \noindent The functions $a_{ij}$ and $b_{i}$ are typically given as linear combinations of the $\varphi_k$-functions, which in turn are recursively defined as 
@@ -393,9 +487,9 @@
 	for $1\le i\le s$ the scheme \eqref{exprbscheme} can be expressed as 
 	\begin{align}
 	\begin{split}
-	U_i &= u_0 + c_i\uptau\varphi_1(c_i \uptau A)F(u_0) + \uptau\sum_{j=2}^{i-1}a_{ij}(\uptau A)D_j, \\
+	U_i &= u_0 + c_i\tau\varphi_1(c_i \tau A)F(u_0) + \tau\sum_{j=2}^{i-1}a_{ij}(\tau A)D_j, \\
 	D_j &= g(U_j) - g(u_0), \quad 2\le j\le s, \\
-	u_1 &= u_0 +    \uptau\varphi_1(    \uptau A)F(u_0) + \uptau\sum_{i=2}^{s}     b_i(\uptau A)D_i.
+	u_1 &= u_0 +    \tau\varphi_1(    \tau A)F(u_0) + \tau\sum_{i=2}^{s}     b_i(\tau A)D_i.
 	\end{split}\label{Djscheme}
 	\end{align}
 	The main advantage of this reformulation lies in the fact that the norm of all $D_j$ is expected to be small. This can be exploited by the Leja method by allowing an early termination of the Newton interpolation. \\
@@ -403,7 +497,7 @@
 	
 	\subsection{Computing the action of the $\varphi$-functions}
 	Exponential integrators rely on the efficient computation of $\varphi_k$-functions. In the matrix case $A\in\mathbb{C}^{N\times N}$ this can be done by slightly expanding $A$, see \cite[Theorem 2.1]{action}.\\
-	Let $V = [V_p\dots V_2, V_1]\in\mathbb{C}^{N\times p}$, $u\in\mathbb{C}^{N\times 1}$, $\uptau\in\mathbb{C}$ and
+	Let $V = [V_p\dots V_2, V_1]\in\mathbb{C}^{N\times p}$, $u\in\mathbb{C}^{N\times 1}$, $\tau\in\mathbb{C}$ and
 	
 	\begin{align*}
 	\tilde{A} = 
@@ -417,16 +511,16 @@
 	\end{align*}
 	where $I_{n}$ is the $n\times n$ identity matrix. Let $e_n$ denote the $n$-th $p\times 1$ unity vector. Then
 	\begin{align*}
-	\begin{bmatrix}I_N & 0\end{bmatrix} e^{\uptau\tilde{A}}\colvec{2}{u}{e_j} =
-	e^{\uptau A}u +
-	\displaystyle\sum_{k=1}^{j}\uptau^k\varphi_k(\uptau A)V_{p-j+k}, 
+	\begin{bmatrix}I_N & 0\end{bmatrix} e^{\tau\tilde{A}}\colvec{2}{u}{e_j} =
+	e^{\tau A}u +
+	\displaystyle\sum_{k=1}^{j}\tau^k\varphi_k(\tau A)V_{p-j+k}, 
 	\quad j\in\{1,\dots,p\}. 
 	\end{align*}
 	In particular for $j=p$ we have
 	\begin{align*}
-	\begin{bmatrix}I_N & 0\end{bmatrix} e^{\uptau\tilde{A}}\colvec{2}{u}{e_p} =
-	e^{\uptau A}u +
-	\displaystyle\sum_{k=1}^{p}\uptau^k\varphi_k(\uptau A)V_{k}
+	\begin{bmatrix}I_N & 0\end{bmatrix} e^{\tau\tilde{A}}\colvec{2}{u}{e_p} =
+	e^{\tau A}u +
+	\displaystyle\sum_{k=1}^{p}\tau^k\varphi_k(\tau A)V_{k}
 	\hphantom{V_{-1}, \quad j\in\{1,\dots,p\}.}
 	\end{align*}
 	This formulation can be directly applied to each stage in \eqref{Djscheme} assuming $a_{ij}$ and $b_j$ are linear combinations of $\varphi_k$-functions. Therefore for each stage only a single action of an expanded matrix exponential has to be evaluated. In total this has to be done $s$ times for an exponential Rosenbrock method with $s$ stages. \\
@@ -484,8 +578,8 @@
 	\begin{align*}
 	\partial_tu &= Au.
 	\end{align*} 
-	Some eigenvalues of $A$ can have an extremely large negative real part. Therefore, since no explicit Runge-Kutta method is A-stable, this imposes very stingend conditions on the time step size $\uptau$ for $\operatorname{rk2}$ and $\operatorname{rk4}$.\footnote{See section \ref{CFL}} We will refer to the Courant-Friedrich-Lewy (CFL) conditions imposed by the advective and diffusive part of $A$ respectively by $C_{adv}$ and $C_{dif}$.  
-	\[ C_{adv} = \frac{b\uptau}{h} \le 1, \quad C_{dif} = \frac{a\uptau}{h^2} \le \frac{1}{2}\] 
+	Some eigenvalues of $A$ can have an extremely large negative real part. Therefore, since no explicit Runge-Kutta method is A-stable, this imposes very stingend conditions on the time step size $\tau$ for $\operatorname{rk2}$ and $\operatorname{rk4}$.\footnote{See section \ref{CFL}} We will refer to the Courant-Friedrich-Lewy (CFL) conditions imposed by the advective and diffusive part of $A$ respectively by $C_{adv}$ and $C_{dif}$.  
+	\[ C_{adv} = \frac{b\tau}{h} \le 1, \quad C_{dif} = \frac{a\tau}{h^2} \le \frac{1}{2}\] 
 	
 	
 	
