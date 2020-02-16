@@ -10,7 +10,7 @@ from datapreperation import IntegratorData, get_optimal_data
 '''
 DISCRETIZED ONE DIMENSIONAL LINEAR ADVECTION-DIFFUSION EQUATION
 
-Experiment1 LinOP:
+Experiment1 Powerit:
     We study the matrix-free case and determine for which parameter
     (number of power iterations, substeps, etc) expleja still converges
 
@@ -41,16 +41,16 @@ plt.rcParams['lines.linewidth'] = 3
 '''
 CONFIG
 '''
-maxerror = str(2**-24)
+maxerror = str(2**-10)
 save = True # Flag: If True, figures will be saved as pdf
-save_path = 'figures' + os.sep + 'Experiment1LinOp' + os.sep
+save_path = 'figures' + os.sep + 'Experiment1Powerit' + os.sep
 adv = 1.0 # Coefficient of advection matrix. Do not change.
 difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1
 
 '''
 Load data
 '''
-filelocation = 'HDF5-Files' + os.sep + 'Experiment1LinOp.h5'
+filelocation = 'HDF5-Files' + os.sep + 'Experiment1Powerit.h5'
 with pd.HDFStore(filelocation) as hdf:
     keys = hdf.keys()
     Integrators = {key:IntegratorData(filelocation,key) for key in keys}
