@@ -235,7 +235,7 @@
 	From now on we denote the Leja method for the matrix exponential function as \texttt{expleja}. Depending on the chosen tolerance, see Table \ref{table:thetam}, we will refer to the algorithm as half, single or double precision \texttt{expleja} respectively.
 	
 	\section{Linear advection-diffusion equation}
-	In this section we consider a simple initial value problem which serves as a test-bed for future experiments. We also want to examine the power method, an algorithm to (under)-estimate the absolutely largest eigenvalue of an operator.
+	In this section we consider a simple initial value problem which serves as a test-bed for future experiments. We also want to examine the power method, an algorithm to (under)-estimate the absolutely largest eigenvalue of an operator.\\
 	Consider the one-dimensional advection-diffusion equation
 	\begin{align}\label{eq:LinearAdvDif}
 	\begin{split}
@@ -390,8 +390,8 @@ is optimal.
 	\newcommand{\safe}{sf=1.1}
 	
 	\centering
-	\includegraphics[width=1.\columnwidth]{../Figures/Experiment1LinOp/{1, \precision, \Pe, \safe}.pdf}
-	\caption{Space dimension $N$ vs costs \texttt{mv} per timestep $s$ for matrix-free single precision \texttt{expleja}. Results are only shown if they achieve \precision\ precision.} \label{fig:Poweriterations}
+	\includegraphics[width=1.\columnwidth]{../Figures/Experiment1Powerit/{1, \precision, \Pe, \safe}.pdf}
+	\caption{Space dimension $N$ vs costs \texttt{mv} per timestep $s$ for matrix-free single precision \texttt{expleja}. The interpolation degree $m$ is fixed to 100. The Newton interpolation can still terminate early resulting in smaller numbers of $\texttt{mv}/s$. The number of power iterations are denoted by $n$. For this experiment we chose $\operatorname{Pe}=1.0$ and $\text{sf}=1.1$. Results are only shown if they achieve \precision\ precision.} \label{fig:Poweriterations}
 \end{figure}
 A priori it is unclear whether this result holds true for arbitrary $v$ and $N$. Therefore we do not know whether or not if the matrix-free Leja method converges. We solve the initial value problem \label{eq:LinearAdvDif} for a fixed number of substeps $s$ with fixed interpolation degree $m=100$ per substep while still allowing for an early termination of the interpolation if the error is small enough, see Figure \ref{fig:Poweriterations}. While the algorithm did not converge for all combinations of $N$, $\text{sf}$ and P\'eclet numbers we tried, we observed that $n=4$ and $\text{sf}=1.1$ is a robust choice independent of $N$ for our initial vector $u_0$. This combination also happened to be optimal for the power method analysis in the previous section, since $\frac{1}{\alpha_4}\approx 1.1$. \\
 For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-free \texttt{expleja} algorithm. As an extra optimization, we save the approximated eigenvector for $\lambda_{max}$ when integrating over multiple timesteps. We use it as the initial vector for the next time step. Furthermore we terminate the power method early if the relative change of the approximated eigenvalue is smaller than $0.01$. 
@@ -463,7 +463,7 @@ For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-fr
 	\[
 	u(t) \approx e^{At}u_0 + \int_{0}^{t}e^{(t-\tau)A}g(u_0)d\tau = e^{At}u_0 + \varphi_1(tA)g(u_0),
 	\]
-	where $\varphi_1(z) = \frac{e^z-1}z$. The exponential Rosenbrock-Euler method is of order 2 and is exact for fully linear problems. We will refer to it as \texttt{exprb2} in section \ref{sec:NE}.
+	where $\varphi_1(z) = \frac{e^z-1}z$. The exponential Rosenbrock-Euler method is of order 2 and is exact for linear problems, i.e. if g(u)=0. We will refer to it as \texttt{exprb2} in section \ref{sec:NE}.
 	\subsection{Higher order Rosenbrock methods}
 	Exponential Rosenbrock methods are a special class of exponential integrators which efficiently solve semi-linear problems \eqref{semilinear}. For a given time step size $\tau$ the numerical solution $u_1$ is given by
 	\begin{align}
