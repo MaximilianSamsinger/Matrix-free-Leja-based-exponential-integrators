@@ -41,7 +41,7 @@ plt.rcParams['lines.linewidth'] = 3
 '''
 CONFIG
 '''
-maxerror = str(2**-10)
+maxerror = str(2**-24)
 save = True # Flag: If True, figures will be saved as pdf
 save_path = 'figures' + os.sep + 'Experiment1LinOp' + os.sep
 adv = 1.0 # Coefficient of advection matrix. Do not change.
@@ -87,7 +87,7 @@ from copy import deepcopy
 Nts = [250, 500, 750, 1000]
 powerits = [2,3,4,6,10,25]
 safetyfactors = [0.75,0.9,1.,1.1,1.5]
-tol = 2**-24
+tol = float(maxerror)
 
 Integrator = deepcopy(Integrators['/exprb2'])
 
@@ -114,7 +114,7 @@ for dif, sf in product(difs, safetyfactors):
             data.m = (data.mv-data.powerits)/data.substeps + data.powerits #Assumption: Matrix changes every substep
             ''' Here we try to plot '''
             try:
-                data.plot('Nx','m',label=str(its) +' it', ax=ax,)
+                data.plot('Nx','m',label=f'n={str(its)}', ax=ax,)
             except TypeError:
                 print('No numeric data to plot')
                 print('Nt: %s, dif: %s, its: %s\n' %(Nt,dif,its))
@@ -125,7 +125,7 @@ for dif, sf in product(difs, safetyfactors):
         ax.set_xlim([50,400])
         ax.set_ylim([0,120])
     plt.subplots_adjust(hspace=0.35)
-    savefig(1, save, f', Pe={1/dif}, sf={sf}')
+    savefig(1, save, f'Pe={1/dif}, sf={sf}')
 
 
 
