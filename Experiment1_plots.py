@@ -48,7 +48,7 @@ plt.rcParams['lines.linewidth'] = 3
 '''
 CONFIG
 '''
-maxerror = str(2**-10)
+maxerror = str(2**-24)
 save = True # Flag: If True, figures will be saved as pdf
 save_path = 'figures' + os.sep + 'Experiment1' + os.sep
 adv = 1.0 # Coefficient of advection matrix. Do not change.
@@ -190,7 +190,9 @@ for dif in difs:
     '''
     
     fig, ax = plt.subplots(1, 1, sharex=True)
-    fig.suptitle(suptitle + '\n Single precision expleja')
+ 
+    fig.suptitle(suptitle + 
+                 f'\n {precision_type.capitalize()} precision expleja')
     
     data = Integrators['/exprb2'].data
     data = data.loc[(data['dif'] == dif)
@@ -206,7 +208,8 @@ for dif in difs:
     ax.set_ylabel('Relative error')
     ax.set_xscale('log')
     ax.set_yscale('log')    
-    
+    if dif == 1e-1:
+        ax.set_xlim([0,5e2])
     savefig(5, save, f'Pe={adv/dif}')
 
 

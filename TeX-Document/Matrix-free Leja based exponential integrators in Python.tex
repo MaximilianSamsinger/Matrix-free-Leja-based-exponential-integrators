@@ -114,10 +114,10 @@
 	\[e^Av \approx p_m(A)v.\]
 	This approach has many advantages. The cost of the computation of $p_m(A)v$ mainly depends on the calculation of $m$ matrix-vector multiplications with $A$. Furthermore the explicit knowledge of $A$ itself is no longer required. $A$ can be replaced by a linear operator, which can be more convenient and save memory.
 	
-	\section{The Leja method}
-	This section serves as an introduction to the Leja method for approximating the action of the exponential function. All proofs can be found in a more general form in either \cite{advdif} or \cite{lejarev}. 
+	\section{The Leja method} \label{sec:LejaMethod}
+	This section serves as an introduction to the Leja method for approximating the action of the exponential function. We briefly cover the key concepts and definitions in section \ref{sec:LejaInterpolation} and \ref{sec:ApproxMatrixExponential}. For more details and all proofs we refer to \cite{advdif} and \cite{lejarev}. 
 	
-	\subsection{Leja interpolation}
+	\subsection{Leja interpolation} \label{sec:LejaInterpolation}
 	Let $K\in\mathbb{C}$ be a compact set in the complex plane and $\xi_0\in K$ be arbitrary. The sequence $(\xi_k)_{k=0}^{\infty}$ recursively defined as
 	\[\xi_k = \underset{{\xi\in K}}{\operatorname{arg\,max}}\displaystyle\prod_{j=0}^{k-1}\abs{\xi-\xi_j}\]
 	is called a Leja sequence. Due to the maximum principle all elements in the sequence realize their maximum on the border $\partial K$. Typically $\xi_0$ is also chosen on $\partial K$.\\
@@ -139,7 +139,7 @@
 	
 	In summary the Leja points offer convergence properties similar to Chebyshev nodes for interpolation, while having computational advantages. All results hold true for the corresponding matrix interpolation polynomials.
 	
-	\subsection{Approximating the matrix exponential function:}
+	\subsection{Approximating the matrix exponential function:} \label{sec:ApproxMatrixExponential}
 	Inspired by the previous subsection we try to find a low-cost approximation of the action of the matrix exponential $e^Av$ using Leja interpolation polynomials. From now on, we will fix 
 	\[K=[-c,c], ~~ f = e^\cdot  ~~\text{and}~~ \xi_0 = c \]
 	for $c>0$. With $L_{m,c}$ we denote the Leja interpolation polynomial on the interval $[-c,c]$ with Leja points $(\xi_j)_{j=0}^{m}$. We use the well-known property of the exponential function
@@ -156,9 +156,9 @@
 	\[
 	\frac{\norm{\Delta A}}{\norm{A}} \le \operatorname{tol}, 
 	\]
-	for a given tolerance $\operatorname{tol}$. Furthermore we want to minimize the cost of the interpolation. A priori it is unclear for which values $m$, $s$ and $c$ the inequality is satisfied. The authors of \cite{lejarev} conducted a backward error analysis and chose an approach which favors normal matrices. For various tolerances $\operatorname{tol}$ they precomputed values $\theta_m$ \ref{table:thetam} which satisfy
+	for a given tolerance $\operatorname{tol}$. Furthermore we want to minimize the cost of the interpolation. A priori it is unclear for which values $m$, $s$ and $c$ the inequality is satisfied. The authors of \cite{lejarev} conducted a backward error analysis and chose an approach which puts an upper bound on $c$ depending only on $s$ and $m$. For various tolerances $\operatorname{tol}$ they precomputed values $\theta_m$, see \ref{table:thetam}, which satisfy
 	\[
-	\text{If}\ \norm{s^{-1}A}\le \theta_m\ \text{and}\ 0 < c \le \theta_m\ \text{then}\ \frac{\norm{\Delta A}}{\norm{A}} \le \operatorname{tol}.
+	\text{If}\ \norm{s^{-1}A}\le \theta_m\ \text{and}\ 0 \le c \le \theta_m\ \text{then}\ \frac{\norm{\Delta A}}{\norm{A}} \le \operatorname{tol}.
 	\]
 	\begin{table}[tbp]
 		\begin{tabular}{r|rrrrrrr}
@@ -180,7 +180,7 @@
 		\caption{Samples of the precomputed values $\theta_m$. The backward error of the Leja interpolation is bounded if $c\le\theta_m$, where $[-c,c]$ is the interpolation interval and $m$ the interpolation degree. Half, single and double correspond to the tolerances $2^{-10}$, $2^{-24}$ and $2^{-53}$ respectively \cite[Table 1]{lejarev}.}
 		\label{table:thetam}
 	\end{table}	
-	For our purposes it is important to note that the optimal choice for $c$ is given by $c=\rho(s^{-1}A)$, where $\rho(A)$ is the spectral radius of $A$. However, computing $\rho(A)$ introduces additional costs for the algorithms proposed in \cite{lejarev}. Our matrix-free implementation relies on the computations of the spectral radius, but it does not need to compute the matrix norm $\norm{A}$, see section \ref{matrixfreeimplementation}.
+	For our purposes it is important to note that the optimal choice for $c$ is given by $c=\rho(s^{-1}A)$, where $\rho(A)$ is the spectral radius of $A$. However, computing $\rho(A)$ introduces additional costs for the algorithms proposed in \cite{lejarev}. Our matrix-free implementation relies on the computations of the spectral radius, but it does not need to compute the operator norm $\norm{A}$, see section \ref{matrixfreeimplementation}.
 	
 	\paragraph{Choosing cost-minimizing parameters}
 	The cost of the Leja interpolation mainly depends on the the number of matrix-vector products
@@ -192,10 +192,12 @@
 	\norm{s^{-1}A} \le \theta_m
 	\]
 	is satisfied. This leads to the optimal choice for $m$ and $s$ 
-	\[
+	\begin{align}
+	\begin{split}
 	m_* = \underset{2\le m\le m_{\operatorname{max}}}{\operatorname{arg\ min}}  \left\{{\left\lceil{\frac{\norm{A}}{\theta_m}}\right\rceil}m\right\}, \quad
 	s_* =  \left\lceil{\frac{\norm{A}}{\theta_m}}\right\rceil.
-	\]
+	\end{split} \label{eq:ms}
+	\end{align}
 	In our algorithm we set $m_{\operatorname{max}} = 100$ in order to avoid over- and underflow errors.
 	
 	\paragraph{Shifting the matrix}
@@ -207,14 +209,28 @@
 	A well-chosen shift centers the eigenvalues of $A-\mu I$ around $0$. Such a shift can be found by using Gerschgorin's circle theorem. This is, however, not possible in the matrix-free case.
 	
 	\section{Matrix-free implementation}\label{matrixfreeimplementation}
-	For matrix-free linear operators it can be expensive to compute the matrix norm $\norm A$. We will circumvent this problem by replacing $\norm{A}$ with the spectral radius $\rho(A)$. 
+	Modern CPUs can utilize a high-speed memory type called cache, which reduces the time for the processor to access data from the main memory. At the time of this writing high-end consumer CPU cache sizes are in the order of megabytes. Consider finite-difference schemes of the form
+	\[
+		v_k = \sum_{j=-n}^{n} a_{j+k}v_{j+k}
+	\]
+	for $v\in\mathbb{C}^N$, $n\in\mathbb{N}$ and periodic boundaries i.e. $a_{l+N} = a_{l}$ and $v_{l+N}=v_{l}$ for all $l\in\mathbb{Z}$. 
+	This finite difference scheme can be written as an matrix-vector multiplication with an $(2n+1)$-diagonal matrix. Even if the matrix is stored in a sparse format it is still necessary to save $N(2n+1)$ non-zero elements. In the case of two-dimensional five-point stencil method on a rectangular grid we have $n=2$ and $N=N_{x}N_{y}$, where $N_{x}$ and $N_{y}$ is the number of grid points on the $x$- and $y$-axis respectively. This leads to a storage demand of $20*N_x*N_y$ bytes when saving matrix entries as float data. This means that we surpass $1$ megabyte when we choose $N_x,N_y > 250$, which might cause cache misses. This is especially true for L1 and L2 caches. This problem is further magnified when we consider stencils on three-dimensional domains. \\	
+	This serves as a motivation to propose an alternative for the classical Leja method we discussed in section \ref{sec:LejaMethod}. We will now construct a matrix-free version, meaning that the matrix representation of $A$ is no longer explicitly given. Instead we consider linear operators of the form
+	\begin{align*}
+	\begin{split}
+		A\!:\mathbb{C}^{N}&\to\mathbb{C}^{N}\\
+			v&\mapsto A(v)
+	\end{split}.
+	\end{align*}
+	%Linear operators can also be convenient to work with in applications where the matrix representation is not easily available. They can also be more memory efficient. For the finite difference schemes we discussed at the beginning of this section we only need to store $(2n+1)$ values independent of $N$. 
+	Since the Newton method only relies on computation of matrix-vector products it is unproblematic to use an linear operators. However, without the matrix representation it can be expensive to compute the operator norm $\norm A$ in \eqref{eq:ms}  We will circumvent this problem by replacing $\norm{A}$ with the spectral radius $\rho(A)$. 
 	
-	The backward error analysis in \cite{lejarev} holds true for every matrix norm.
-	We use a well-known result from the matrix analysis literature \cite[Lemma 5.6.10.]{matrixanalysis}. For every $A$ and for every $\varepsilon>0$ exists an induced matrix norm $\norm{\cdot}_{A,\varepsilon}$ such that
+	The backward error analysis in \cite{lejarev} holds true for every operator norm.
+	We use a well-known result from the matrix analysis literature \cite[Lemma 5.6.10.]{matrixanalysis}. For every $A$ and for every $\varepsilon>0$ exists an induced operator norm $\norm{\cdot}_{A,\varepsilon}$ such that
 	\[
 	\rho(A) \le \norm{A}_{A,\varepsilon} \le \rho(A) + \varepsilon. 
 	\]
-	The first inequality holds true for every matrix norm. We choose $\varepsilon$ small enough, such that
+	The first inequality holds true for every operator norm. We choose $\varepsilon$ small enough, such that
 	\[
 	\norm{s^{-1}A}_{A,\varepsilon} \le \underset{\rho(s^{-1}A) < \theta_m}{\min}\theta_m.
 	\]
@@ -251,8 +267,7 @@
 	\begin{align*}
 	\partial_tu &= Au.
 	\end{align*}
-	In order to measure the stiffness of the differential equation we employ the P\'eclet number $\operatorname{Pe} = \frac{b}{a}$.
-	The P\'eclet number is a dimensionless quantities representing the ratio of the advective velocity $b$ to the diffusive velocity $a$.\\
+	In order to measure the relative strength of advection compared to diffusion we employ the P\'eclet number $\operatorname{Pe} = \frac{b}{a}$.
 	\begin{figure}[ht]
 		\newcommand{\precision}{single}
 		\newcommand{\Pe}{Pe=10.0}
@@ -283,7 +298,7 @@
 	%\end{cases*} 
 	%,\quad j=1,\dots, N.
 	%\]
-We investigate the rate of convergence of the power method to the absolutely largest eigenvalue $\lambda_{max}$ of $A$.
+We investigate the rate of convergence of the power method to the largest eigenvalue (with respect to the modulus) $\lambda_{max}$ of $A$.
 For our analysis we assume periodic boundary conditions
 \[ A = \frac{a}{h^2}
 \begin{bmatrix}
@@ -315,75 +330,84 @@ Each $v_j$ is an eigenvector of $A$
 where the eigenvalues $\lambda_j$ are given by
 \begin{align*}
 \lambda_j &= \frac{a}{h^2}\left(e^{i\frac{2\pi}{N}j} - 2 + e^{-i\frac{2\pi}{N}j}\right)-\frac{b}{h}\left(e^{i\frac{2\pi}{N}j}-1\right) \\ 
-&=-\left(\frac{4a}{h^2}-\frac{2b}{h}\right) \sin^2\left(\frac{\pi j}{N}\right) + i\frac{b}{h}\sin\left(\frac{2\pi j}{N}\right),
+&=-\left(\frac{4a}{h^2}-\frac{2b}{h}\right) \sin^2\!\left(\frac{\pi j}{N}\right) + i\frac{b}{h}\sin\!\left(\frac{2\pi j}{N}\right),
 \end{align*}
 see Figure \ref{fig:spectrum}.
-From now on we study the behaviour of $v = \sum_{j=0}^{N-1} v_j$, the sum of all normalized eigenvectors. Let $n\in\mathbb{N}$ be the number of power iterations. We begin our analysis with the following auxiliary calculation.
+From now on we study the behaviour of $v = \frac{1}{N}\sum_{j=0}^{N-1} v_j$, the normalized sum of all eigenvectors. Let $n\in\mathbb{N}$ be the number of power iterations. We begin our analysis with the following auxiliary calculation
 \begin{align*}
-\frac{h^{4n}}{N}\norm{A^nv}_2^2 
-&= \frac{h^{4n}}{N}\sum_{j=0}^{N-1}{\abs{\lambda_j}^{2n}}
-= \frac{1}{N}\sum_{j=0}^{N-1}{\abs{h^2\lambda_j}^{2n}} \\
-&= \frac{1}{N}\sum_{j=0}^{N-1} \left(\left(4a-2bh\right)^2 \sin^4\left(\frac{\pi j}{N}\right) + bh\sin^2\left(\frac{2\pi j}{N-1}\right)\right)^n \\
-&\xrightarrow[]{N\to\infty} (4a)^{2n} \int_{0}^{1} \sin^{4n}(\pi x)dx \\
-&= (4a)^{2n} \frac{2}{\pi} \int_{0}^{\frac\pi 2} \sin^{4n}(x)dx \\
-&= (4a)^{2n} \frac{1}{\pi} \operatorname{B}(2n+0.5,0.5),
+\norm{A^nv}_2
+&= \sqrt{\frac{1}{N}\sum_{j=0}^{N-1}{\abs{\lambda_j}^{2n}}}
+= \frac{(4a)^n}{h^{2n}}\sqrt{I_{N,n}} ,
 \end{align*}
-where $\operatorname{B}$ is the beta function. The first equality holds since all eigenvectors are orthogonal. When the limit is taken all terms depending on $h$ vanish. The remaining sum is a left Riemann sum of the integrable function $x\to (4a)^{2n}\sin^{4n}(\pi x)$. 
-In the limit we underestimate the absolutely largest eigenvalue $\lambda_{max}$ after $n\ge2$ power iterations by a factor of $\alpha_n$ \ref{table:alphan}, where $\alpha_n$ is given by
-
+where
 \begin{align*}
-\lim\limits_{N\to\infty} \frac{\norm{A^{n-1}v}_2}{\norm{A^nv}_2}\abs{\lambda_{max}} &= 
-\lim\limits_{N\to\infty}\frac{\frac{h^{2n-2}}{\sqrt{N}}\norm{A^{n-1}v}_2}{\frac{h^{2n}}{\sqrt{N}}\norm{A^nv}_2}\abs{h^2\lambda_{max}} \\
-&= \sqrt{
-	\frac{(4a)^{2n-2} \operatorname{B}(2n-1.5,0.5)}
-		{(4a)^{2n} \operatorname{B}(2n+0.5,0.5)}}4a\\
-&= \sqrt{\frac{\operatorname{B}(2n-1.5,0.5)}{\operatorname{B}(2n+0.5,0.5)}}.
+	I_{N,n} &= \frac{1}{N}\sum_{j=0}^{N-1}\left(\left(1-\frac{hb}{2a}\right)^2 \sin^4\!\left(\frac{\pi j}{N}\right) + \frac{hb}{4a}\sin^2\!\left(\frac{2\pi j}{N}\right)\right)^n.
 \end{align*}
-\begin{table}
-	\centering
-	\def\arraystretch{1.5}
-	\begin{tabular}{c|ccccccccc}	
-		n & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10\\ 
-		\hline 
-		$\alpha_n$ & 0.676 & 0.727 & 0.906 & 0.931 & 0.946 & 0.955 & 0.962 & 0.967 & 0.971\\ 
-	\end{tabular} 
-	\caption{Number of power iterations $n$ versus $\alpha_n$. In the limit $N\to\infty$ the power method underestimates the absolutely largest eigenvalue by the factor $\alpha_n$ for the sum of all normalized eigenvectors of $A$.}
-	\label{table:alphan}
-\end{table}
-We have
+%&\xrightarrow[]{N\to\infty} (4a)^{2n} \int_{0}^{1} \sin^{4n}(\pi x)dx = \\
+%&= (4a)^{2n} \frac{2}{\pi} \int_{0}^{\frac\pi 2} \sin^{4n}(x)dx \\
+%&= (4a)^{2n} \frac{1}{\pi} \operatorname{B}(2n+0.5,0.5),
+%where $\operatorname{B}$ is the beta function. 
+The first equality holds since all eigenvectors are orthogonal. %When the limit is taken all terms depending on $h$ vanish. The remaining sum is a left Riemann sum of the integrable function $x\to (4a)^{2n}\sin^{4n}(\pi x)$. 
+We underestimate the largest eigenvalue $\lambda_{max}$ by a factor of
 \begin{align*}
-\frac{\operatorname{B}(2n-1.5,0.5)}{\operatorname{B}(2n+0.5,0.5)} &= 
-\frac{\Gamma(2n + 1)\Gamma(2n - 1.5)}{\Gamma(2n - 1)\Gamma(2n + 0.5)} \\&= 
-\frac{(2n)!}{(2n-2)!}
-	\frac{\Gamma(2n - 1.5)}{\Gamma(2n + 0.5)}
-	\frac{\Gamma(2n)}{\Gamma(2n)}
-	\frac{\Gamma(2n-2)}{\Gamma(2n-2)} \\&=
-2n(2n-1) 
-	\frac{2^{5-4n}\sqrt\pi}{2^{1-4n}\sqrt\pi}
-	\frac{\Gamma(4n-4)}{\Gamma(4n)}
-	\frac{\Gamma(2n)}{\Gamma(2n-2)} \\&=
-32n(2n-1)
-	\frac{(4n-5)!}{(4n-1)!}
-	\frac{(2n-2)!}{(2n-4)!} \\&=
-\frac{32n(2n-1)(2n-2)(2n-3)}{(4n-1)(4n-2)(4n-3)(4n-4)}\\&=
-\frac{4n(4n-6)}{(4n-1)(4n-3)}\\&=
-\left(1+\frac{1}{4n-1}\right)\left(1-\frac{3}{4n-3}\right)
+\frac{\norm{A^{n+1}v}_2}{\norm{A^nv}_2}\frac{1}{\abs{\lambda_{max}}}
+= \frac{\frac{h^{2n+2}}{(4a)^{n+1}}\norm{A^{n+1}v}_2}{\frac{h^{2n}}{(4a)^n}\norm{A^nv}_2}\frac{4a}{\abs{h^2\lambda_{max}}} = \sqrt{\frac{I_{N,n+1}}{I_{N,n}}}\frac{4a}{h^2\abs{\lambda_{max}}}.
 \end{align*}
-For the third equality we applied the duplication formula for the gamma function. All in all we underestimate the absolutely largest eigenvalue $\lambda_{max}$ by a factor of 
+using the power method. For large $N$ we have $\frac{4a}{\abs{h^2\lambda_{max}}}\approx 1$.  
+% $\alpha_n$, see Table \ref{table:alphan}, where $\alpha_n$ is given by
+In order to continue our analysis and get some asymptotic bounds we interpret the $n$-th root the summands of $I_{N,n}$ as a function of $x$
 \[
-\alpha_n = 
-\lim_{N\to\infty}\frac{\norm{A^{n-1}v}}{\norm{A^{n}v}}\abs{\lambda_{max}} =
-\sqrt{\left(1+\frac{1}{4n-1}\right)\left(1-\frac{3}{4n-3}\right)}
+	S_{N}(x) = \left(1-\frac{hb}{2a}\right)^{2} \sin^4\!\left(\pi x\right) + \frac{hb}{4a}\sin^2\!\left(2\pi x\right).
 \]
-at the limit $N\to\infty$. 
+In the limit $S_N(\cdot)$ converges to $\sin^4(\pi\cdot)$. Furthermore we have uniform convergence since for all for $x\in[0,1]$ 
+\begin{align*}
+	\abs{S_N(x) - \sin^4(\pi x)} =
+	\left\lvert\frac{hb}{2a}\left(-2 + \frac{hb}{2a}\right) \sin^4\!\left(\pi x\right) + \frac{hb}{4a}\sin^2\!\left(2\pi x\right)\right\rvert \le \frac{hb}{a}\sin^4\!\left(\pi x\right) \le \frac{hb}{a}, 
+\end{align*}
+if $N$ is sufficiently large. Therefore, if we keep $n$ fixed, we can take the limit
+\[
+	\lim_{N\to\infty} I_{N,n} = \lim_{N\to\infty} \frac{1}{N}\sum_{j=0}^{N-1}\left(S_N(x_j)\right)^n = \int_{0}^{1} \sin^{4n}(\pi x)dx = \frac{1}{\pi} \operatorname{B}(2n+0.5,0.5),
+\]
+\noindent where $\operatorname{B}$ is the beta function. Finally we can establish an asymptotic bound
+\begin{align*}
+\lim_{N\to\infty} \frac{I_{N,n+1}}{I_{N,n}} &=   
+\frac{\operatorname{B}(2n+2.5,0.5)}{\operatorname{B}(2n+0.5,0.5)} \\&= 
+\frac{\Gamma(2n + 1)\Gamma(2n + 2.5)}{\Gamma(2n + 3)\Gamma(2n + 0.5)} \\&= 
+\frac{(2n)!}{(2n+2)!}
+	\frac{\Gamma(2n + 2.5)}{\Gamma(2n + 0.5)}\\&=
+\frac{(2n)!}{(2n+2)!}
+	\frac{2^{4n}\sqrt\pi}{2^{4n+4}\sqrt\pi}
+	\frac{(4n+4)!}{(4n)!}
+	\frac{(2n)!}{(2n+2)!} \\&=
+\frac{(4n+4)(4n+3)(4n+2)(4n+1)}{16(2n+2)^2(2n+1)^2} \\&=
+\frac{(4n+3)(4n+1)}{(4n+4)(4n+2)}\\&=
+\left(1-\frac{1}{4n+4}\right)\left(1-\frac{1}{4n+2}\right)
+\end{align*}
+For the third equality we applied the duplication formula for the gamma function. All in all we underestimate the largest eigenvalue $\lambda_{max}$ by a factor of 
+\[
+\lim_{N\to\infty}\frac{\norm{A^{n+1}v}_2}{\norm{A^{n}v}_2}\frac{1}{\abs{\lambda_{max}}} =
+\sqrt{\left(1+\frac{1}{4n+4}\right)\left(1-\frac{3}{4n+2}\right)} \approx 1-\frac{1}{4n+3}
+\]
+at the limit $N\to\infty$. %For some sample values of $\alpha_n$ consider Table \ref{table:alphan}. We observe that the relative increase of $\alpha_n$ is  
+%\begin{table}
+%	\centering
+%	\def\arraystretch{1.5}
+%	\begin{tabular}{c|ccccccccc}	
+%		n & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & 10\\ 
+%		\hline 
+%		$\alpha_n$ & 0.676 & 0.727 & 0.906 & 0.931 & 0.946 & 0.955 & 0.962 & 0.967 & 0.971\\ 
+%	\end{tabular} 
+%	\caption{Number of power iterations $n$ versus $\alpha_n$. In the limit $N\to\infty$ the power method underestimates the absolutely largest eigenvalue by the factor $\alpha_n$ for the sum of all normalized eigenvectors of $A$.}
+%	\label{table:alphan}
+%\end{table}
 \subsection{Power iteration experiment}
-As discussed in section \ref{matrixfreeimplementation} we need to estimate the absolutely largest eigenvalue $\lambda_{max}$ of $A$ for the matrix-free \texttt{expleja} algorihm. However, we can only guarantee convergence if we overestimate $\lambda_{max}$. Therefore we have to include a safety-factor by which we multiply the output of the power method.
-The question naturally arises, how many power iterations $n$ and which safety factor $\text{sf}\ge 1$ is necessary for convergence.
-The power method analysis in section \ref{poweritanalysis} partially answers this question. For large $N$ and for the vector $v=\sum_{j=0}^{N-1}v_j$ the choice 
-\[ \text{sf} = \frac{1}{\alpha_n}\]
-is optimal. 
+As discussed in section \ref{matrixfreeimplementation} we need to estimate the largest eigenvalue $\lambda_{max}$ of $A$ for the matrix-free \texttt{expleja} algorihm. However, we can only guarantee convergence if we overestimate $\lambda_{max}$. Therefore we have to include a safety-factor $\text{sf}$ by which we multiply the output of the power method. 
+%The question naturally arises, how many power iterations $n$ and which safety factor $\text{sf}\ge 1$ is necessary for convergence.
+%The power method analysis in section \ref{poweritanalysis} partially answers this question. For large $N$ and for the vector $v=\sum_{j=0}^{N-1}v_j$ the choice 
+%\[ \text{sf} = \frac{1}{\alpha_n}\]
+%is optimal. 
 
-%In the matrix-free case the linear operator $A$ is not explicitly given. In order to compute the matrix norm ${\norm A}_2$ we use power iterations to estimate the absolutely largest eigenvalue of $A$. A priory it is not clear how many power iterations $it$ are necessary for a good approximation. 
+%In the matrix-free case the linear operator $A$ is not explicitly given. In order to compute the operator norm ${\norm A}_2$ we use power iterations to estimate the absolutely largest eigenvalue of $A$. A priory it is not clear how many power iterations $it$ are necessary for a good approximation. 
 \begin{figure}[h!]
 	\newcommand{\Pe}{Pe=1.0}
 	\newcommand{\precision}{single}
@@ -393,8 +417,8 @@ is optimal.
 	\includegraphics[width=1.\columnwidth]{../Figures/Experiment1Powerit/{1, \precision, \Pe, \safe}.pdf}
 	\caption{Space dimension $N$ vs costs \texttt{mv} per timestep $s$ for matrix-free single precision \texttt{expleja}. The interpolation degree $m$ is fixed to 100. The Newton interpolation can still terminate early resulting in smaller numbers of $\texttt{mv}/s$. The number of power iterations are denoted by $n$. For this experiment we chose $\operatorname{Pe}=1.0$ and $\text{sf}=1.1$. Results are only shown if they achieve \precision\ precision.} \label{fig:Poweriterations}
 \end{figure}
-A priori it is unclear whether this result holds true for arbitrary $v$ and $N$. Therefore we do not know whether or not if the matrix-free Leja method converges. We solve the initial value problem \label{eq:LinearAdvDif} for a fixed number of substeps $s$ with fixed interpolation degree $m=100$ per substep while still allowing for an early termination of the interpolation if the error is small enough, see Figure \ref{fig:Poweriterations}. While the algorithm did not converge for all combinations of $N$, $\text{sf}$ and P\'eclet numbers we tried, we observed that $n=4$ and $\text{sf}=1.1$ is a robust choice independent of $N$ for our initial vector $u_0$. This combination also happened to be optimal for the power method analysis in the previous section, since $\frac{1}{\alpha_4}\approx 1.1$. \\
-For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-free \texttt{expleja} algorithm. As an extra optimization, we save the approximated eigenvector for $\lambda_{max}$ when integrating over multiple timesteps. We use it as the initial vector for the next time step. Furthermore we terminate the power method early if the relative change of the approximated eigenvalue is smaller than $0.01$. 
+We solve the initial value problem \label{eq:LinearAdvDif} for a fixed number of substeps $s$ with fixed interpolation degree $m=100$ per substep, while still allowing for an early termination of the interpolation if the error is small enough. See Figure \ref{fig:Poweriterations}. While the algorithm did not converge for all combinations of $N$, $\text{sf}$ and P\'eclet numbers we tried, we observed that $n=4$ and $\text{sf}=1.1$ is a robust choice independent of $N$ for our initial vector $u_0$.\\
+For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-free \texttt{expleja} algorithm. As an extra optimization, we save the approximated eigenvector for $\lambda_{max}$ when integrating over multiple timesteps. We use it as the initial vector for the power method for next time step. Furthermore we terminate the power method early if the relative change of the approximated eigenvalue is smaller than $0.01$. 
 %	We investigate the rate of convergence for the power method given $A$ and an initial vector $v$. Consider $v=\frac{1}{N}\sum_{j=1}^N v_{j}$, where each $v_j$ is the normalized eigenvector corresponding to the eigenvalue $\lambda_j$. Let $N$ be even.
 %	After $n$ power iteration we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of
 %	\begin{align*}
@@ -478,7 +502,7 @@ For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-fr
 		\begin{tabular}{c|ccccc}
 			$c_1$ &  &  &  & \\
 			$c_2$ & $a_{21}(\tau A)$ &  &  & \\
-			$\vdots$ & &  $\ddots$  &  & \\
+			$\vdots$ & $\vdots$ &  $\ddots$  &  & \\
 			$c_s$ & $a_{s1}(\tau A)$ & $\ldots$ & $a_{s,s-1}(\tau A)$  & \\
 			\hline
 			&$b_1(\tau A)$ & $\ldots$ & $b_{s-1}(\tau A)$ & $b_s(\tau A)$
@@ -488,9 +512,10 @@ For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-fr
 	\[\varphi_{k+1}(z) = \frac{\varphi_k(z)-1}z, \quad \varphi_0(z) = e^z, \quad k\in\mathbb{N}.\]
 	For example consider the embedded method
 	\begin{table}[H]
+		\vspace{-1em}
 		\centering
-		\[
 		\renewcommand\arraystretch{1.2}
+		\[
 		\begin{array}
 		{c|ccc}
 		0\\
@@ -498,10 +523,21 @@ For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-fr
 		1& 0& \varphi_1\\
 		\hline
 		\texttt{exprb3} & \varphi_1 - 14\varphi_3 & 16\varphi_3 & -2\varphi_3  \\
-		\texttt{exprb4} & \varphi_1 - 14\varphi_3 + 36\varphi_4 & 16\varphi_3 -48\varphi_4 & -2\varphi_3 + 12\varphi_4  
-		\end{array}.
+		\texttt{exprb4} & \varphi_1 - 14\varphi_3 + 36\varphi_4 & 16\varphi_3 -48\varphi_4 & -2\varphi_3 + 12\varphi_4 
+		\end{array},
 		\]
+		\vspace{-2em}
 	\end{table}
+	\noindent i.e. 
+	\begin{alignat*}{2}
+	U_{1} &= u_0,\\
+	U_{2} &= e^{\frac{\tau}{2} A}u_0 &&+ \tau\varphi_1\left(\frac{\tau}{2} A\right)g(U_1) = u_0 + \frac{\tau}{2}\varphi_1\left(\frac{\tau}{2}A\right)F(u_0),\\
+	U_{3} &= e^{\tau A}u_0 &&+ \tau\varphi_1(\tau A)g(U_2) = e^{\tau A}F(U_2),\\
+	\tilde{u}_1 &= e^{\tau A}u_0 &&+ (\varphi_1 - 14\varphi_3)(\tau A)g(u_0) + 16\varphi_3(\tau A)g(U_2) - 2\varphi_3(\tau A)g(U_3),\\
+	\hat{u}_1 &= e^{\tau A}u_0 &&+ (\varphi_1 - 14\varphi_3 + 36\varphi_4)(\tau A)g(u_0) + (16\varphi_3 -48\varphi_4)(\tau A)g(U_2) \\
+	& &&+ (-2\varphi_3 + 12\varphi_4)(\tau A)g(U_3),
+	\end{alignat*}
+	where $\tilde{u}_1$ and $\hat{u}_1$ is the numerical solution given by \texttt{exprb3} and \texttt{exprb4} respectively.
 	\noindent This scheme is known as $\texttt{exprb43}$ \cite[Example 2.24]{bible}. It uses \texttt{exprb3} as a third-order estimator for its fourth-order method \texttt{exprb4}. Both integrators are well suited for numerical computations since all internal stages can be cheaply computed using the exponential Euler method. \\
 	Under the simplifying assumptions
 	\[
@@ -550,7 +586,7 @@ For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-fr
 	%Many exponential Rosenbrock methods can use this relation to reduce computational costs. For most practical integrators each stage only requires a single action of an expanded matrix exponential has to be evaluated. This is in particular true for the exponential Rosenbrock-Euler methods which can be solved in a single step.
 	For a matrix-free implementation of $\tilde A$ given an operator $A$ we can simply compute the action of $\tilde{A}$ as follows
 	\[
-	\tilde{A}\colvec{2}{v}{w} = \colvec{2}{Av}{0} + \colvec{2}{Uw}{Jw}, \quad v\in\mathbb{C}^{N\times 1}, w\in\mathbb{C}^{p\times 1}.
+	\tilde{A}\colvec{2}{v}{w} = \colvec{2}{Av}{0} + \colvec{2}{Vw}{Jw}, \quad v\in\mathbb{C}^{N\times 1}, w\in\mathbb{C}^{p\times 1}.
 	\]
 	The Leja method only relies on matrix-vector multiplications with $\tilde{A}$ and therefore the explicit knowledge of $A$ is not required. To summarize, an efficient matrix-free implementation of exponential Rosenbrock-methods can be achieved using the Leja method. In particular \texttt{exprb3} and \texttt{exprb4} can be evaluated by computing three actions of matrix exponentials. 
 	
@@ -559,7 +595,7 @@ For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-fr
 	Consider the one-dimensional advection-diffusion-reaction equation
 	\begin{align*}
 	\partial_tu &= \alpha\partial_x((u+\partial_xu)) + \beta\partial_x(u^2) + u(u-0.5) \quad \alpha,\beta,\ge 0\\
-	u_0(t) &= e^{-80\cdot(t-0,45)^2} \quad t\in[0,0.1]
+	u_0(t) &= e^{-80\cdot(t-0,45)^2}, \quad t\in[0,0.1]
 	\end{align*}
 	on the domain $\Omega = [0,1]$.
 	
@@ -572,7 +608,7 @@ For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-fr
 	
 	\paragraph{Exponential Rosenbrock-Euler method:}
 	We refer to the Exponential Rosenbrock-Euler method of order 2 as \texttt{exprb2}.
-	The approximate the action of the matrix exponential with the Leja method. No hump reduction is used. The maximal interpolation degree is set to 100. Note that the total number of matrix-vector multiplication per time step can still exeed 100 since we have to compute a single matrix norm. This typically happens for $s=1$. 
+	The approximate the action of the matrix exponential with the Leja method. No hump reduction is used. The maximal interpolation degree is set to 100. Note that the total number of matrix-vector multiplication per time step can still exeed 100 since we have to compute a single operator norm. This typically happens for $s=1$. 
 	
 	\paragraph{Explicit midpoint method:}
 	We refer to the explicit midpoint method of order 2 as \texttt{rk2}. 
@@ -618,7 +654,7 @@ For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-fr
 	
 	\section{Appendix}
 	Matrix analysis, Horn and Johnson, Lemma 5.6.10
-	\[\rho(A) = \inf\{\norm{A} : \norm{\cdot} \text{ is an induced matrix norm} \} \]
+	\[\rho(A) = \inf\{\norm{A} : \norm{\cdot} \text{ is an induced operator norm} \} \]
 	
 	%
 	%\subsection{CFL Condition} \label{CFL}
