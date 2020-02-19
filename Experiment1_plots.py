@@ -6,7 +6,7 @@ import os
 from matplotlib import pyplot as plt
 from itertools import chain, product
 from datapreperation import IntegratorData, get_optimal_data
-
+import matplotlib as mlp
 
 '''
 DISCRETIZED ONE DIMENSIONAL LINEAR ADVECTION-DIFFUSION EQUATION
@@ -32,18 +32,27 @@ Note: We write exprb2, even though we only compute the matrix exponential
 '''
 Global plot parameters
 '''
-SMALL_SIZE = 12
-MEDIUM_SIZE = 14
-BIGGER_SIZE = 16
+SMALL_SIZE = 8
+MEDIUM_SIZE = 10
+BIGGER_SIZE = 12
 
-plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+#plt.style.use('seaborn')
+
+width = 426.79135
+fig_dim = lambda fraction: (width*fraction / 72.27, width*fraction / 72.27 *(5**.5 - 1) / 2)
+
+plt.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
 plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
 plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
 plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
-plt.rcParams['lines.linewidth'] = 3
+plt.rcParams['lines.linewidth'] = 2
+plt.rcParams['text.latex.unicode']=True
+plt.rc('text', usetex=True)
+plt.rcParams['figure.figsize'] = fig_dim(0.75)
+plt.rc('font', family='serif')
 
 '''
 CONFIG
@@ -106,7 +115,8 @@ for dif in difs:
     for key in keys:
         df = Integrators[key].optimaldata
         df.plot('Nx','mv', label=key[1:], ax=ax)
-    ax.set_title(f'Achieving error ≤ {precision} {Petext}')
+    title = f'Achieving error {{$\le$}} {{{precision}}} {{{Petext}}}'
+    ax.set_title(title)
     ''' Optimal in the sense of cost minimizing '''
     ax.set_xlabel('N')
     ax.set_ylabel('Matrix-vector multiplications')
@@ -115,7 +125,7 @@ for dif in difs:
 
     savefig(1, save, f'Pe={adv/dif}')
     
-    precisiontext = '\n achieving error ≤ ' + precision
+    precisiontext = '\n achieving error {{$\le$}} ' + precision
     title = 'Optimal time step ' + precisiontext + Petext
     
     '''
@@ -148,7 +158,7 @@ for dif in difs:
     for key in keys:
         df = Integrators[key].optimaldata
         df.plot('Nx','m', label=key[1:], ax=ax)
-    ax.set_title(f'Minimal costs for {precision} results')
+    ax.set_title(f'Minimal costs for {{{precision}}} results')
     ax.set_xlabel('N')
     ax.set_ylabel('Matrix-vector multiplications per timestep')
     ax.set_ylim([0,120])
@@ -191,8 +201,8 @@ for dif in difs:
     
     fig, ax = plt.subplots(1, 1, sharex=True)
  
-    fig.suptitle(suptitle + 
-                 f'\n {precision_type.capitalize()} precision expleja')
+    fig.suptitle(f'{{{precision_type.capitalize()}}} precision expleja, '
+                 + suptitle)
     
     data = Integrators['/exprb2'].data
     data = data.loc[(data['dif'] == dif)

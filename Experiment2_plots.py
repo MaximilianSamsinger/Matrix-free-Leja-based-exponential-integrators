@@ -25,9 +25,9 @@ DISCRETIZED ONE/TWO DIMENSIONAL NONLINEAR ADVECTION-DIFFUSION EQUATION:
 '''
 Global plot parameters
 '''
-SMALL_SIZE = 12
-MEDIUM_SIZE = 14
-BIGGER_SIZE = 16
+SMALL_SIZE = 10
+MEDIUM_SIZE = 12
+BIGGER_SIZE = 14
 
 plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
 plt.rc('axes', titlesize=MEDIUM_SIZE)    # fontsize of the axes title
@@ -58,7 +58,7 @@ filename = 'Experiment_2D' if isproblem2D else 'Experiment2'
 filelocation = 'HDF5-Files' + os.sep + filename + '.h5'
 
 
-save = False # Flag: If True, figures will be saved (as pdf)
+save = True # Flag: If True, figures will be saved (as pdf)
 save_path = 'figures' + os.sep + filename + os.sep
 
 params = [[α, β, γ] for α in [0.1,0.01] for β in [1,0.1,0.01] for γ in [1]]

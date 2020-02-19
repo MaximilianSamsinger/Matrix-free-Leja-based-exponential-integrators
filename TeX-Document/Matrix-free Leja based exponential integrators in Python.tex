@@ -272,7 +272,7 @@
 		\newcommand{\precision}{single}
 		\newcommand{\Pe}{Pe=10.0}
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/{5, \precision, \Pe}.pdf}
+		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/5, \precision, \Pe.pdf}
 		\caption{Approximation of $e^{0.1A}u_0$ using single precision \texttt{expleja} for a fixed interpolation degree $m=100$ and varying number of substeps $s$. The relative error is measured in the Eucledian norm. The reference solution was computed using the double precision \texttt{expleja} algorithm.}
 		\label{fig:Experiment1}
 	\end{figure} 
@@ -414,7 +414,7 @@ As discussed in section \ref{matrixfreeimplementation} we need to estimate the l
 	\newcommand{\safe}{sf=1.1}
 	
 	\centering
-	\includegraphics[width=1.\columnwidth]{../Figures/Experiment1Powerit/{1, \precision, \Pe, \safe}.pdf}
+	\includegraphics[width=1.\columnwidth]{../Figures/Experiment1Powerit/1, \precision, \Pe, \safe.pdf}
 	\caption{Space dimension $N$ vs costs \texttt{mv} per timestep $s$ for matrix-free single precision \texttt{expleja}. The interpolation degree $m$ is fixed to 100. The Newton interpolation can still terminate early resulting in smaller numbers of $\texttt{mv}/s$. The number of power iterations are denoted by $n$. For this experiment we chose $\operatorname{Pe}=1.0$ and $\text{sf}=1.1$. Results are only shown if they achieve \precision\ precision.} \label{fig:Poweriterations}
 \end{figure}
 We solve the initial value problem \label{eq:LinearAdvDif} for a fixed number of substeps $s$ with fixed interpolation degree $m=100$ per substep, while still allowing for an early termination of the interpolation if the error is small enough. See Figure \ref{fig:Poweriterations}. While the algorithm did not converge for all combinations of $N$, $\text{sf}$ and P\'eclet numbers we tried, we observed that $n=4$ and $\text{sf}=1.1$ is a robust choice independent of $N$ for our initial vector $u_0$.\\
@@ -671,31 +671,31 @@ For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-fr
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/{1, \precision, \Pe}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/1, \precision, \Pe.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/{2, \precision, \Pe}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/2, \precision, \Pe.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/{3, \precision, \Pe}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/3, \precision, \Pe.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/{5, \precision, \Pe}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/5, \precision, \Pe.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/{4, \precision, \Pe}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment1/4, \precision, \Pe.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
@@ -708,25 +708,25 @@ For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-fr
 	{1, \precision, \adv, \dif}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment2/{1, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment2/1, \precision, \adv, \dif.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment2/{2, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment2/2, \precision, \adv, \dif.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment2/{3, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment2/3, \precision, \adv, \dif.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment2/{4, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment2/4, \precision, \adv, \dif.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
@@ -734,25 +734,25 @@ For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-fr
 	{1, \precision, \adv, \dif}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment_2D/{1, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment_2D/1, \precision, \adv, \dif.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment_2D/{2, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment_2D/2, \precision, \adv, \dif.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment_2D/{3, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment_2D/3, \precision, \adv, \dif.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=.8\columnwidth]{../Figures/Experiment_2D/{4, \precision, \adv, \dif}.pdf}
+		\includegraphics[width=.8\columnwidth]{../Figures/Experiment_2D/4, \precision, \adv, \dif.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
