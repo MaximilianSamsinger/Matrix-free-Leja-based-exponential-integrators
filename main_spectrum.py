@@ -58,9 +58,10 @@ for j, ax in enumerate(axes.flatten()):
         A = A.toarray().astype(np.complex_)
         w, _ = np.linalg.eig(A)
 
-        ax.plot(np.real(w),np.imag(w),'.', label=f"Pe = {{{Pe}}}")
+        ax.plot(np.real(w),np.imag(w),'.', label="{{$\\mathrm{Pe}$}}" + 
+                f" = {{{Pe}}}")
 
-        ax.set_title(f'N = {{{Nx}}}')
+        ax.set_title('{{$N$}}' +f' = {{{Nx}}}')
         x1,x2,y1,y2 = ax.axis()
         y1,y2 = (y1, y2) if periodic else (-1,1)
         ax.axis((x1,x2,y1,y2))

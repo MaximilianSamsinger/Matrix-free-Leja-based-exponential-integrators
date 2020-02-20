@@ -25,18 +25,29 @@ DISCRETIZED ONE/TWO DIMENSIONAL NONLINEAR ADVECTION-DIFFUSION EQUATION:
 '''
 Global plot parameters
 '''
-SMALL_SIZE = 10
-MEDIUM_SIZE = 12
-BIGGER_SIZE = 14
+SMALL_SIZE = 8
+MEDIUM_SIZE = 10
+BIGGER_SIZE = 12
 
-plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
-plt.rc('axes', titlesize=MEDIUM_SIZE)    # fontsize of the axes title
+#plt.style.use('seaborn')
+
+width = 426.79135/72.27
+golden_ratio = (5**.5 - 1) / 2
+fig_dim = lambda fraction: (width*fraction, width*fraction*golden_ratio)
+
+plt.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
+plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
 plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
 plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
 plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
-plt.rcParams['lines.linewidth'] = 3
+plt.rcParams['lines.linewidth'] = 2
+plt.rcParams['text.latex.unicode']=True
+plt.rc('text', usetex=True)
+plt.rcParams['figure.figsize'] = fig_dim(0.75)
+plt.rc('font', family='serif')
+
 
 '''
 CONFIG
@@ -93,13 +104,14 @@ def savefig(number, save=False, add_to_filename = None):
 
 
 for param in params:
+    
     print(param)
     assert(param[0] <= 1)
     
     adv = param[1]
 
-    suptitle = f'α={param[0]}, β={param[1]}'
-    paramtext = f'α={param[0]}, β={param[1]}'
+    suptitletext = f'Minimal cost with error $\le$ {{{precision}}} for {{$\\alpha= $}}'+f'{{{param[0]}}}'+', {{$\\beta= $}}'+f'{{{param[1]}}}'
+    savetext = f'α={param[0]}, β={param[1]}'
 
 
     for key in keys:
@@ -113,9 +125,9 @@ for param in params:
     for key in keys:
         df = Integrators[key].optimaldata
         df.plot('Nx','cost', label=key[1:], ax=ax)
-    ax.set_title(f'Achieving error ≤ {precision}, {paramtext}')
+    ax.set_title(suptitletext)
     ''' Optimal in the sense of cost minimizing '''
-    ax.set_xlabel('N')
+    ax.set_xlabel('{{$N$}}')
     ax.set_ylabel('Cost')
     if precision_type == 'half':
         ax.set_ylim([1e0,1.1e6])
@@ -123,10 +135,9 @@ for param in params:
         ax.set_ylim([1e0,1.1e6])
     ax.set_yscale('log')
 
-    savefig(1, save, paramtext)
+    savefig(1, save, savetext)
     
-    precisiontext = f'\n achieving error ≤ {precision}'
-    title = f'Optimal time step {precisiontext}, {paramtext}'
+    precisiontext = '\n achieving error {{$\le$}} ' + precision
     '''
     1.2 Plot matrix dimension (Nx) vs optimal time step size (tau)
     '''
@@ -144,34 +155,34 @@ for param in params:
     ax.plot(df.Nx, CFLA, label="$CFL_{adv}$",linestyle='-.')
     ax.plot(df.Nx, CFLD, label="$CFL_{dif}$",linestyle=':')
 
-    ax.set_title(title)
+    ax.set_title(suptitletext)
     ax.legend()
-    ax.set_xlabel('N')
+    ax.set_xlabel('{{$N$}}')
     ax.set_ylabel('Optimal time step')
     ax.set_yscale('log')
 
-    savefig(2, save, paramtext)
+    savefig(2, save, savetext)
 
     '''
     1.3 Plot matrix dimension (Nx) vs costs/substep (mv)
     '''
     
     fig, ax = plt.subplots()
-    fig.suptitle(suptitle)
+    #fig.suptitle(suptitle)
     for key in keys:
         df = Integrators[key].optimaldata
         df.plot('Nx','m', label=key[1:], ax=ax)
-    ax.set_title('Minimal costs for ' + precision + ' results')
-    ax.set_xlabel('N')
+    ax.set_title(suptitletext)
+    ax.set_xlabel('{{$N$}}')
     ax.set_ylabel('Costs per timestep')
     #ax.set_ylim([0,100])
 
-    savefig(3, save, paramtext)
+    savefig(3, save, savetext)
     
     '''
     1.4 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
     '''
-    '''
+    
     fig, ax = plt.subplots()
     
     for key in keys:
@@ -182,7 +193,7 @@ for param in params:
             if j in [df.Nx.iloc[k] for k in [0,-1]]:
                 ax.annotate('N=' + str(j), xy=(df.cost[i], df.tau[i]))
     
-    ax.set_title(title)
+    ax.set_title(suptitletext)
     ax.legend()
     ax.set_xlabel('Matrix-vector multiplications')
     ax.set_ylabel('Optimal time step')
@@ -192,8 +203,8 @@ for param in params:
     ax.set_xlim([1e1,1e5])
     ax.set_ylim([1e-5,1e-1])
     
-    savefig(4, save, paramtext)
-    '''
+    savefig(4, save, savetext)
+    
 '''
 key = '/exprb4'
 param = [0.01,0.01,1]

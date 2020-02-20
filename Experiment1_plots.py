@@ -38,8 +38,9 @@ BIGGER_SIZE = 12
 
 #plt.style.use('seaborn')
 
-width = 426.79135
-fig_dim = lambda fraction: (width*fraction / 72.27, width*fraction / 72.27 *(5**.5 - 1) / 2)
+width = 426.79135/72.27
+golden_ratio = (5**.5 - 1) / 2
+fig_dim = lambda fraction: (width*fraction, width*fraction*golden_ratio)
 
 plt.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
 plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
@@ -59,7 +60,7 @@ CONFIG
 '''
 maxerror = str(2**-24)
 save = True # Flag: If True, figures will be saved as pdf
-save_path = 'figures' + os.sep + 'Experiment1' + os.sep
+save_path = 'Figures' + os.sep + 'Experiment1' + os.sep
 adv = 1.0 # Coefficient of advection matrix. Do not change.
 difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1
 
@@ -104,8 +105,8 @@ for dif in difs:
     for key in keys:
         get_optimal_data(Integrators[key], float(maxerror), errortype, dif)
 
-    suptitle = f'Pe = {adv/dif}'
-    Petext = f' for Pe = {adv/dif}'
+    suptitle = '{{$\\mathrm{Pe}$}} ' + f'= {adv/dif}'
+    Petext = ' for {{$\\mathrm{Pe}$}} = ' + f'{adv/dif}'
 
 
     '''
@@ -118,7 +119,7 @@ for dif in difs:
     title = f'Achieving error {{$\le$}} {{{precision}}} {{{Petext}}}'
     ax.set_title(title)
     ''' Optimal in the sense of cost minimizing '''
-    ax.set_xlabel('N')
+    ax.set_xlabel('{{$N$}}')
     ax.set_ylabel('Matrix-vector multiplications')
     #ax.set_ylim([5e2,1.5e5])
     ax.set_yscale('log')
@@ -144,7 +145,7 @@ for dif in difs:
 
     ax.set_title(title)
     ax.legend()
-    ax.set_xlabel('N')
+    ax.set_xlabel('{{$N$}}')
     ax.set_ylabel('Optimal time step')
     ax.set_yscale('log')
 
@@ -159,7 +160,7 @@ for dif in difs:
         df = Integrators[key].optimaldata
         df.plot('Nx','m', label=key[1:], ax=ax)
     ax.set_title(f'Minimal costs for {{{precision}}} results')
-    ax.set_xlabel('N')
+    ax.set_xlabel('{{$N$}}')
     ax.set_ylabel('Matrix-vector multiplications per timestep')
     ax.set_ylim([0,120])
 
@@ -201,8 +202,8 @@ for dif in difs:
     
     fig, ax = plt.subplots(1, 1, sharex=True)
  
-    fig.suptitle(f'{{{precision_type.capitalize()}}} precision expleja, '
-                 + suptitle)
+    fig.suptitle(f'{{{precision_type.capitalize()}}} precision expleja '
+                 + Petext)
     
     data = Integrators['/exprb2'].data
     data = data.loc[(data['dif'] == dif)

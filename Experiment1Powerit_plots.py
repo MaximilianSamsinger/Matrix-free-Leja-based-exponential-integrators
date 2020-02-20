@@ -25,32 +25,41 @@ Note: We write exprb2, even though we only compute the matrix exponential
 '''
 Global plot parameters
 '''
-SMALL_SIZE = 12
-MEDIUM_SIZE = 14
-BIGGER_SIZE = 16
+SMALL_SIZE = 8
+MEDIUM_SIZE = 10
+BIGGER_SIZE = 12
 
-plt.rc('font', size=SMALL_SIZE)          # controls default text sizes
+#plt.style.use('seaborn')
+
+width = 426.79135/72.27
+fig_dim = lambda fraction: (width*fraction, width*fraction*0.75)
+
+plt.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
 plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
 plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
 plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
 plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
-plt.rc('figure', titlesize=BIGGER_SIZE)  # fontsize of the figure title
-plt.rcParams['lines.linewidth'] = 3
+plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
+plt.rcParams['lines.linewidth'] = 2
+plt.rcParams['text.latex.unicode']=True
+plt.rc('text', usetex=True)
+plt.rcParams['figure.figsize'] = fig_dim(0.9)
+plt.rc('font', family='serif')
 
 '''
 CONFIG
 '''
-maxerror = str(2**-10)
+maxerror = str(2**-24)
 save = True # Flag: If True, figures will be saved as pdf
-save_path = 'figures' + os.sep + 'Experiment1Powerit' + os.sep
+save_path = 'figures' + os.sep + 'Experiment1LinOp' + os.sep
 adv = 1.0 # Coefficient of advection matrix. Do not change.
 difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1
 
 '''
 Load data
 '''
-filelocation = 'HDF5-Files' + os.sep + 'Experiment1Powerit.h5'
+filelocation = 'HDF5-Files' + os.sep + 'Experiment1LinOp.h5'
 with pd.HDFStore(filelocation) as hdf:
     keys = hdf.keys()
     Integrators = {key:IntegratorData(filelocation,key) for key in keys}
@@ -96,12 +105,12 @@ Integrator = deepcopy(Integrators['/exprb2'])
 '''
 mng = plt.get_current_fig_manager()
 for dif, sf in product(difs, safetyfactors):
-    fig, axes = plt.subplots(2,2, figsize=(12,9))
+    fig, axes = plt.subplots(2,2)
     axes = axes.flatten()
-    fig.suptitle(f'Péclet: {1/dif}, sf: {sf}')
+    fig.suptitle('Cost per timestep for {{$\\mathrm{Pe}$}}' + f' = {1/dif} and sf = {sf}')
     for k, Nt in enumerate(Nts):
         ax = axes[k]
-        ax.set_title(f's: {Nt}')
+        ax.set_title(f'{{$s$}} = {{{Nt}}}')
 
         for its in powerits:
             ''' Prepare data '''
@@ -119,13 +128,19 @@ for dif, sf in product(difs, safetyfactors):
                 print('No numeric data to plot')
                 print('Nt: %s, dif: %s, its: %s\n' %(Nt,dif,its))
 
-        ax.legend(loc ='lower right')
-        ax.set_xlabel('N')
-        ax.set_ylabel('mv/s')
+        if k==0:
+            ax.legend(loc ='lower right')
+        else:
+            ax.get_legend().remove()
+        if k in [0,1]:
+            ax.set_xlabel('')
+        else:
+            ax.set_xlabel('{{$N$}}')
+        if k%2 == 0:
+            ax.set_ylabel('{{$\\texttt{mv}/s$}}')
+        else:
+            ax.set_ylabel('')
         ax.set_xlim([50,400])
         ax.set_ylim([0,120])
     plt.subplots_adjust(hspace=0.35)
     savefig(1, save, f'Pe={1/dif}, sf={sf}')
-
-
-
