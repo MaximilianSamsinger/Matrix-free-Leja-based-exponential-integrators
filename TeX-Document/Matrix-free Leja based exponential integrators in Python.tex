@@ -399,7 +399,7 @@
 	\frac{(4n+3)(4n+1)}{(4n+4)(4n+2)}\\&=
 	\left(1-\frac{1}{4n+4}\right)\left(1-\frac{1}{4n+2}\right)
 	\end{align*}
-	For the third equality we applied the duplication formula for the gamma function. All in all we underestimate the largest eigenvalue $\lambda_{max}$ by a factor of 
+	For the fourth equality we applied the duplication formula for the gamma function. All in all we underestimate the largest eigenvalue $\lambda_{max}$ by a factor of 
 	\[
 	\lim_{N\to\infty}\frac{\norm{A^{n+1}v}_2}{\norm{A^{n}v}_2}\frac{1}{\abs{\lambda_{max}}} =
 	\sqrt{\left(1+\frac{1}{4n+4}\right)\left(1-\frac{3}{4n+2}\right)} \approx 1-\frac{1}{4n+3}
@@ -417,7 +417,7 @@
 	%	\label{table:alphan}
 	%\end{table}
 	\subsection{Experiments for the power method}
-	As discussed in section \ref{matrixfreeimplementation} we need to estimate the largest eigenvalue $\lambda_{max}$ of $A$ for the matrix-free \texttt{expleja} algorihm. However, we can only guarantee convergence if we overestimate $\lambda_{max}$. Therefore we have to include a safety-factor $\text{sf}$ by which we multiply the output of the power method. 
+	As discussed in section \ref{matrixfreeimplementation} we need to estimate the largest eigenvalue $\lambda_{max}$ of $A$ for the matrix-free \texttt{expleja} algorihm. However, we can only guarantee convergence if we overestimate $\lambda_{max}$. Therefore we have to include a safety factor $\text{sf}$ by which we multiply the output of the power method. 
 	%The question naturally arises, how many power iterations $n$ and which safety factor $\text{sf}\ge 1$ is necessary for convergence.
 	%The power method analysis in section \ref{poweritanalysis} partially answers this question. For large $N$ and for the vector $v=\sum_{j=0}^{N-1}v_j$ the choice 
 	%\[ \text{sf} = \frac{1}{\alpha_n}\]
@@ -434,7 +434,7 @@
 		\caption{Space dimension $N$ vs costs \texttt{mv} per timestep $s$ for matrix-free single precision \texttt{expleja}. The interpolation degree $m$ is fixed to 100. The Newton interpolation can still terminate early resulting in smaller numbers of $\texttt{mv}/s$. The number of power iterations are denoted by $n$. For this experiment we chose $\operatorname{Pe}=1.0$ and $\text{sf}=1.1$. Results are only shown if they achieve \precision\ precision.} \label{fig:Poweriterations}
 	\end{figure}
 	We solve the initial value problem \ref{eq:LinearAdvDif} for a fixed number of substeps $s$ with fixed interpolation degree $m=100$ per substep, while still allowing for an early termination of the interpolation if the error is small enough. See Figure \ref{fig:Poweriterations}. While the algorithm did not converge for all combinations of $N$, $\text{sf}$ and P\'eclet numbers we tried, we observe that $n=4$ and $\text{sf}=1.1$ is a robust choice independent of $N$ for our initial vector $u_0$.\\
-	For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-free \texttt{expleja} algorithm. As an extra optimization, we save the approximated eigenvector corresponding to $\lambda_{max}$ when integrating over multiple timesteps. We use it as the initial vector for the power method for the next time step. Furthermore we terminate the power method early if the relative change of the approximated eigenvalue is smaller than $0.01$. 
+	For all future experiments we choose $\text{sf}=1.1$ and $n=4$ for the matrix-free \texttt{expleja} algorithm. As an additional optimization we save the approximated eigenvector corresponding to $\lambda_{max}$ when integrating over multiple time steps. We use it as the initial vector for the power method for the next time step. Furthermore we terminate the power method early if the relative change of the approximated eigenvalue is smaller than $0.01$. 
 	%	We investigate the rate of convergence for the power method given $A$ and an initial vector $v$. Consider $v=\frac{1}{N}\sum_{j=1}^N v_{j}$, where each $v_j$ is the normalized eigenvector corresponding to the eigenvalue $\lambda_j$. Let $N$ be even.
 	%	After $n$ power iteration we underestimate the absolutely largest eigenvalue $\lambda_N$ by a factor of
 	%	\begin{align*}
@@ -595,7 +595,7 @@
 	\begin{align*}
 	\begin{bmatrix}I_N & 0\end{bmatrix} e^{\tau\tilde{A}}\colvec{2}{u}{e_p} =
 	e^{\tau A}u +
-	\displaystyle\sum_{k=1}^{p}\tau^k\varphi_k(\tau A)V_{k}
+	\displaystyle\sum_{k=1}^{p}\tau^k\varphi_k(\tau A)V_{k}.
 	\hphantom{V_{-1}, \quad j\in\{1,\dots,p\}.}
 	\end{align*}
 	This formulation can be directly applied to each stage in \eqref{Djscheme} assuming $a_{ij}$ and $b_j$ are linear combinations of $\varphi_k$-functions. Therefore for each stage only a single action of an expanded matrix exponential has to be evaluated. In total this has to be done $s$ times for an exponential Rosenbrock method with $s$ stages. \\
