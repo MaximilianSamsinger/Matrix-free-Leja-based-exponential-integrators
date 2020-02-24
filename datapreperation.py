@@ -1,4 +1,5 @@
 import pandas as pd
+import matplotlib.pyplot as plt
 
 '''
 Assumption:
@@ -8,6 +9,20 @@ Assumption:
 Goal:
     Prepare data for plotting in ExperimentX_plots.py files
 '''
+
+def global_plot_parameters(SMALL_SIZE,MEDIUM_SIZE,BIGGER_SIZE,figsize):
+    plt.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
+    plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
+    plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
+    plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+    plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
+    plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+    plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
+    plt.rcParams['lines.linewidth'] = 2
+    plt.rcParams['text.latex.unicode']=True
+    plt.rc('text', usetex=True)
+    plt.rcParams['figure.figsize'] = figsize
+    plt.rc('font', family='serif')
 
 class IntegratorData:
     def __init__(self,filelocation,key):
