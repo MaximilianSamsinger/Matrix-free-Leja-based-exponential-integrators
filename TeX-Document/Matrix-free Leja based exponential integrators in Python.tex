@@ -648,40 +648,61 @@
 	\subsection{One-dimensional advection-diffusion equation}
 	Let $\alpha,\beta,\ge 0$ and 
 	\begin{align*}
-	\partial_tu &= F(u) = \alpha\partial_x(u\partial_xu) + \beta\partial_x(u^2) + u(u-0.5)
+		F(u) = \alpha\partial_x((u+1)\partial_xu) + \beta\partial_x(u^2) + u(u-0.5).
 	\end{align*}
-	With $\alpha$ and $\beta$ we control the relative strength of the diffusion compared to the advection respectively. The differential equation can be rewritten using $\partial_x(u\partial_xu) = \partial_{xx}u + u\partial_{x}u$ and $\partial_x(u^2) = 2u\partial_{x}u$
+	With $\alpha$ and $\beta$ we control the relative strength of the diffusion compared to the advection respectively. The differential equation can be rewritten using $\partial_x((u+1)\partial_xu) = (u+1)\partial_{xx}u + (\partial_{x}u)^2$ and $\partial_x(u^2) = 2u\partial_{x}u$.
 	This leads to
-	\[
-		F(u) = 
-			\alpha(\partial_{xx}u + u\partial_{x}u) 
+	\begin{align*}
+		F(u) &= 
+			\alpha((u+1)\partial_{xx}u + (\partial_{x}u)^2) 
 			+ 2\beta u\partial_x(u) 
 			+ u(u-0.5)
-	\]
+	\end{align*}
 	The total derivative is given by
-	\[
-		\partial_{u}F(u) = 
-			\alpha(\partial_{xx} + \partial_{x}u\operatorname{Id} + u\partial_{x}) 
+	\begin{align*}
+		\partial_{u}F &= 
+			\alpha((u+1)\partial_{xx} + (\partial_{xx}u)\operatorname{Id} + (\partial_{x}u)\operatorname{Id} + u\partial_{x}) 
 			+ 2\beta(\partial_xu\operatorname{Id} + u\partial_x) 
-			+ (2u-0.5)\operatorname{Id},
-	\]
+			+ (2u-0.5)\operatorname{Id}
+			,
+	\end{align*}
 	where $\operatorname{Id}$ is the identity function. We will treat $A = \partial_{u}F$ as a linear operator for all calculations.
-	All instances of $\partial_{xx}$ are discretized with centred finite differences. We approximate $\partial_{x}$ using the upwind scheme for numerical stability. The matrix representation of both discretized operators is given by
+	All instances of $\partial_{xx}$ are discretized with centred finite differences. 
+%   We approximate $\partial_{x}$ using the upwind scheme for numerical stability. The matrix representation of both discretized operators is given by
+%	\[
+%		 B = \frac{1}{h^2}
+%		\begin{bmatrix}
+%			-2 & 1      &        &    \\
+%			1  & \ddots & \ddots &    \\
+%			   & \ddots & \ddots & 1  \\
+%			   &        & 1      & -2
+%		\end{bmatrix}
+%		,~~ C = \frac{1}{h}
+%		\begin{bmatrix}
+%			-1 & 1      &        &    \\
+%			  & \ddots & \ddots &    \\
+%			   & & \ddots & 1  \\
+%			   &        &       & -1
+%		\end{bmatrix}.
+%	\]
+%	
+	By considering only the terms depending $\partial_{xx}$ we get the modified problem
 	\[
-		INSERT MATRICES
-	\]
-	
-	\[
-		F(u) = (\alpha)\partial_{xx} + 
-	\]
-	\[
-	\]
-	
-	After discretization the
-	\[ 
-		C_{adv} = \frac{b\tau}{h} \le 1, \quad C_{dif} = \frac{a\tau}{h^2} \le \frac{1}{2}
+		\partial_{t}u = \alpha (u+1)\partial_{xx}u.
 	\] 
-	All terms de
+	Since num
+	\[
+		\tau \le \frac{h^2}{2\alpha} \eqdefn C_{dif}
+	\]
+	restricts the maximum possible step size for explicit Runge-Kutta methods. This constraint can be seen in Figure \ref{fig:multi1DNonlinear} on the bottom row for the original problem.
+	\begin{figure}[H]
+		\newcommand{\adv}{\detokenize{α}=0.1}
+		\newcommand{\dif}{\detokenize{β}=0.01}
+		\centering
+		\includegraphics[width=1\columnwidth]{../Figures/Experiment2/multi, \adv, \dif.pdf}
+		\caption{}
+		\label{fig:multi1DNonlinear}
+	\end{figure}
 	
 	\subsection{Two-dimensional advection-diffusion equation}
 	Let $\alpha,\beta,\ge 0$ and 
@@ -745,15 +766,15 @@
 	\newcommand{\precision}{single}
 	\newcommand{\safe}{sf=1.1}
 	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/12, \precision, \Pe.pdf}
-		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
-	\end{figure}
+%	\begin{figure}[H]
+%		\centering
+%		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/12, \precision, \Pe.pdf}
+%		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
+%	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/2, \precision, \Pe.pdf}
+		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/multi, \Pe.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
@@ -778,13 +799,13 @@
 	
 	\newpage
 	\subsection{Experiment Nonlinear 1D}
-	\newcommand{\adv}{\detokenize{α}=0.01}
+	\newcommand{\adv}{\detokenize{α}=0.1}
 	\newcommand{\dif}{\detokenize{β}=0.1}
 	\renewcommand{\precision}{half}
 	{1, \precision, \adv, \dif}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment2/1, \precision, \adv, \dif.pdf}
+		\includegraphics[width=1\columnwidth]{../Figures/Experiment2/multi, \adv, \dif.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
 	

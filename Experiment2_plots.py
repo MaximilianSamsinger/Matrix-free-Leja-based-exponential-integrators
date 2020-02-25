@@ -5,7 +5,9 @@ import numpy as np
 import os
 from matplotlib import pyplot as plt
 from itertools import chain, product
-from datapreperation import IntegratorData, get_optimal_data
+from datapreperation import IntegratorData, get_optimal_data, \
+    global_plot_parameters, savefigure
+import matplotlib as mlp
 
 '''
 DISCRETIZED ONE/TWO DIMENSIONAL NONLINEAR ADVECTION-DIFFUSION EQUATION:
@@ -23,37 +25,45 @@ DISCRETIZED ONE/TWO DIMENSIONAL NONLINEAR ADVECTION-DIFFUSION EQUATION:
 '''
 
 '''
-Global plot parameters
+CONFIG
 '''
 SMALL_SIZE = 8
 MEDIUM_SIZE = 10
 BIGGER_SIZE = 12
 
-#plt.style.use('seaborn')
+maxerror = str(2**-10)
+save_path = 'Figures' + os.sep + 'Experiment1' + os.sep
 
+isproblem2D = True # Switches between 1D and 2D case
+
+filename = 'Experiment_2D' if isproblem2D else 'Experiment2'
+filelocation = 'HDF5-Files' + os.sep + filename + '.h5'
+save = True # Flag: If True, figures will be saved (as pdf)
+save_path = 'Figures' + os.sep + filename + os.sep
+
+params = [[α, β, γ] for α in [0.1,0.01] for β in [1,0.1,0.01] for γ in [1]]
+
+'''
+Global plot parameters
+'''
+scaling = 0.75
 width = 426.79135/72.27
 golden_ratio = (5**.5 - 1) / 2
 fig_dim = lambda fraction: (width*fraction, width*fraction*golden_ratio)
 
-plt.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
-plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
-plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
-plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
-plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
-plt.rcParams['lines.linewidth'] = 2
-plt.rcParams['text.latex.unicode']=True
-plt.rc('text', usetex=True)
-plt.rcParams['figure.figsize'] = fig_dim(0.75)
-plt.rc('font', family='serif')
-
+global_plot_parameters(SMALL_SIZE,MEDIUM_SIZE,BIGGER_SIZE,fig_dim(scaling))
 
 '''
-CONFIG
+Load data
 '''
-maxerror = str(2**-24)
-
+with pd.HDFStore(filelocation) as hdf:
+    keys = hdf.keys()
+    Integrators = {key:IntegratorData(filelocation,key) for key in keys}
+#keys = [keys[k] for k in [0,1,4,5,2,3]]
+    
+'''
+For saving and plotting
+'''
 if maxerror == str(2**-24):
     precision = '$2^{-24}$'
     precision_type = 'single'
@@ -64,59 +74,24 @@ elif maxerror == str(2**-10):
 
 errortype = 'relerror'
 
-isproblem2D = True # Switches between 1D and 2D case
-filename = 'Experiment_2D' if isproblem2D else 'Experiment2'
-filelocation = 'HDF5-Files' + os.sep + filename + '.h5'
-
-
-save = True # Flag: If True, figures will be saved (as pdf)
-save_path = 'figures' + os.sep + filename + os.sep
-
-params = [[α, β, γ] for α in [0.1,0.01] for β in [1,0.1,0.01] for γ in [1]]
-
-
-
-
-'''
-Load data
-'''
-
-with pd.HDFStore(filelocation) as hdf:
-    keys = hdf.keys()
-    Integrators = {key:IntegratorData(filelocation,key) for key in keys}
-#keys = [keys[k] for k in [0,1,4,5,2,3]]
-
-
 pd.set_option('display.max_columns', 500) # Easier to investigate data  
 pd.set_option('display.width', 1000)  # Easier to investigate data  
 
-
-def savefig(number, save=False, add_to_filename = None):
-    if add_to_filename is None:
-        filename = f'{number}, {precision_type}.pdf'
-    else:
-        filename = f'{number}, {precision_type}, {add_to_filename}.pdf'
-    if save:
-        plt.savefig(save_path + filename
-                    , format='pdf', bbox_inches='tight', transparent=True)
-        print('File saved')
-        plt.close()
-
+savefig = lambda num, save, *args : savefigure(save_path, num, save, *args)
 
 for param in params:
-    
     print(param)
     assert(param[0] <= 1)
-    
     adv = param[1]
-
-    suptitletext = f'Minimal cost with error $\le$ {{{precision}}} for {{$\\alpha= $}}'+f'{{{param[0]}}}'+', {{$\\beta= $}}'+f'{{{param[1]}}}'
-    savetext = f'α={param[0]}, β={param[1]}'
-
-
+    
+    ''' Optimal in the sense of cost minimizing '''
     for key in keys:
         get_optimal_data(Integrators[key], float(maxerror), errortype, param)
 
+    paramtext = '{{$\\alpha$}}='+f'{param[0]}'+', {{$\\beta$}}='+f'{param[1]}'
+    titletext = f'{{{precision_type.capitalize()}}} precision, ' \
+        + paramtext
+    savetext = f'α={param[0]}, β={param[1]}'
 
     '''
     1.1 Plot matrix dimension (Nx) vs matrix-vector multiplications (m)
@@ -125,19 +100,13 @@ for param in params:
     for key in keys:
         df = Integrators[key].optimaldata
         df.plot('Nx','cost', label=key[1:], ax=ax)
-    ax.set_title(suptitletext)
-    ''' Optimal in the sense of cost minimizing '''
+    ax.set_title(titletext)
     ax.set_xlabel('{{$N$}}')
     ax.set_ylabel('Cost')
-    if precision_type == 'half':
-        ax.set_ylim([1e0,1.1e6])
-    else:
-        ax.set_ylim([1e0,1.1e6])
     ax.set_yscale('log')
 
-    savefig(1, save, savetext)
+    savefig(1, save, precision_type, savetext)
     
-    precisiontext = '\n achieving error {{$\le$}} ' + precision
     '''
     1.2 Plot matrix dimension (Nx) vs optimal time step size (tau)
     '''
@@ -147,21 +116,21 @@ for param in params:
         df.plot('Nx','tau', label=key[1:], ax=ax)
 
 
-    CFLA = df.gridsize/df.β
+    #CFLA = df.gridsize/df.β
     if isproblem2D:
-        CFLD = 0.125*df.gridsize**2/df.α # Yes, 0.25 is correct
+        CFLD = 0.125*df.gridsize**2/df.α 
     else:
         CFLD = 0.25*df.gridsize**2/df.α
-    ax.plot(df.Nx, CFLA, label="$CFL_{adv}$",linestyle='-.')
-    ax.plot(df.Nx, CFLD, label="$CFL_{dif}$",linestyle=':')
+    #ax.plot(df.Nx, CFLA, label="$C_{adv}$",linestyle='-.')
+    ax.plot(df.Nx, CFLD, label="$C_{dif}$",linestyle=':')
 
-    ax.set_title(suptitletext)
+    ax.set_title(titletext)
     ax.legend()
     ax.set_xlabel('{{$N$}}')
     ax.set_ylabel('Optimal time step')
     ax.set_yscale('log')
 
-    savefig(2, save, savetext)
+    savefig(2, save, precision_type, savetext)
 
     '''
     1.3 Plot matrix dimension (Nx) vs costs/substep (mv)
@@ -172,12 +141,12 @@ for param in params:
     for key in keys:
         df = Integrators[key].optimaldata
         df.plot('Nx','m', label=key[1:], ax=ax)
-    ax.set_title(suptitletext)
+    ax.set_title(titletext)
     ax.set_xlabel('{{$N$}}')
     ax.set_ylabel('Costs per timestep')
     #ax.set_ylim([0,100])
 
-    savefig(3, save, savetext)
+    savefig(3, save, precision_type, savetext)
     
     '''
     1.4 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
@@ -193,7 +162,7 @@ for param in params:
             if j in [df.Nx.iloc[k] for k in [0,-1]]:
                 ax.annotate('N=' + str(j), xy=(df.cost[i], df.tau[i]))
     
-    ax.set_title(suptitletext)
+    ax.set_title(titletext)
     ax.legend()
     ax.set_xlabel('Matrix-vector multiplications')
     ax.set_ylabel('Optimal time step')
@@ -203,20 +172,54 @@ for param in params:
     ax.set_xlim([1e1,1e5])
     ax.set_ylim([1e-5,1e-1])
     
-    savefig(4, save, savetext)
+    savefig(4, save, precision_type, savetext)
     
-'''
-key = '/exprb4'
-param = [0.01,0.01,1]
-for Nx in range(50,351,50):
-    for tol in [2**-10, 2**-24]:
-        fig, ax = plt.subplots()
-        fig.suptitle(f'α={param[0]}, β={param[1]}')
-        df = Integrators[key].data
-        df = df.loc[(df[['Nx']+['α','β','γ'] + ['tol']] == [Nx] + param + [tol]).all(1)]
-        df.plot('tau','cost', label=key[1:], ax=ax)
-        ax.set_title(f'Nx = {Nx}, tol = {str(tol)}')
-        ax.set_xlabel('tau')
-        ax.set_ylabel('cost')
-        ax.set_xscale('log')
-'''
+    '''
+    1. Multi plot of 1.1 and 1.2
+    '''
+
+    fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey='row',
+                    figsize=(width,width))
+    axes = axes.flatten()
+    fig.subplots_adjust(hspace=0, wspace=0)
+    fig.suptitle(paramtext)
+    
+    for k, error in enumerate([2**-10,2**-24]):
+        with pd.HDFStore(filelocation) as hdf:
+            keys = hdf.keys()
+            Integrators = {key:IntegratorData(filelocation,key) for key in keys}
+        for key in keys:
+            get_optimal_data(Integrators[key], float(error), errortype, param)
+        
+        ax = axes[0+k]
+        for key in keys:
+            df = Integrators[key].optimaldata
+            df.plot('Nx','cost', label=key[1:], ax=axes[0+k])
+            
+        ax.set_xlabel('{{$N$}}')
+        ax.set_yscale('log')
+        if k == 0:
+            ax.set_title('Half precision')
+            ax.set_ylabel('Cost')
+        else:
+            ax.set_title('Single precision')
+        ax.get_legend().remove()
+        ax = axes[2+k]
+        
+        for key in keys:
+            df = Integrators[key].optimaldata
+            df.plot('Nx','tau', label=key[1:], ax=axes[2+k])
+        #ax.plot(df.Nx, CFLA, label="$C_{adv}$",linestyle='-.')
+        ax.plot(df.Nx, CFLD, label="$C_{dif}$",linestyle=':')
+        ax.set_xlabel('{{$N$}}')
+        if k == 0:
+            ax.legend()
+            ax.set_ylabel('Optimal time step')
+        else:
+            ax.get_legend().remove()
+        ax.set_yscale('log')
+    
+    fig.align_ylabels()
+    fig.subplots_adjust(top=0.95)
+    
+    savefig('multi', save, savetext)

@@ -10,6 +10,18 @@ Goal:
     Prepare data for plotting in ExperimentX_plots.py files
 '''
 
+def savefigure(path, number, save=False, *add_to_filename):
+    filename = f'{number}'
+    for arg in add_to_filename:
+        filename += f', {arg}'
+    filename += '.pdf'
+    print(filename)
+    if save:
+        plt.savefig(path + filename, 
+                    format='pdf', bbox_inches='tight', transparent=True)
+        print('File saved')
+        plt.close()
+
 def global_plot_parameters(SMALL_SIZE,MEDIUM_SIZE,BIGGER_SIZE,figsize):
     plt.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
     plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
