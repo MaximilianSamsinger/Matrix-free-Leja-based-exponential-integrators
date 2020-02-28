@@ -59,20 +59,12 @@ class IntegratorData:
             self.α = self.data['α'].unique()
             self.β = self.data['β'].unique()
             self.γ = self.data['γ'].unique()
-            # 1/3 Derivative = 1 functionEvaluations = 3 mv
             self.data['cost'] = (
                 0*self.data.dFeval
                 + self.data.Feval
                 + self.data.mv
             )
         self.data['m'] = self.data['cost']/self.data['substeps']
-
-'''
-F        30
-dF(u)   325
-dFu @ v  13.3
-mv        8
-'''
 
 def get_optimal_data(integrator, maxerror, errortype, param,
                      subset='Nx'):

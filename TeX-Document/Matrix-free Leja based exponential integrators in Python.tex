@@ -99,7 +99,9 @@
 	\begin{center}\textbf{\Huge Matrix-free Leja based exponential integrators in Python}\end{center}
 	\begin{center}\textbf{Abstract}\end{center}
 	\begin{abstract}
-		In this thesis we develop an algorithm to approximate the action of a matrix exponential function for linear operators. 
+		In this master thesis we develop an algorithm to approximate the action of a matrix exponential function for matrix-free linear operators. This is achieved by using a modified version of the real Leja method where we choose optimal interpolation parameters based on a spectral radius estimate of the power method. With this procedure we construct exponential Rosenbrock-type integrators to solve stiff advection-diffusion-reaction equations. We compare the performance of these integrators with other matrix-free differential equation solvers. 
+ 		As part of this thesis we provide the code for the matrix-free Leja method for the action of the matrix exponential function.
+		
 	\end{abstract}
 	
 	\setcounter{page}{1}
@@ -109,15 +111,18 @@
 	%Examples needed
 	%%%%%%%%%%
 	Consider the action of the matrix exponential function 
-	\[e^Av,\quad A\in\mathbb{C}^{N\times N}, v\in\mathbb{C}^N.\] 
+	\[e^Av ~~\text{where}~~ A\in\mathbb{C}^{N\times N} ~~\text{and}~~ v\in\mathbb{C}^N.\] 
 	Due to computational constraints it can be difficult or impossible to compute $e^A$ in a first step and then the action $e^Av$ in a separate step. This is especially true in applications where $N>10000$ is common. Furthermore the matrix exponential of a sparse matrix is in general no longer sparse. Therefore it is more feasible to compute the action of the matrix exponential in a single step. This can be done by approximating the matrix exponential with a matrix polynomial $p_m$ of degree $m$ in $A$
 	\[e^Av \approx p_m(A)v.\]
-	This approach has many advantages. The cost of the computation of $p_m(A)v$ mainly depends on the calculation of $m$ matrix-vector multiplications with $A$. Furthermore the explicit knowledge of $A$ itself is no longer required. $A$ can be replaced by a linear operator, which can be more convenient and save memory.
-	In section \ref{sec:LejaMethod} we provide an overview of the Leja interpolation. In particular we introduce an application to the action of the matrix exponential function. This leads to a cost-minimizing choice for the interpolation parameters.
-	We adapt the resulting algorithm to the matrix-free version in section \ref{sec:matrixfreeimplementation}. While the old can be  The choice of parameters in this matrix-free version is based on the power method
+	This approach has many benefits. The cost of the computation of $p_m(A)v$ mainly depends on the calculation of $m$ matrix-vector multiplications with $A$, which is inexpensive for sparse matrices. Furthermore the explicit knowledge of $A$ itself is no longer required. $A$ can be replaced by a linear operator, which can be convenient and save memory. 
 	
+	We introduce an polynomial interpolation procedure, the Leja method, in Section \ref{sec:LejaMethod}. The Leja method has many computational advantages. All interpolation nodes can be precomputed and stored for later use. The interpolation itself is done iteratively and can be interrupted if the interpolation error is small enough. For entire functions the Leja interpolation has beneficial convergence properties which translate well to the corresponding matrix functions. After this brief introduction to the Leja method we discuss an application to the action of the matrix exponential function. We consider an approach which bounds the backward error of the interpolation. This will lead to an algorithm which provides cost-minimizing parameters for the Leja interpolation based on the operator norm $\norm{A}$ of $A$. \\
+	In Section \ref{sec:matrixfreeimplementation} we adapt the algorithm in order to obtain a matrix-free version. The implementation of the Newton interpolation is straight-forward for linear operators. However, without the matrix representation it can be computationally infeasible to calculate the operator norm. Instead we replace all instances of $\norm{A}$ with the spectral radius, which can be cheaply estimated using the power method. This modification introduces new challenges. On the one hand it is unclear how many power iterations are necessary for a sufficient estimate of the spectral radius. On the other hand it is no longer possible to specify the norm for the backward error bound. \\
+	In Section \ref{sec:LinearADe} we study the matrix-free Leja method for the discretized linear, one-dimensional advection-diffusion equation. For this specific problem we experimentally and numerically investigate the behavior of the power method. We identify a suitable choice for the number of power iterations. Furthermore we presume that this choice is reasonable in the nonlinear case as well. In order to verify that claim we introduce exponential Rosenbrock-type integrators in Section \ref{sec:expint}. Finally, we compare the performance of three matrix-free Leja based exponential integrators of different order against other matrix-free differential equation solvers in Section \ref{sec:NE}.
+	
+
 	\section{The Leja method} \label{sec:LejaMethod}
-	This section serves as an introduction to the Leja method for approximating the action of the exponential function. We briefly cover the key concepts and definitions in section \ref{sec:LejaInterpolation} and \ref{sec:ApproxMatrixExponential}. For more details and all proofs we refer to \cite{advdif} and \cite{lejarev}. 
+	This section serves as an introduction to the Leja method for approximating the action of the exponential function. We briefly cover the key concepts and definitions in Section \ref{sec:LejaInterpolation} and \ref{sec:ApproxMatrixExponential}. For more details and all proofs we refer to \cite{advdif} and \cite{lejarev}. 
 	
 	\subsection{Leja interpolation} \label{sec:LejaInterpolation}
 	Let $K\in\mathbb{C}$ be a compact set in the complex plane and $\xi_0\in K$ be arbitrary. The sequence $(\xi_k)_{k=0}^{\infty}$ recursively defined as
@@ -182,7 +187,7 @@
 		\caption{Samples of the precomputed values $\theta_m$. The backward error of the Leja interpolation is bounded if $c\le\theta_m$, where $[-c,c]$ is the interpolation interval and $m$ the interpolation degree. Half, single and double correspond to the tolerances $2^{-10}$, $2^{-24}$ and $2^{-53}$ respectively \cite[Table 1]{lejarev}.}
 		\label{table:thetam}
 	\end{table}	
-	For our purposes it is important to note that the optimal choice for $c$ is given by $c=\rho(s^{-1}A)$, where $\rho(A)$ is the spectral radius of $A$. However, computing $\rho(A)$ introduces additional costs for the algorithms proposed in \cite{lejarev}. Our matrix-free implementation relies on the computations of the spectral radius, but it does not need to compute the operator norm $\norm{A}$, see section \ref{sec:matrixfreeimplementation}.
+	For our purposes it is important to note that the optimal choice for $c$ is given by $c=\rho(s^{-1}A)$, where $\rho(A)$ is the spectral radius of $A$. However, computing $\rho(A)$ introduces additional costs for the algorithms proposed in \cite{lejarev}. Our matrix-free implementation relies on the computations of the spectral radius, but it does not need to compute the operator norm $\norm{A}$, see Section \ref{sec:matrixfreeimplementation}.
 	
 	\paragraph{Choosing cost-minimizing parameters}
 	The cost of the Leja interpolation mainly depends on the the number of matrix-vector products
@@ -212,9 +217,12 @@
 	
 	\section{Matrix-free implementation}\label{sec:matrixfreeimplementation}
 	In this section we introduce a matrix-free version of the Leja method for the action of a matrix exponential. After a brief motivation we discuss the main advantages and disadvantages of such an approach. \\
-	Modern CPUs can utilize a high-speed memory type called cache, which reduces the time for the processor to access data from the main memory. At the time of this writing high-end consumer CPU cache sizes are in the order of megabytes. Consider finite-difference schemes of the form
+	Performance on most modern systems is limited by memory bandwidth. A matrix-free implementation gives us the opportunity to significantly save memory and thus increase performance. For example, a matrix-free implementation reduces the amount of memory transactions compared to a
+	sparse matrix implementation based on the CSR format by at least a
+	factor of 5.
+	Consider finite-difference schemes
 	\[
-	v_k = \sum_{j=-n}^{n} a_{j+k}v_{j+k}
+	v_k = \sum_{j=-n}^{n} a_{k+j}v_{k+j}
 	\]
 	for $v\in\mathbb{C}^N$, $n\in\mathbb{N}$ and periodic boundaries i.e. $a_{l+N} = a_{l}$ and $v_{l+N}=v_{l}$ for all $l\in\mathbb{Z}$. 
 	This finite difference scheme can be written as an matrix-vector multiplication with an $(2n+1)$-diagonal matrix. Even if the matrix is stored in a sparse format it is still necessary to save $N(2n+1)$ non-zero elements. In the case of two-dimensional five-point stencil method on a rectangular grid we have $n=2$ and $N=N_{x}N_{y}$, where $N_{x}$ and $N_{y}$ is the number of grid points on the $x$- and $y$-axis respectively. This leads to a storage demand of $20N_xN_y$ bytes when saving matrix entries as float data. This means that we surpass $1$ megabyte when we choose $N_x,N_y > 250$, which might cause cache misses. This is especially true for L1 and L2 caches. This problem is further magnified for stencils on three-dimensional domains. \\	
@@ -225,7 +233,7 @@
 	v&\mapsto A(v)
 	\end{split}.
 	\end{align*}
-	Linear operators can be more convenient to work with in applications where the matrix representation is not easily available. They can also be more memory efficient. For the finite difference schemes we discussed at the beginning of this section we only need to store $(2n+1)$ values independent of $N$. This serves as a motivation to propose an alternative for the classical Leja method we discussed in section \ref{sec:LejaMethod}.
+	Linear operators can be more convenient to work with in applications where the matrix representation is not easily available. They can also be more memory efficient. For the finite difference schemes we discussed at the beginning of this section we only need to store $(2n+1)$ values independent of $N$. This serves as a motivation to propose an alternative for the classical Leja method we discussed in Section \ref{sec:LejaMethod}.
 	\paragraph{Matrix-free Leja method}
 	For the most part it is unproblematic to use linear operators for the Leja method instead of matrices, since the Newton interpolation only relies on computation of matrix-vector products. However, difficulties arise when the interpolation parameters need to be determined. Without the matrix representation it can be expensive to compute the operator norm $\norm A$ in \eqref{eq:ms}. We will circumvent this problem by replacing $\norm{A}$ with the spectral radius $\rho(A)$. 
 	
@@ -247,7 +255,7 @@
 	\end{align}
 	The explicit knowledge of $\norm{\cdot}_{A,\varepsilon}$ is no longer required. Additionally we can choose $c=\rho(A)$ without introducing additional costs, since we have to compute $\rho(A)$ to determine $m_*$ and $s_*$. 
 	For positive and negative semi-definite operators $A$ we can choose the shift $\mu = -\rho(A)/2$ and $\mu = \rho(A)/2$ respectively. This shift works particularly well if the absolutely smallest eigenvalue of $A$ is close to $0$.\\
-	This approach has some drawbacks though. While we are able to bound the backward error
+	We should point out that this approach has some drawbacks. While we are able to bound the backward error
 	\[
 	\frac{\norm{\Delta A}_{A,\varepsilon}}{\norm{A}_{A,\varepsilon}} \le \operatorname{tol}  
 	\]
@@ -266,8 +274,8 @@
 	\[ 
 	\norm{Ab_{n}} = \rho(A) + \mathcal{O}\left(\left\lvert\frac{\lambda_2}{\lambda_1}\right\rvert^{n+1}\right).
 	\]  
-	This can be used to compute \eqref{eq:msmatrixfree}. However, the power method underestimates the spectrum of $A$, which might cause the Leja method to not converge. Therefore we have to multiply the estimate with a safety factor. The convergence speed depends on the eigenvalues of $A$. This will be further analysed in section \ref{sec:LinearADe}.
-	From now on we denote the Leja method for the matrix exponential function as \texttt{expleja}. Depending on the chosen tolerance, see Table \ref{table:thetam}, we will refer to the algorithm as half, single or double precision \texttt{expleja} respectively.
+	This can be used to compute \eqref{eq:msmatrixfree}. However, the power method underestimates the spectrum of $A$, which might cause the Leja method to not converge. Therefore we have to multiply the estimate with a safety factor. The convergence speed depends on the eigenvalues of $A$. This will be further analysed in Section \ref{sec:LinearADe}.
+	From now on we denote matrix-free Leja method for the matrix exponential function as \texttt{expleja}. Depending on the chosen tolerance, see Table \ref{table:thetam}, we will refer to the algorithm as half, single or double precision \texttt{expleja} respectively.
 	
 	\section{Linear advection-diffusion equation}\label{sec:LinearADe}
 	In this section we consider a simple initial value problem which serves as a test-bed for future experiments. We also want to examine the power method, an algorithm to (under)-estimate the absolutely largest eigenvalue of an operator.\\
@@ -329,11 +337,11 @@
 	\end{bmatrix}
 	+\frac{b}{h}
 	\begin{bmatrix}
-	-1     & 1  & 0      & \cdots & 0  & 1      \\
-	0      & -1 & 1      &        &    & 0      \\
-	\vdots & 0  & \ddots & \ddots &    & \vdots \\
-	\vdots &    & \ddots & \ddots & 1  & 0      \\
-	0      &    &        & 0      & -1 & 1      \\
+	-1     & 1  & 0      & \cdots & \cdots  &   0    \\
+	0      & -1 & 1      &        &    & \vdots      \\
+	\vdots &    & \ddots & \ddots &    & \vdots	 \\
+	\vdots &    & 		 & \ddots & 1  &  0      \\
+	0      &    &        &        & -1 & 1      \\
 	1      & 0  & \cdots & \cdots & 0  & -1
 	\end{bmatrix}.
 	\]
@@ -350,22 +358,31 @@
 	\lambda_j &= \frac{a}{h^2}\left(e^{i\frac{2\pi}{N}j} - 2 + e^{-i\frac{2\pi}{N}j}\right)-\frac{b}{h}\left(e^{i\frac{2\pi}{N}j}-1\right) \\ 
 	&=-\left(\frac{4a}{h^2}-\frac{2b}{h}\right) \sin^2\!\left(\frac{\pi j}{N}\right) + i\frac{b}{h}\sin\!\left(\frac{2\pi j}{N}\right),
 	\end{align*}
-	see Figure \ref{fig:spectrum}.
+	see Figure \ref{fig:spectrum}. We restrict our analysis to the case $a=0$ and $b=1$, i.e.
+	\begin{align*}
+	\lambda_j =-\frac{4}{h^2}\sin^2\!\left(\frac{\pi j}{N}\right).
+	\end{align*}
+	The modulus is maximized for $j=\lfloor N/2\rfloor$, i.e.  $\lambda_{max} = \lambda_{\lfloor N/2\rfloor}$.
 	From now on we study the behaviour of $v = \frac{1}{N}\sum_{j=0}^{N-1} v_j$, the normalized sum of all eigenvectors. Let $n\in\mathbb{N}$ be the number of power iterations. We begin our analysis with the following auxiliary calculation
 	\begin{align*}
 	\norm{A^nv}_2
 	&= \sqrt{\frac{1}{N}\sum_{j=0}^{N-1}{\abs{\lambda_j}^{2n}}}
-	= \frac{(4a)^n}{h^{2n}}\sqrt{I_{N,n}} ,
+	= \frac{2^{2n}}{h^{2n}}\sqrt{I_{N,n}} ,
 	\end{align*}
 	where
 	\begin{align*}
-	I_{N,n} &= \frac{1}{N}\sum_{j=0}^{N-1}\left(\left(1-\frac{hb}{2a}\right)^2 \sin^4\!\left(\frac{\pi j}{N}\right) + \frac{hb}{4a}\sin^2\!\left(\frac{2\pi j}{N}\right)\right)^n.
+	I_{N,n} &= \frac{1}{N}\sum_{j=0}^{N-1} \sin^{4n}\!\left(\frac{\pi j}{N}\right).
 	\end{align*}
 	%&\xrightarrow[]{N\to\infty} (4a)^{2n} \int_{0}^{1} \sin^{4n}(\pi x)dx = \\
 	%&= (4a)^{2n} \frac{2}{\pi} \int_{0}^{\frac\pi 2} \sin^{4n}(x)dx \\
 	%&= (4a)^{2n} \frac{1}{\pi} \operatorname{B}(2n+0.5,0.5),
 	%where $\operatorname{B}$ is the beta function. 
-	The first equality holds since all eigenvectors are orthogonal. %When the limit is taken all terms depending on $h$ vanish. The remaining sum is a left Riemann sum of the integrable function $x\to (4a)^{2n}\sin^{4n}(\pi x)$. 
+	The first equality holds since all eigenvectors are orthogonal. We interpret the sum of sine functions as an integral approximated by the composite trapezoidal rule. Using the nodes $\frac{ k}{N}$ for $k=0\dots N$ we have
+	\[
+	\int_{0}^{1}{\sin^{4n}\!\left(\pi x\right)} =
+	\frac{1}{N}\sum_{j=1}^{N-1}\sin^{4n}\left(\frac{\pi j}{N}\right)
+	+ \mathcal{O}\left(\frac{1}{12N^2}\right) = I_{N,n} + \mathcal{O}\left(\frac{1}{12N^2}\right).
+	\]
 	We underestimate the largest eigenvalue $\lambda_{max}$ by a factor of
 	\begin{align*}
 	\frac{\norm{A^{n+1}v}_2}{\norm{A^nv}_2}\frac{1}{\abs{\lambda_{max}}}
@@ -419,7 +436,7 @@
 	%	\label{table:alphan}
 	%\end{table}
 	\subsection{Experiments for the power method}
-	As discussed in section \ref{sec:matrixfreeimplementation} we need to estimate the largest eigenvalue $\lambda_{max}$ of $A$ for the matrix-free \texttt{expleja} algorihm. However, we can only guarantee convergence if we overestimate $\lambda_{max}$. Therefore we have to include a safety factor $\text{sf}$ by which we multiply the output of the power method. 
+	As discussed in Section \ref{sec:matrixfreeimplementation} we need to estimate the largest eigenvalue $\lambda_{max}$ of $A$ for the matrix-free \texttt{expleja} algorihm. However, we can only guarantee convergence if we overestimate $\lambda_{max}$. Therefore we have to include a safety factor $\text{sf}$ by which we multiply the output of the power method. 
 	%The question naturally arises, how many power iterations $n$ and which safety factor $\text{sf}\ge 1$ is necessary for convergence.
 	%The power method analysis in section \ref{poweritanalysis} partially answers this question. For large $N$ and for the vector $v=\sum_{j=0}^{N-1}v_j$ the choice 
 	%\[ \text{sf} = \frac{1}{\alpha_n}\]
@@ -489,7 +506,7 @@
 	%	\]
 	%	at the limit $N\to\infty$. 
 	
-	\section{Matrix-free Leja based exponential integrators} \label{expint}
+	\section{Matrix-free Leja based exponential integrators} \label{sec:expint}
 	Exponential integrators are a class of numerical integrators which excel at solving stiff differential equations. Unlike most numerical ordinary differential equation (ODE) solvers their construction is based on the variation-of-constants formula. Consider the semilinear initial value problem
 	\begin{align}
 	\begin{split}
@@ -505,7 +522,7 @@
 	\[
 	u(t) \approx e^{At}u_0 + \int_{0}^{t}e^{(t-\tau)A}g(u_0)d\tau = e^{At}u_0 + \varphi_1(tA)g(u_0),
 	\]
-	where $\varphi_1(z) = \frac{e^z-1}z$. The exponential Rosenbrock-Euler method is of order 2 and is exact for linear problems, i.e. if g(u)=0. We will refer to it as \texttt{exprb2} in section \ref{sec:NE}.
+	where $\varphi_1(z) = \frac{e^z-1}z$. The exponential Rosenbrock-Euler method is of order 2 and is exact for linear problems, i.e. if g(u)=0. We will refer to it as \texttt{exprb2} in Section \ref{sec:NE}.
 	\subsection{Higher order Rosenbrock methods}
 	Exponential Rosenbrock methods are a special class of exponential integrators which efficiently solve semi-linear problems \eqref{semilinear}. For a given time step size $\tau$ the numerical solution $u_1$ is given by
 	\begin{align}
@@ -622,35 +639,48 @@
 %	on the domain $\Omega = [0,1]$.
 %	
 	\section{Numerical experiments}\label{sec:NE}
-	In this section we will apply matrix-free exponential Rosenbrock integrators to multiple advection-diffusion-reaction equations. We compare the behavior of these methods with other matrix-free ODE solvers.
+	In this section we will apply matrix-free exponential Rosenbrock integrators to multiple advection-diffusion-reaction equations. All experiments are conducted in Python 3.7 \cite{python} with NumPy 1.18.1 \cite{numpy} and SciPy 1.4.1 \cite{numpy}. We use an AMD Ryzen 7 2700 Processor on a Windows machine. 
+	We consider $d$-dimensional nonlinear variants of the initial value problem in section \ref{sec:LinearADe}
+	\begin{alignat*}
+	\partial\partial_tu &= F(u) &&~~\text{with}~~ t\in[0,0.1],\\
+	u_0(x) &= e^{-80\cdot(\norm{x}_2^2-0,45)^2} &&~~\text{with}~~ x\in[0,1]^d.
+	\end{alignat*}
+	For all experiments we assume Dirichlet boundary conditions. \\ We compare the behavior of these methods with other matrix-free ODE solvers.
 	
 	\paragraph{Crank-Nicolson method:}
-	We refer to the Crank-Nicolson method of order 2 as \texttt{cn2}. 
-	In our implementation of \texttt{cn2}, we used the SciPy package \texttt{scipy.sparse.linalg.gmres} to solve linear equations. We set the relative tolerance to $\texttt{tol}/s$, where $s$ is the total number of substeps taken for solving the ODE. This choice guarantees that the sum of errors made by \texttt{gmres} is always lower than our specified tolerance \texttt{tol}, since we have to solve exactly one linear equation per substep. No preconditioner was used for \texttt{gmres}. The Crank-Nicolson method is unconditionally stable and therefore does not have to satisfy the Courant-Friedrichs-Lewy (CFL) conditions for the differential equations we investigate in our experiments.
+	We refer to the Crank-Nicolson method of order 2 as \texttt{cn2}.
+	In our implementation of \texttt{cn2} we use the Newton-Raphson method to solve the nonlinear system of equations. We treat the Jacobian-vector product $v\mapsto F'(u)v$ as a linear operator. For the resulting system of linear equations we use the SciPy package \texttt{scipy.sparse.linalg.gmres}. For all experiments the relative tolerance is set to $\texttt{tol}/N_\tau$, where $N_\tau$ is the total number of time steps used for solving the ODE. This choice guarantees that the sum of errors made by \texttt{gmres} is always lower than our specified tolerance \texttt{tol}. No preconditioner was used for \texttt{gmres}. The Crank-Nicolson method is unconditionally stable and therefore does not have to satisfy the Courant-Friedrichs-Lewy (CFL) conditions for the differential equations we investigate in our experiments.
 	
 	\paragraph{Explicit Runge-Kutta method:}
 	We refer to the explicit midpoint method of order 2 as \texttt{rk2} and refer to the classical Runge-Kutta method of order 4 as \texttt{rk4}. No explicit Runge-Kutta method is A-stable. Therefore small time step sizes have to be chosen when solving stiff differential equations. In our experiments this is the case when the considered differential equation is diffusion-dominated.
 	
 	\paragraph{Exponential Rosenbrock methods:}
-	We refer to the exponential Rosenbrock methods of order 2, 3 and 4 discussed in \ref{expint} as \texttt{exprb2}, \texttt{exprb3} and \texttt{exprb4} respectively.
-	The action of the matrix exponential is approximated with the matrix-free \texttt{expleja} algorithm. At each time step we compute the optimal interpolation degree and substep parameter according to \eqref{eq:msmatrixfree}.
-	The maximal interpolation degree is set to 100. Note that the total number of matrix-vector multiplication per time step can still exceed 100 since we have to compute the spectral radius. This typically happens for $s=1$. \\
+	We refer to the exponential Rosenbrock methods of order 2, 3 and 4 discussed in \ref{sec:expint} as \texttt{exprb2}, \texttt{exprb3} and \texttt{exprb4} respectively.
+	The action of the matrix exponential is approximated with the matrix-free \texttt{expleja} algorithm. At each time step we compute the optimal interpolation degree and substep parameter according to \eqref{eq:msmatrixfree}. 
+	The maximal interpolation degree is set to 100. Note that the total number of matrix-vector multiplication per time step can still exceed 100 since we have to compute the spectral radius. This typically happens for $s=1$. At each time step we compute the spectral radius using the power method with at most four power iterations.\\
 	\\
 	Our goal is to investigate the respective computational costs of these methods while achieving a prescribed relative tolerance \texttt{tol}.
-	We consider $d$-dimensional nonlinear variants of the initial value problem in \ref{sec:LinearADe}
-	\begin{alignat*}
-		\partial\partial_tu &= F(u) &&~~\text{with}~~ t\in[0,0.1] \\
-		u_0(x) &= e^{-80\cdot(\norm{x}_2^2-0,45)^2} &&~~\text{with}~~ x\in[0,1]^d.
-	\end{alignat*}
-	We assume Dirichlet boundary conditions. \\
-	All experiments are conducted in Python 3.7 \cite{python} with NumPy 1.18.1 \cite{numpy} and SciPy 1.4.1 \cite{numpy}. We use an AMD Ryzen 7 2700 Processor on a Windows machine. 
+%We investigate cost incurred by each integrator in terms of function evaluations \texttt{Feval}, directional derivatives evaluations \texttt{dFeval} and matrix-vector multiplications \texttt{mv}. From now on the cost of evaluating $F$ once will be defined as 1 \texttt{Feval}.
+	\subsection{Cost analysis}
+	Let $N_\tau\in\mathbb{N}$ be the total number of time steps. We investigate the cost per time step incurred by each integrator in terms of function evaluations. 
+	%From now on the cost of evaluating $F$ once will be defined as 1 \texttt{Feval}. 
+	Both \texttt{rk2} and \texttt{rk4} require one function evaluation for each stage.
+	For \texttt{cn2} and all exponential integrators the cost analysis is much more involved. In addition to function evaluations these methods use expensive subroutines which incur costs mainly depending on the number of Jacobian-vector products. For $v\in\mathbb{R}^{N}$ the directional derivative can be approximated using two function evaluations 
+	\[
+	F'(u)v \approx \frac{F(u+\epsilon v)-F(u)}{\epsilon} ~~\text{with}~~ \epsilon > 0.
+	\]
+	However, $F(u)$ only needs to be computed once per time step. Therefore, after evaluating and storing $F(u)$ the directional derivative $F'(u)v$ costs approximately one function evaluation.
+	
+	%Note that $N_\tau$ is unrelated to $s$ in \eqref{eq:msmatrixfree} and each exponential integrator may select a parameter $s>1$ for \texttt{expleja}. 
+
 	
 	\subsection{One-dimensional advection-diffusion equation}
 	Let $\alpha,\beta,\ge 0$ and 
 	\begin{align*}
 		F(u) = \alpha\partial_x((u+1)\partial_xu) + \beta\partial_x(u^2) + u(u-0.5).
 	\end{align*}
-	With $\alpha$ and $\beta$ we control the relative strength of the diffusion compared to the advection respectively. The differential equation can be rewritten using $\partial_x((u+1)\partial_xu) = (u+1)\partial_{xx}u + (\partial_{x}u)^2$ and $\partial_x(u^2) = 2u\partial_{x}u$.
+	With $\alpha$ and $\beta$ we control the relative strength of the diffusion compared to the advection respectively. The differential equation can be rewritten using the product rule.
+	The 
 	This leads to
 	\begin{align*}
 		F(u) &= 
@@ -699,7 +729,7 @@
 		\newcommand{\adv}{\detokenize{α}=0.1}
 		\newcommand{\dif}{\detokenize{β}=0.01}
 		\centering
-		\includegraphics[width=1\columnwidth]{../Figures/Experiment2/multi, \adv, \dif.pdf}
+		\includegraphics[width=0.9\columnwidth]{../Figures/Experiment2/multi, \adv, \dif.pdf}
 		\caption{}
 		\label{fig:multi1DNonlinear}
 	\end{figure}
@@ -772,6 +802,17 @@
 %		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 %	\end{figure}
 	
+	\section{TODO}
+
+	\begin{itemize}
+		\item Section 3, adapt introduction with RAM constraints, not cache
+		\item Section 4.1 Explain $v=\sum_{j=1}^N v_j$, Gleichverteilung aller EV
+		\item Section 4.1 Consider special case $b=0$ for analysis.
+		\item Section 4.1 What is $\lambda_{max}?$
+		
+	\end{itemize}
+	
+	
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/multi, \Pe.pdf}
@@ -800,7 +841,7 @@
 	\newpage
 	\subsection{Experiment Nonlinear 1D}
 	\newcommand{\adv}{\detokenize{α}=0.1}
-	\newcommand{\dif}{\detokenize{β}=0.1}
+	\newcommand{\dif}{\detokenize{β}=1}
 	\renewcommand{\precision}{half}
 	{1, \precision, \adv, \dif}
 	\begin{figure}[H]
@@ -831,7 +872,12 @@
 	{1, \precision, \adv, \dif}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment_2D/1, \precision, \adv, \dif.pdf}
+		\includegraphics[width=0.9\columnwidth]{../Figures/Experiment_2D/multi, \adv, \dif.pdf}
+		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
+	\end{figure}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=1\columnwidth]{../Figures/Experiment2/multi, \adv, \dif.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
 	

@@ -31,10 +31,10 @@ SMALL_SIZE = 8
 MEDIUM_SIZE = 10
 BIGGER_SIZE = 12
 
-maxerror = str(2**-10)
+maxerror = str(2**-24)
 save_path = 'Figures' + os.sep + 'Experiment1' + os.sep
 
-isproblem2D = True # Switches between 1D and 2D case
+isproblem2D = False # Switches between 1D and 2D case
 
 filename = 'Experiment_2D' if isproblem2D else 'Experiment2'
 filelocation = 'HDF5-Files' + os.sep + filename + '.h5'
@@ -92,14 +92,15 @@ for param in params:
     titletext = f'{{{precision_type.capitalize()}}} precision, ' \
         + paramtext
     savetext = f'α={param[0]}, β={param[1]}'
-
+    
     '''
     1.1 Plot matrix dimension (Nx) vs matrix-vector multiplications (m)
     '''
-    fig, ax = plt.subplots()
+    #fig, ax = plt.subplots()
     for key in keys:
         df = Integrators[key].optimaldata
-        df.plot('Nx','cost', label=key[1:], ax=ax)
+        #df.plot('Nx','cost', label=key[1:], ax=ax)
+    """
     ax.set_title(titletext)
     ax.set_xlabel('{{$N$}}')
     ax.set_ylabel('Cost')
@@ -115,12 +116,13 @@ for param in params:
         df = Integrators[key].optimaldata
         df.plot('Nx','tau', label=key[1:], ax=ax)
 
-
+    """
     #CFLA = df.gridsize/df.β
     if isproblem2D:
         CFLD = 0.125*df.gridsize**2/df.α 
     else:
         CFLD = 0.25*df.gridsize**2/df.α
+    """
     #ax.plot(df.Nx, CFLA, label="$C_{adv}$",linestyle='-.')
     ax.plot(df.Nx, CFLD, label="$C_{dif}$",linestyle=':')
 
@@ -177,9 +179,9 @@ for param in params:
     '''
     1. Multi plot of 1.1 and 1.2
     '''
-
+    """
     fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey='row',
-                    figsize=(width,width))
+                    figsize=(0.9*width,0.9*width))
     axes = axes.flatten()
     fig.subplots_adjust(hspace=0, wspace=0)
     fig.suptitle(paramtext)

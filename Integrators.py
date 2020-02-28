@@ -313,7 +313,7 @@ def exprb3(F, u, t, t_end, linearCase, s,
         u, t, mvstep = exprbstep(u, t, τ, X3, v3, s, tol, normEstimate=λ)
         mv += mv2 + mvstep + its + 1
     assert(abs(t - t_end) < τ)
-    functionEvaluations = 2*s #One extra for initializing LinOpX3
+    functionEvaluations = 2*s
     derivativeEvaluations = s
     
     return u, (functionEvaluations, derivativeEvaluations, mv)
