@@ -379,14 +379,15 @@
 	%where $\operatorname{B}$ is the beta function. 
 	The first equality holds since all eigenvectors are orthogonal. We interpret the sum of sine functions as an integral approximated by the composite trapezoidal rule. Using the nodes $\frac{ k}{N}$ for $k=0\dots N$ we have
 	\[
-	\int_{0}^{1}{\sin^{4n}\!\left(\pi x\right)} =
-	\frac{1}{N}\sum_{j=1}^{N-1}\sin^{4n}\left(\frac{\pi j}{N}\right)
-	+ \mathcal{O}\left(\frac{1}{12N^2}\right) = I_{N,n} + \mathcal{O}\left(\frac{1}{12N^2}\right).
+	\int_{0}^{1}{\sin^{4n}\!\left(\pi x\right)} \approx
+	\frac{1}{N}\sum_{j=1}^{N-1}\sin^{4n}\!\left(\frac{\pi j}{N}\right)
+	= I_{N,n}.
 	\]
+	Since $sin^{4n}$ is a trigonometric polynomial of degree $4n$ the trapezoidal rule is exact for $N>4n$. For readers unfamiliar with this property we refer to \cite[Corollary 3.3]{trapezoidal}. The approximation is even better than the theory predicts. We numerically verify that the trapezoidal rule is exact for $N + 1 < n$.
 	We underestimate the largest eigenvalue $\lambda_{max}$ by a factor of
 	\begin{align*}
 	\frac{\norm{A^{n+1}v}_2}{\norm{A^nv}_2}\frac{1}{\abs{\lambda_{max}}}
-	= \frac{\frac{h^{2n+2}}{(4a)^{n+1}}\norm{A^{n+1}v}_2}{\frac{h^{2n}}{(4a)^n}\norm{A^nv}_2}\frac{4a}{\abs{h^2\lambda_{max}}} = \sqrt{\frac{I_{N,n+1}}{I_{N,n}}}\frac{4a}{h^2\abs{\lambda_{max}}}.
+	= \frac{\frac{2^{2n+2}}{h^{2n+2}}\sqrt{I_{N,n+1}}}{\frac{2^{2n}}{h^{2n}}\sqrt{I_{N,n}}}\frac{1}{\abs{\lambda_{max}}} = \sqrt{\frac{I_{N,n+1}}{I_{N,n}}}\sin^{-2}\!\left(\frac{\pi}{N}\left\lfloor\frac{N}{2}\right\rfloor\right).
 	\end{align*}
 	using the power method. For large $N$ we have $\frac{4a}{\abs{h^2\lambda_{max}}}\approx 1$.  
 	% $\alpha_n$, see Table \ref{table:alphan}, where $\alpha_n$ is given by
@@ -917,6 +918,7 @@
 		\bibitem{polynomialmethods} P. Novati, Polynomial methods for the computation of functions of large unsymmetric matrices, Ph.D. Thesis in Computational Mathematics, University of Trieste, advisor I. Moret (2000).
 		\bibitem{newtoninterpolation} L. Reichel, Newton interpolation at Leja points, BIT 30 (2) (1990), 332–346.
 		\bibitem{matrixanalysis} R. Horn, C. Johnson, Matrix Analysis, Cambridge University Press (2012).
+		\bibitem{trapezoidal} L. N. Trefethen, J.A.C. Weideman, The exponentially convergent trapezoidal rule, SIAM Review 56-3 (2014), 385-458.
 		
 		\bibitem{python} Python Software Foundation. Python Language Reference, version 3.7. Available at https://www.python.org. Manual at https://docs.python.org/3/. [Online; accessed 2020-02-19]
 		\bibitem{numpy} S. v. d. Walt, C. Colbert, G Varoquaux. The NumPy Array: A Structure for Efficient Numerical Computation, Computing in Science \& Engineering, 13 (2011), 22-30.
