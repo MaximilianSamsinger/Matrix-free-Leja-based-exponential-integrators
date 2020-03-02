@@ -118,7 +118,7 @@
 	
 	We introduce an polynomial interpolation procedure, the Leja method, in Section \ref{sec:LejaMethod}. The Leja method has many computational advantages. All interpolation nodes can be precomputed and stored for later use. The interpolation itself is done iteratively and can be interrupted if the interpolation error is small enough. For entire functions the Leja interpolation has beneficial convergence properties which translate well to the corresponding matrix functions. After this brief introduction to the Leja method we discuss an application to the action of the matrix exponential function. We consider an approach which bounds the backward error of the interpolation. This will lead to an algorithm which provides cost-minimizing parameters for the Leja interpolation based on the operator norm $\norm{A}$ of $A$. \\
 	In Section \ref{sec:matrixfreeimplementation} we adapt the algorithm in order to obtain a matrix-free version. The implementation of the Newton interpolation is straight-forward for linear operators. However, without the matrix representation it can be computationally infeasible to calculate the operator norm. Instead we replace all instances of $\norm{A}$ with the spectral radius, which can be cheaply estimated using the power method. This modification introduces new challenges. On the one hand it is unclear how many power iterations are necessary for a sufficient estimate of the spectral radius. On the other hand it is no longer possible to specify the norm for the backward error bound. \\
-	In Section \ref{sec:LinearADe} we study the matrix-free Leja method for the discretized linear, one-dimensional advection-diffusion equation. For this specific problem we experimentally and numerically investigate the behavior of the power method. We identify a suitable choice for the number of power iterations. Furthermore we presume that this choice is reasonable in the nonlinear case as well. In order to verify that claim we introduce exponential Rosenbrock-type integrators in Section \ref{sec:expint}. Finally, we compare the performance of three matrix-free Leja based exponential integrators of different order against other matrix-free differential equation solvers in Section \ref{sec:NE}.
+	In Section \ref{sec:LinearADe} we study the matrix-free Leja method for the discretized linear, one-dimensional advection-diffusion equation. For this specific problem we experimentally and numerically investigate the behavior of the power method. We identify a suitable choice for the number of power iterations. Furthermore, this choice is reasonable in the nonlinear case as well. In order to verify that claim we introduce exponential Rosenbrock-type integrators in Section \ref{sec:expint}. Finally, we compare the performance of three matrix-free Leja based exponential integrators of different order against other matrix-free differential equation solvers in Section \ref{sec:NE}.
 	
 
 	\section{The Leja method} \label{sec:LejaMethod}
@@ -283,7 +283,7 @@
 	\begin{align}
 	\begin{split}
 	\partial_tu &= a\partial_{xx}u + b\partial_xu ~~\text{with}~~ a,b\ge 0 ~~\text{and}\\
-	u_0(x) &= e^{-80\cdot(x-0,45)^2}\hphantom{,} ~~\text{with}~~ x\in[0,1]
+	u_0(x) &= e^{-80\cdot(x-0.45)^2}\hphantom{,} ~~\text{with}~~ x\in[0,1]
 	\end{split}\label{eq:LinearAdvDif}
 	\end{align}
 	on the time interval $[0,0.1]$. For a fixed $N\in\mathbb N$ we approximate the diffusive part of the differential equation with second-order central differences on an equidistant grid with grid size $h = \frac{1}{N-1}$ and grid points $x_k = kh$, $k=0\dots,N-1$
@@ -377,37 +377,32 @@
 	%&= (4a)^{2n} \frac{2}{\pi} \int_{0}^{\frac\pi 2} \sin^{4n}(x)dx \\
 	%&= (4a)^{2n} \frac{1}{\pi} \operatorname{B}(2n+0.5,0.5),
 	%where $\operatorname{B}$ is the beta function. 
-	The first equality holds since all eigenvectors are orthogonal. We interpret the sum of sine functions as an integral approximated by the composite trapezoidal rule. Using the nodes $\frac{ k}{N}$ for $k=0\dots N$ we have
+	The first equality holds since all eigenvectors are orthogonal. We interpret the sum of sine functions as an integral approximated by the composite trapezoidal rule
 	\[
-	\int_{0}^{1}{\sin^{4n}\!\left(\pi x\right)} \approx
-	\frac{1}{N}\sum_{j=1}^{N-1}\sin^{4n}\!\left(\frac{\pi j}{N}\right)
-	= I_{N,n}.
+		I_n\defneq\int_{0}^{1}{\sin^{4n}\!\left(\pi x\right)} \approx I_{N,n},
 	\]
-	Since $sin^{4n}$ is a trigonometric polynomial of degree $4n$ the trapezoidal rule is exact for $N>4n$. For readers unfamiliar with this property we refer to \cite[Corollary 3.3]{trapezoidal}. The approximation is even better than the theory predicts. We numerically verify that the trapezoidal rule is exact for $N + 1 > 2n$.
+	with nodes $\frac{j}{N}$ for $j=0$, \dots, $N$.
+	Furthermore if we use the nodes $\frac{k}{N}$ for $k=0$, \dots, $2N$ we have
+	\[
+	2I_n = \int_{0}^{2}{\sin^{4n}\!\left(\pi x\right)} \approx
+	\frac{1}{N}\sum_{k=0}^{2N-1}\sin^{4n}\!\left(\frac{\pi k}{N}\right)
+	= \frac{2}{N}\sum_{j=0}^{N-1}\sin^{4n}\!\left(\frac{\pi j}{N}\right)
+	= 2 I_{N,n}.
+	\]
+	due to symmetry. Since $\sin^{4n}$ is a $2\pi$-peroidic trigonometric polynomial of degree $4n$ the trapezoidal rule is exact if $2N>4n$. In general the error converges exponentially to $0$. For readers unfamiliar with these properties we refer to \cite[Corollary 3.3]{trapezoidal}. 
+	By comparing both trapezoidal approximations we establish $I_n = I_{n,N}$ if $N > 2n$.\\
 	We underestimate the largest eigenvalue $\lambda_{max}$ by a factor of
 	\begin{align*}
 	\frac{\norm{A^{n+1}v}_2}{\norm{A^nv}_2}\frac{1}{\abs{\lambda_{max}}}
 	= \frac{\frac{2^{2n+2}}{h^{2n+2}}\sqrt{I_{N,n+1}}}{\frac{2^{2n}}{h^{2n}}\sqrt{I_{N,n}}}\frac{1}{\abs{\lambda_{max}}} = \sqrt{\frac{I_{N,n+1}}{I_{N,n}}}\sin^{-2}\!\left(\frac{\pi}{N}\left\lfloor\frac{N}{2}\right\rfloor\right).
 	\end{align*}
-	using the power method. For large $N$ we have $\frac{4a}{\abs{h^2\lambda_{max}}}\approx 1$.  
-	% $\alpha_n$, see Table \ref{table:alphan}, where $\alpha_n$ is given by
-	In order to continue our analysis and get some asymptotic bounds we interpret the $n$-th root the summands of $I_{N,n}$ as a function of $x$
+	using the power method. From now on we assume $N > 2(n+1)$. By using the properties of the beta function $\operatorname{B}$ we get
 	\[
-	S_{N}(x) = \left(1-\frac{hb}{2a}\right)^{2} \sin^4\!\left(\pi x\right) + \frac{hb}{4a}\sin^2\!\left(2\pi x\right).
+	I_{N,n} = I_{n} = \int_{0}^{1} \sin^{4n}(\pi x)dx = \frac{1}{\pi} \operatorname{B}(2n+0.5,0.5) = \frac{\Gamma(2n + 0.5)\Gamma(0.5)}{\pi \Gamma(2n + 1)}
 	\]
-	In the limit $S_N(\cdot)$ converges to $\sin^4(\pi\cdot)$. Furthermore we have uniform convergence since for all for $x\in[0,1]$ 
+	\noindent where $\Gamma$ is the gamma function. Finally we can simplify the ratio
 	\begin{align*}
-	\abs{S_N(x) - \sin^4(\pi x)} =
-	\left\lvert\frac{hb}{2a}\left(-2 + \frac{hb}{2a}\right) \sin^4\!\left(\pi x\right) + \frac{hb}{4a}\sin^2\!\left(2\pi x\right)\right\rvert \le \frac{hb}{a}\sin^4\!\left(\pi x\right) \le \frac{hb}{a}, 
-	\end{align*}
-	if $N$ is sufficiently large. Therefore, if we keep $n$ fixed, we can take the limit
-	\[
-	\lim_{N\to\infty} I_{N,n} = \lim_{N\to\infty} \frac{1}{N}\sum_{j=0}^{N-1}\left(S_N(x_j)\right)^n = \int_{0}^{1} \sin^{4n}(\pi x)dx = \frac{1}{\pi} \operatorname{B}(2n+0.5,0.5),
-	\]
-	\noindent where $\operatorname{B}$ is the beta function. Finally we can establish an asymptotic bound
-	\begin{align*}
-	\lim_{N\to\infty} \frac{I_{N,n+1}}{I_{N,n}} &=   
-	\frac{\operatorname{B}(2n+2.5,0.5)}{\operatorname{B}(2n+0.5,0.5)} \\&= 
+	\frac{I_{N,n+1}}{I_{N,n}} &=   
 	\frac{\Gamma(2n + 1)\Gamma(2n + 2.5)}{\Gamma(2n + 3)\Gamma(2n + 0.5)} \\&= 
 	\frac{(2n)!}{(2n+2)!}
 	\frac{\Gamma(2n + 2.5)}{\Gamma(2n + 0.5)}\\&=
@@ -419,12 +414,12 @@
 	\frac{(4n+3)(4n+1)}{(4n+4)(4n+2)}\\&=
 	\left(1-\frac{1}{4n+4}\right)\left(1-\frac{1}{4n+2}\right)
 	\end{align*}
-	For the fourth equality we applied the duplication formula for the gamma function. All in all we underestimate the largest eigenvalue $\lambda_{max}$ by a factor of 
+	For the third equality we applied the duplication formula for the gamma function. All in all the power method underestimates the largest eigenvalue $\lambda_{max}$ by a factor of 
 	\[
-	\lim_{N\to\infty}\frac{\norm{A^{n+1}v}_2}{\norm{A^{n}v}_2}\frac{1}{\abs{\lambda_{max}}} =
-	\sqrt{\left(1+\frac{1}{4n+4}\right)\left(1-\frac{3}{4n+2}\right)} \approx 1-\frac{1}{4n+3}
+	\frac{\norm{A^{n+1}v}_2}{\norm{A^{n}v}_2}\frac{1}{\abs{\lambda_{max}}} =
+	\sqrt{\left(1-\frac{1}{4n+4}\right)\left(1-\frac{1}{4n+2}\right)}\sin^{-2}\!\left(\frac{\pi}{N}\left\lfloor\frac{N}{2}\right\rfloor\right) \approx 1-\frac{1}{4n+3}
 	\]
-	at the limit $N\to\infty$. %For some sample values of $\alpha_n$ consider Table \ref{table:alphan}. We observe that the relative increase of $\alpha_n$ is  
+	assuming $N>2(n+1)$. %For some sample values of $\alpha_n$ consider Table \ref{table:alphan}. We observe that the relative increase of $\alpha_n$ is  
 	%\begin{table}
 	%	\centering
 	%	\def\arraystretch{1.5}
@@ -631,11 +626,11 @@
 %	Consider the one-dimensional advection-diffusion-reaction equation
 %	\begin{align*}
 %	\partial_tu &= \alpha\partial_x(u+\partial_xu) + \beta\partial_x(u^2) + u(u-0.5) \quad \alpha,\beta,\ge 0\\
-%	u_0(t) &= e^{-80\cdot(t-0,45)^2}, \quad t\in[0,0.1]
+%	u_0(t) &= e^{-80\cdot(t-0.45)^2}, \quad t\in[0,0.1]
 %	\end{align*}
 %	\begin{align*}
 %	\partial_tu &= \alpha\nabla(u+\nabla u) + \beta(\partial_x + \partial_y)(u^2) + u(u-0.5) ~~\text{and}\\
-%	u_0(t) &= e^{-80\cdot(t-0,45)^2} ~~\text{with}~~ \alpha,\beta,\ge 0  ~~\text{and}~~ t\in[0,0.1]
+%	u_0(t) &= e^{-80\cdot(t-0.45)^2} ~~\text{with}~~ \alpha,\beta,\ge 0  ~~\text{and}~~ t\in[0,0.1]
 %	\end{align*}
 %	on the domain $\Omega = [0,1]$.
 %	
@@ -644,7 +639,7 @@
 	We consider $d$-dimensional nonlinear variants of the initial value problem in section \ref{sec:LinearADe}
 	\begin{alignat*}
 	\partial\partial_tu &= F(u) &&~~\text{with}~~ t\in[0,0.1],\\
-	u_0(x) &= e^{-80\cdot(\norm{x}_2^2-0,45)^2} &&~~\text{with}~~ x\in[0,1]^d.
+	u_0(x) &= e^{-80\cdot(\norm{x}_2^2-0.45)^2} &&~~\text{with}~~ x\in[0,1]^d.
 	\end{alignat*}
 	For all experiments we assume Dirichlet boundary conditions. \\ We compare the behavior of these methods with other matrix-free ODE solvers.
 	
@@ -754,7 +749,7 @@
 	Consider the one-dimensional advection-diffusion equation
 	\begin{align*}
 	\partial_tu &= a\partial_{xx}u + b\partial_xu \quad a,b\ge 0\\
-	u_0(t) &= e^{-80\cdot(t-0,45)^2} \quad t\in[0,0.1]
+	u_0(t) &= e^{-80\cdot(t-0.45)^2} \quad t\in[0,0.1]
 	\end{align*}
 	with homogeneous Dirichlet boundary conditions on the domain $\Omega = [0,1]$. 
 	For a fixed $N\in\mathbb N$ we approximate the diffusive part with second-order central differences on an equidistant grid with grid size $h = \frac{1}{N}$ and grid points $x_i = ih$, $i=0\dots,N$.
