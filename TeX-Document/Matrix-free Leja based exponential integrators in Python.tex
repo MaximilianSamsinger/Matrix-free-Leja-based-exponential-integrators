@@ -99,8 +99,8 @@
 	\begin{center}\textbf{\Huge Matrix-free Leja based exponential integrators in Python}\end{center}
 	\begin{center}\textbf{Abstract}\end{center}
 	\begin{abstract}
-		In this master thesis we develop an algorithm to approximate the action of a matrix exponential function for matrix-free linear operators. This is achieved by using a modified version of the real Leja method where we choose optimal interpolation parameters based on a spectral radius estimate of the power method. With this procedure we construct exponential Rosenbrock-type integrators to solve stiff advection-diffusion-reaction equations. We compare the performance of these integrators with other matrix-free differential equation solvers. 
- 		As part of this thesis we provide the code for the matrix-free Leja method for the action of the matrix exponential function.
+		In this master thesis we develop an algorithm to approximate the action of a matrix exponential function for matrix-free linear operators. This is achieved by using a modified version of the real Leja method where we choose optimal interpolation parameters based on a spectral radius estimate that is computed using the power method. With this procedure we construct exponential Rosenbrock-type integrators to solve stiff advection-diffusion-reaction equations. We compare the performance of these integrators with other matrix-free differential equation solvers. 
+ 		As part of this thesis we publish the code for the matrix-free Leja method for the action of the matrix exponential function on GitHub \footnote{INSERT LINK HERE}.
 		
 	\end{abstract}
 	
@@ -116,7 +116,7 @@
 	\[e^Av \approx p_m(A)v.\]
 	This approach has many benefits. The cost of the computation of $p_m(A)v$ mainly depends on the calculation of $m$ matrix-vector multiplications with $A$, which is inexpensive for sparse matrices. Furthermore the explicit knowledge of $A$ itself is no longer required. $A$ can be replaced by a linear operator, which can be convenient and save memory. 
 	
-	We introduce an polynomial interpolation procedure, the Leja method, in Section \ref{sec:LejaMethod}. The Leja method has many computational advantages. All interpolation nodes can be precomputed and stored for later use. The interpolation itself is done iteratively and can be interrupted if the interpolation error is small enough. For entire functions the Leja interpolation has beneficial convergence properties which translate well to the corresponding matrix functions. After this brief introduction to the Leja method we discuss an application to the action of the matrix exponential function. We consider an approach which bounds the backward error of the interpolation. This will lead to an algorithm which provides cost-minimizing parameters for the Leja interpolation based on the operator norm $\norm{A}$ of $A$. \\
+	We introduce an polynomial interpolation procedure, the Leja method, in Section \ref{sec:LejaMethod}. The Leja method has many computational advantages. All interpolation nodes can be precomputed and stored for later use. The interpolation itself is done iteratively and can be interrupted if the interpolation error is small enough. For entire functions the Leja interpolation has beneficial convergence properties which translate well to the corresponding matrix functions. After this brief introduction to the Leja method we discuss its application to the action of the matrix exponential function. We consider an approach which bounds the backward error of the interpolation. This will lead to an algorithm which provides cost-minimizing parameters for the Leja interpolation based on the operator norm $\norm{A}$ of $A$. \\
 	In Section \ref{sec:matrixfreeimplementation} we adapt the algorithm in order to obtain a matrix-free version. The implementation of the Newton interpolation is straight-forward for linear operators. However, without the matrix representation it can be computationally infeasible to calculate the operator norm. Instead we replace all instances of $\norm{A}$ with the spectral radius, which can be cheaply estimated using the power method. This modification introduces new challenges. On the one hand it is unclear how many power iterations are necessary for a sufficient estimate of the spectral radius. On the other hand it is no longer possible to specify the norm for the backward error bound. \\
 	In Section \ref{sec:LinearADe} we study the matrix-free Leja method for the discretized linear, one-dimensional advection-diffusion equation. For this specific problem we experimentally and numerically investigate the behavior of the power method. We identify a suitable choice for the number of power iterations. Furthermore, this choice is reasonable in the nonlinear case as well. In order to verify that claim we introduce exponential Rosenbrock-type integrators in Section \ref{sec:expint}. Finally, we compare the performance of three matrix-free Leja based exponential integrators of different order against other matrix-free differential equation solvers in Section \ref{sec:NE}.
 	
@@ -559,7 +559,7 @@
 		\]
 		\vspace{-2em}
 	\end{table}
-	\noindent i.e. 
+	\noindent that is 
 	\begin{alignat*}{2}
 	U_{1} &= u_0,\\
 	U_{2} &= e^{\frac{\tau}{2} A}u_0 &&+ \tau\varphi_1\left(\frac{\tau}{2} A\right)g(U_1) = u_0 + \frac{\tau}{2}\varphi_1\left(\frac{\tau}{2}A\right)F(u_0),\\
@@ -635,17 +635,24 @@
 %	on the domain $\Omega = [0,1]$.
 %	
 	\section{Numerical experiments}\label{sec:NE}
-	In this section we will apply matrix-free exponential Rosenbrock integrators to multiple advection-diffusion-reaction equations. All experiments are conducted in Python 3.7 \cite{python} with NumPy 1.18.1 \cite{numpy} and SciPy 1.4.1 \cite{numpy}. We use an AMD Ryzen 7 2700 Processor on a Windows machine. 
-	We consider $d$-dimensional nonlinear variants of the initial value problem in section \ref{sec:LinearADe}
+	In this section we will apply matrix-free exponential Rosenbrock integrators to multiple advection-diffusion-reaction equations. All experiments are conducted in Python 3.7 \cite{python} with NumPy 1.18.1 \cite{numpy} and SciPy 1.4.1 \cite{numpy}. We use an AMD Ryzen 7 2700 Processor on a Windows machine.
+	Consider $d$-dimensional nonlinear variants of the initial value problem in section \ref{sec:LinearADe}. Let $\alpha$, $\beta > 0$ and
 	\begin{alignat*}
 	\partial\partial_tu &= F(u) &&~~\text{with}~~ t\in[0,0.1],\\
-	u_0(x) &= e^{-80\cdot(\norm{x}_2^2-0.45)^2} &&~~\text{with}~~ x\in[0,1]^d.
+	u_0(x) &= e^{-80\cdot(\norm{x}_2^2-0.45)^2} &&~~\text{with}~~ x\in[0,1]^d,
 	\end{alignat*}
-	For all experiments we assume Dirichlet boundary conditions. \\ We compare the behavior of these methods with other matrix-free ODE solvers.
+	with
+	\begin{align*}
+		F(u) &= 
+		\alpha\nabla((u+1)\nabla u) 
+		+ 2\beta (u\cdot\nabla u) 
+		+ u(u-0.5).
+	\end{align*}
+	For all experiments we assume Dirichlet boundary conditions. \\ We compare the behavior of exponential integrators with other matrix-free ODE solvers.
 	
 	\paragraph{Crank-Nicolson method:}
 	We refer to the Crank-Nicolson method of order 2 as \texttt{cn2}.
-	In our implementation of \texttt{cn2} we use the Newton-Raphson method to solve the nonlinear system of equations. We treat the Jacobian-vector product $v\mapsto F'(u)v$ as a linear operator. For the resulting system of linear equations we use the SciPy package \texttt{scipy.sparse.linalg.gmres}. For all experiments the relative tolerance is set to $\texttt{tol}/N_\tau$, where $N_\tau$ is the total number of time steps used for solving the ODE. This choice guarantees that the sum of errors made by \texttt{gmres} is always lower than our specified tolerance \texttt{tol}. No preconditioner was used for \texttt{gmres}. The Crank-Nicolson method is unconditionally stable and therefore does not have to satisfy the Courant-Friedrichs-Lewy (CFL) conditions for the differential equations we investigate in our experiments.
+	In our implementation of \texttt{cn2} we use the Newton-Raphson method to solve the nonlinear system of equations. We treat the Jacobian-vector product $v\mapsto F'(u)v$ as a linear operator. For the resulting system of linear equations we use the SciPy package \texttt{scipy.sparse.linalg.gmres}. For all experiments the relative tolerance is set to $\texttt{tol}/N_\tau$, where $N_\tau$ is the total number of time steps used for solving the ODE. No preconditioner was used for \texttt{gmres}. The Crank-Nicolson method is unconditionally stable and therefore does not have to satisfy the Courant-Friedrichs-Lewy (CFL) conditions for the differential equations we investigate in our experiments.
 	
 	\paragraph{Explicit Runge-Kutta method:}
 	We refer to the explicit midpoint method of order 2 as \texttt{rk2} and refer to the classical Runge-Kutta method of order 4 as \texttt{rk4}. No explicit Runge-Kutta method is A-stable. Therefore small time step sizes have to be chosen when solving stiff differential equations. In our experiments this is the case when the considered differential equation is diffusion-dominated.
@@ -658,22 +665,25 @@
 	Our goal is to investigate the respective computational costs of these methods while achieving a prescribed relative tolerance \texttt{tol}.
 %We investigate cost incurred by each integrator in terms of function evaluations \texttt{Feval}, directional derivatives evaluations \texttt{dFeval} and matrix-vector multiplications \texttt{mv}. From now on the cost of evaluating $F$ once will be defined as 1 \texttt{Feval}.
 	\subsection{Cost analysis}
-	Let $N_\tau\in\mathbb{N}$ be the total number of time steps. We investigate the cost per time step incurred by each integrator in terms of function evaluations. 
-	%From now on the cost of evaluating $F$ once will be defined as 1 \texttt{Feval}. 
-	Both \texttt{rk2} and \texttt{rk4} require one function evaluation for each stage.
-	For \texttt{cn2} and all exponential integrators the cost analysis is much more involved. In addition to function evaluations these methods use expensive subroutines which incur costs mainly depending on the number of Jacobian-vector products. For $v\in\mathbb{R}^{N}$ the directional derivative can be approximated using two function evaluations 
+	%Let $N_\tau\in\mathbb{N}$ be the total number of time steps. 
+	For our cost analysis we investigate the relative number of memory operations incurred by each integrator. We show that it can be sufficient to measure this cost in terms of function evaluations. By this we mean counting the occurrences of the following procedure. 
+	\begin{enumerate}
+		\item Load an $N^d$-dimensional vector $v$ into memory.
+		\item Evaluate a function $f(v)$ which requires a similar number of read and write operations as $F(v)$.
+		\item Store the result in memory.
+	\end{enumerate}
+	For both \texttt{rk2} and \texttt{rk4} the dominant costs per stage are incurred by one evaluation of $F$. Therefore their cost per time step amounts to two and four function evaluations respectively.
+	For \texttt{cn2} and all exponential integrators the cost analysis is much more involved. These methods use expensive subroutines with costs mainly depending on Jacobian-vector products. For $v\in\mathbb{R}^{N}$ the directional derivative can be approximated using two function evaluations
 	\[
-	F'(u)v \approx \frac{F(u+\epsilon v)-F(u)}{\epsilon} ~~\text{with}~~ \epsilon > 0.
+	f'(u)v \approx \frac{f(u+\epsilon v)-f(u)}{\epsilon} ~~\text{with}~~ \epsilon > 0.
 	\]
-	However, $F(u)$ only needs to be computed once per time step. Therefore, after evaluating and storing $F(u)$ the directional derivative $F'(u)v$ costs approximately one function evaluation.
-	
-	%Note that $N_\tau$ is unrelated to $s$ in \eqref{eq:msmatrixfree} and each exponential integrator may select a parameter $s>1$ for \texttt{expleja}. 
-
+	However, $f(u)$ can be precomputed once per time step. With this optimization the directional derivative costs one function evaluation plus an extra $N^d$ read operations for looking up $f(u)$. This is, however, an upper bound for the costs, since the expression $f(u+\epsilon v) - f(u)$ can often be simply to save memory. \\
+	All in all it is reasonable to compare the number of read and write memory operations of each integrator by counting the number of function evaluations.
 	
 	\subsection{One-dimensional advection-diffusion equation}
 	Let $\alpha,\beta,\ge 0$ and 
 	\begin{align*}
-		F(u) = \alpha\partial_x((u+1)\partial_xu) + \beta\partial_x(u^2) + u(u-0.5).
+		F(u) = \alpha\partial_x((u+1)\partial_xu) + 2\beta u\partial_x u + u(u-0.5).
 	\end{align*}
 	With $\alpha$ and $\beta$ we control the relative strength of the diffusion compared to the advection respectively. The differential equation can be rewritten using the product rule.
 	The 
@@ -802,10 +812,7 @@
 
 	\begin{itemize}
 		\item Section 3, adapt introduction with RAM constraints, not cache
-		\item Section 4.1 Explain $v=\sum_{j=1}^N v_j$, Gleichverteilung aller EV
-		\item Section 4.1 Consider special case $b=0$ for analysis.
-		\item Section 4.1 What is $\lambda_{max}?$
-		
+		\item Section 4.1 Explain $v=\sum_{j=1}^N v_j$, Gleichverteilung aller EV		
 	\end{itemize}
 	
 	
