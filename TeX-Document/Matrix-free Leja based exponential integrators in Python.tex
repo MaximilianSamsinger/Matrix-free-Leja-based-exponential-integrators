@@ -215,7 +215,54 @@
 	A well-chosen shift centers the eigenvalues of $A-\mu I$ around $0$. Such a shift can be found by using Gerschgorin's circle theorem. This is, however, not possible in the matrix-free case.
 	
 	\section{Matrix-free implementation}\label{sec:matrixfreeimplementation}
-	As an motivational example consider stencil codes, which are fixed, geometric update rules for vector elements using a pattern depending on itself its neighbours. Stencils naturally arise in finite difference and finite element schemes. \\ 
+
+In this section we introduce a matrix-free version of the Leja method for the action of a matrix exponential. After a brief motivation we discuss the main advantages and disadvantages of such an approach. \\
+Performance on most modern systems is limited by memory bandwidth. A matrix-free implementation gives us the opportunity to significantly save memory and thus increase performance.
+
+\subsection{Matrix-free methods for finite difference schemes}
+Discretizing partial differential equations often leads to stencils, which are fixed, geometric update rules for vector elements using a pattern depending on itself its neighbours. In the simplest case, which is the only one we consider, each point on a grid is updated using a linear combination of its neighbours. This update can be expressed as an linear function $F$ acting on a vector $u$. 
+
+On modern systems the computation of these updates is often restricted by the available memory bandwidth. It is often beneficial to use algorithms, which do not rely on the matrix representation to save memory. We demonstrate this for finite difference schemes of the following form.
+
+\begin{align}
+\partial_{t}u = F(u) = \sum_{j=-n}^{n} a_{k+j}u_{k+j} \label{eq:stencil}
+\end{align}
+for $n\in\mathbb{N}$, $u\in\mathbb{R}^N$ and periodic boundaries i.e. $a_{l+N} = a_{l}$ and $u^{(i)}_{l+N}=u^{(i)}_{l}$ for all $l\in\mathbb{Z}$, $i\in\{0,1\}$.
+We assume the discretization was performed on a regular grid and all real numbers are stored in double-precision format.
+The solution of \eqref{eq:stencil} can be calculated with the Leja method using the matrix-representation of $F(u)=Au$. For a fast computation it is crucial to minimize the cost of computing $F(u)$.    
+We investigate the number of read and write operations. For 
+
+We count the number of read and write operations necessary to compute $Au$. Reading $u$ and writing the result costs $2N$ operations in total. If $A$ is stored as a dense matrix then $N^2$ entries have to be loaded. These costs are reduced to $(2n+1)N$ for sparse matrices, since only $2n+1$ entries have to be loaded at each row in $A$. However, depending on the sparse format chosen additional information has to be accessed to specify the index of each matrix entry. For the compressed sparse row (CSR) format we require $N$ integers for the row and $(2n+1)N$ integers for the column indices. Integers need four bytes of memory space compared to 16 bytes for floating point numbers in double precision. Therefore $(40n + 20)N$ bytes need to be accessed for the matrix in CSR format. In total $(40n + 52)N$ bytes are read or written for the computation of $Au$.
+
+This example shows that most of the memory operations are incurred by loading the coefficients of the matrix $A$. 
+
+Blabla implement as a linear operator, i.e.
+
+loading only the relevant $(2n+1)$ coefficients $a_{-n}, \dots, a_{n}$. This reduces the number of memory operations for the calculation of $Au$ to $2N + n$. In total $32N + 16n$ bytes need to be either read or written. For a simple 5-point stencil, which is commonly used to calculate the numerical derivative in two dimensions, this reduces the number of memory operations necessary by a factor of 4.
+
+	
+	In this section we introduce a matrix-free version of the Leja method for the action of a matrix exponential. This algorithm 
+	
+	We demonstrated that a matrix-free representation of finite difference schemes can save memory. Finite difference methods are part of a more general class of  stencil codes, which are fixed, geometric update rules for vector elements using a pattern depending on itself its neighbours, 
+	Blah blah, stencil codes. More generally stencil code 
+	
+	We consider stencils for partial differential equations. They are fixed, geometric update rules for vector elements using a pattern depending on itself its neighbours. On modern systems the memory bandwidth is th 
+	We demonstrate this for finite difference methods of the form
+
+\begin{align}
+\partial_{t}u = Au = \sum_{j=-n}^{n} a_{k+j}u_{k+j} \label{eq:stencil}
+\end{align}
+for $n\in\mathbb{N}$, $u\in\mathbb{R}^N$ and periodic boundaries i.e. $a_{l+N} = a_{l}$ and $u^{(i)}_{l+N}=u^{(i)}_{l}$ for all $l\in\mathbb{Z}$, $i\in\{0,1\}$.
+We assume the discretization was performed on a regular grid assume and all real numbers are stored in double-precision format.
+The solution of \eqref{eq:stencil} can be calculated with the Leja method. For a fast computation it is crucial to minimize the cost of computing $Au$.    
+We investigate the number of read and write operations. For 
+
+As an motivational example consider stencil codes, which are fixed, geometric update rules for vector elements using a pattern depending on itself its neighbours. Stencils naturally arise in finite difference and finite element schemes. \\ 
+Consider 
+
+Even if the matrix is stored in a sparse format it is still necessary to save $N(2n+1)$ non-zero elements. In the case of two-dimensional five-point stencil method on a rectangular grid we have $n=2$ and $N=N_{x}N_{y}$, where $N_{x}$ and $N_{y}$ is the number of grid points on the $x$- and $y$-axis respectively. This leads to a storage demand of $20N_xN_y$ bytes when saving matrix entries as float data. This means that we surpass $1$ megabyte when we choose $N_x,N_y > 250$, which might cause cache misses. This is especially true for L1 and L2 caches. This problem is further magnified for stencils on three-dimensional domains. \\	
+
+	
 	%%%%%%%%%%%%%%%% CHANGE THIS CHANGE THIS CHANGE THIS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	In this section we introduce a matrix-free version of the Leja method for the action of a matrix exponential. After a brief motivation we discuss the main advantages and disadvantages of such an approach. \\
 	Performance on most modern systems is limited by memory bandwidth. A matrix-free implementation gives us the opportunity to significantly save memory and thus increase performance. For example, a matrix-free implementation reduces the amount of memory transactions compared to a
@@ -505,7 +552,7 @@
 	%	at the limit $N\to\infty$. 
 	
 	\section{Matrix-free Leja based exponential integrators} \label{sec:expint}
-	Exponential integrators are a class of numerical integrators which excel at solving stiff differential equations. Unlike most numerical ordinary differential equation (ODE) solvers their construction is based on the variation-of-constants formula. Consider the semilinear initial value problem
+	Exponential integrators are a class of numerical integrators which excel at solving stiff differential equations. Unlike most ordinary differential equation (ODE) solvers their construction is based on the variation-of-constants formula. Consider the semilinear initial value problem
 	\begin{align}
 	\begin{split}
 	\partial_tu &= F(u) = Au + g(u) \\ 
@@ -585,7 +632,7 @@
 	\end{split}\label{eq:Djscheme}
 	\end{align}
 	The main advantage of this reformulation lies in the fact that the norm of all $D_j$ is expected to be small. This can be exploited by the Leja method by allowing an early termination of the Newton interpolation. \\
-	For an efficient implementation of exponential Rosenbrock integrators it is crucial to compute only a single action of a matrix function per stage $U_i$ and for solution $u_1$. Since the most frequently employed methods depend on linear combinations of $\varphi_k$-functions this can be done using the matrix exponential function.
+	For an efficient implementation of exponential Rosenbrock integrators it is crucial to compute only a single action of a matrix function per stage $U_i$ and for the solution $u_1$. Since the most frequently employed methods depend on linear combinations of $\varphi_k$-functions this can be done using the matrix exponential function.
 	
 	\subsection{Computing the action of the $\varphi$-functions}
 	Exponential integrators rely on the efficient computation of $\varphi_k$-functions. In the matrix case $A\in\mathbb{C}^{N\times N}$ this can be done by slightly expanding $A$, see \cite[Theorem 2.1]{action}.\\
