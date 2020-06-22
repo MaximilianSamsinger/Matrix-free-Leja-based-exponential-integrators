@@ -215,26 +215,35 @@
 	A well-chosen shift centers the eigenvalues of $A-\mu I$ around $0$. Such a shift can be found by using Gerschgorin's circle theorem. This is, however, not possible in the matrix-free case.
 	
 	\section{Matrix-free implementation}\label{sec:matrixfreeimplementation}
+Matrix-free methods are algorithms which use linear functions, but do not explicitly rely on their respective matrix-representations. These methods are preferable when saving and loading matrix coefficients becomes prohibitively expensive. As a motivational example we perform a cost analysis in terms of memory operations for finite difference schemes in section \ref{sec:FDS}.
+We develop a matrix-free version of the Leja method for the action of the matrix exponential in section \label{sec:MatrixFreeLejaMethod}. Finally, we discuss the advantages and disadvantages of this new algorithm.
 
-In this section we introduce a matrix-free version of the Leja method for the action of a matrix exponential. After a brief motivation we discuss the main advantages and disadvantages of such an approach. \\
-Performance on most modern systems is limited by memory bandwidth. A matrix-free implementation gives us the opportunity to significantly save memory and thus increase performance.
+%In this section we demonstrate this for finite difference schemes and develop a matrix-free version of the Leja method for the action of the matrix exponential. This is  
+%The cost of the Leja interpolation mainly depend on the number of matrix-vector multiplications. For large matrices it is memory-inefficient to load the coefficients first and compute a matrix-.
+%We will demonstrate 
 
-\subsection{Matrix-free methods for finite difference schemes}
-Discretizing partial differential equations often leads to stencils, which are fixed, geometric update rules for vector elements using a pattern depending on itself its neighbours. In the simplest case, which is the only one we consider, each point on a grid is updated using a linear combination of its neighbours. This update can be expressed as an linear function $F$ acting on a vector $u$. 
+%In this section the a matrix-free version of the Leja method for the action of a matrix exponential. After a brief motivation we discuss the main advantages and disadvantages of such an approach. \\
+%Performance on most modern systems is limited by memory bandwidth. A matrix-free implementation gives us the opportunity to significantly save memory and thus increase performance.
 
-On modern systems the computation of these updates is often restricted by the available memory bandwidth. It is often beneficial to use algorithms, which do not rely on the matrix representation to save memory. We demonstrate this for finite difference schemes of the following form.
+\subsection{Matrix-free methods for finite difference schemes} \label{sec:FDS}
+Discretizing partial differential equations often leads to stencils, which are fixed, geometric update rules for vector elements. In the simplest case, which is the only one we consider, each point on a grid is updated by a linear combination of itself and its neighbours. This can be expressed as an linear function $A$ acting on a vector $u$. 
+
+On modern systems the computation of these updates is often restricted by the available memory bandwidth. It is often beneficial to use algorithms, which do not rely on the matrix representation of $A$ to save memory. We demonstrate this for finite difference schemes of the following form.
 
 \begin{align}
-\partial_{t}u = F(u) = \sum_{j=-n}^{n} a_{k+j}u_{k+j} \label{eq:stencil}
+\partial_{t}u = Au = \sum_{j=-n}^{n} a_{k+j}u_{k+j} \label{eq:stencil}
 \end{align}
 for $n\in\mathbb{N}$, $u\in\mathbb{R}^N$ and periodic boundaries i.e. $a_{l+N} = a_{l}$ and $u^{(i)}_{l+N}=u^{(i)}_{l}$ for all $l\in\mathbb{Z}$, $i\in\{0,1\}$.
 We assume the discretization was performed on a regular grid and all real numbers are stored in double-precision format.
-The solution of \eqref{eq:stencil} can be calculated with the Leja method using the matrix-representation of $F(u)=Au$. For a fast computation it is crucial to minimize the cost of computing $F(u)$.    
-We investigate the number of read and write operations. For 
+The solution of \eqref{eq:stencil} can be approximated with the Leja method using the matrix-representation of $A$. The Newton interpolation itself can be computed without the explicit knowledge of the matrix coefficients. For fixed interpolation parameters we can compare the performance of the Leja method for the regular and the matrix-free case by counting the number of read and write operations necessary to compute $Av$, where $v$ is an arbitary vector.
 
-We count the number of read and write operations necessary to compute $Au$. Reading $u$ and writing the result costs $2N$ operations in total. If $A$ is stored as a dense matrix then $N^2$ entries have to be loaded. These costs are reduced to $(2n+1)N$ for sparse matrices, since only $2n+1$ entries have to be loaded at each row in $A$. However, depending on the sparse format chosen additional information has to be accessed to specify the index of each matrix entry. For the compressed sparse row (CSR) format we require $N$ integers for the row and $(2n+1)N$ integers for the column indices. Integers need four bytes of memory space compared to 16 bytes for floating point numbers in double precision. Therefore $(40n + 20)N$ bytes need to be accessed for the matrix in CSR format. In total $(40n + 52)N$ bytes are read or written for the computation of $Au$.
+%Since the cost of the Leja method mainly depend on the number of matrix-vector products, we can performing a cost analysis in terms of memory operations for $Av$, where $v$ is an arbitrary vector, to investigate the performance of the Leja method.\\ 
 
-This example shows that most of the memory operations are incurred by loading the coefficients of the matrix $A$. 
+%We count the number of read and write operations necessary to compute $Au$. 
+Reading $v$ and writing the result of $Av$ costs $2N$ memory operations in total. If $A$ is stored as a dense matrix then $N^2$ entries have to be loaded. These costs are reduced to $(2n+1)N$ for sparse matrices, since only $2n+1$ entries have to be loaded for each row in $A$. However, depending on the sparse format chosen, additional information has to be accessed to specify the index of each matrix entry. For example, the compressed sparse row (CSR) format requires storing $N$ and $(2n+1)N$ integers for the row and column indices respectively. Integers need four bytes of memory space compared to 16 bytes for floating point numbers in double precision. Therefore $(40n + 20)N$ bytes need to be accessed for the matrix in CSR format. In total $(40n + 52)N$ bytes are read or written for the computation of $Au$.
+In the matrix-free case the $(2n+1)$ coefficients $a_{-n}, \dots, a_{n}$ only need to be loaded once. This reduces the number of memory operations for the calculation of $Au$ to $2N + n$. In total $32N + 16n$ bytes need to be either read or written. For a simple 5-point stencil, which is commonly used to calculate the numerical derivative in two dimensions, this reduces the number of memory operations by a factor of 4.
+
+This example shows that most of the memory operations are incurred by loading the coefficients of the matrix $A$. Furthermore it motivates the development of a fully matrix-free Leja method for the matrix exponential function. 
 
 Blabla implement as a linear operator, i.e.
 
@@ -282,7 +291,7 @@ Even if the matrix is stored in a sparse format it is still necessary to save $N
 	\end{split}.
 	\end{align*}
 	Linear operators can be more convenient to work with in applications where the matrix representation is not easily available. They can also be more memory efficient. For the finite difference schemes we discussed at the beginning of this section we only need to store $(2n+1)$ values independent of $N$. This serves as a motivation to propose an alternative for the classical Leja method we discussed in Section \ref{sec:LejaMethod}.
-	\paragraph{Matrix-free Leja method}
+	\subsection{Matrix-free Leja method} \label{sec:MatrixFreeLejaMethod}
 	For the most part it is unproblematic to use linear operators for the Leja method instead of matrices, since the Newton interpolation only relies on computation of matrix-vector products. However, difficulties arise when the interpolation parameters need to be determined. Without the matrix representation it can be expensive to compute the operator norm $\norm A$ in \eqref{eq:ms}. We will circumvent this problem by replacing $\norm{A}$ with the spectral radius $\rho(A)$. 
 	
 	The backward error analysis in \cite{lejarev} holds true for every operator norm.
