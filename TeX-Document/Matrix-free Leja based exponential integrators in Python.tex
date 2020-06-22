@@ -228,7 +228,9 @@ We develop a matrix-free version of the Leja method for the action of the matrix
 \subsection{Matrix-free methods for finite difference schemes} \label{sec:FDS}
 Discretizing partial differential equations often leads to stencils, which are fixed, geometric update rules for vector elements. In the simplest case, which is the only one we consider, each point on a grid is updated by a linear combination of itself and its neighbours. This can be expressed as an linear function $A$ acting on a vector $u$. 
 
-On modern systems the computation of these updates is often restricted by the available memory bandwidth. It is often beneficial to use algorithms, which do not rely on the matrix representation of $A$ to save memory. We demonstrate this for finite difference schemes of the following form.
+%Performance on most modern systems is limited by memory bandwidth. A matrix-free implementation gives us the opportunity to significantly save memory and thus increase performance.
+
+On modern systems the available memory bandwidth is the bottleneck for the computation of these updates. It is beneficial to use algorithms, which do not rely on the matrix representation of $A$ to save memory. We demonstrate this for finite difference schemes of the following form.
 
 \begin{align}
 \partial_{t}u = Au = \sum_{j=-n}^{n} a_{k+j}u_{k+j} \label{eq:stencil}
@@ -249,29 +251,7 @@ Blabla implement as a linear operator, i.e.
 
 loading only the relevant $(2n+1)$ coefficients $a_{-n}, \dots, a_{n}$. This reduces the number of memory operations for the calculation of $Au$ to $2N + n$. In total $32N + 16n$ bytes need to be either read or written. For a simple 5-point stencil, which is commonly used to calculate the numerical derivative in two dimensions, this reduces the number of memory operations necessary by a factor of 4.
 
-	
-	In this section we introduce a matrix-free version of the Leja method for the action of a matrix exponential. This algorithm 
-	
-	We demonstrated that a matrix-free representation of finite difference schemes can save memory. Finite difference methods are part of a more general class of  stencil codes, which are fixed, geometric update rules for vector elements using a pattern depending on itself its neighbours, 
-	Blah blah, stencil codes. More generally stencil code 
-	
-	We consider stencils for partial differential equations. They are fixed, geometric update rules for vector elements using a pattern depending on itself its neighbours. On modern systems the memory bandwidth is th 
-	We demonstrate this for finite difference methods of the form
 
-\begin{align}
-\partial_{t}u = Au = \sum_{j=-n}^{n} a_{k+j}u_{k+j} \label{eq:stencil}
-\end{align}
-for $n\in\mathbb{N}$, $u\in\mathbb{R}^N$ and periodic boundaries i.e. $a_{l+N} = a_{l}$ and $u^{(i)}_{l+N}=u^{(i)}_{l}$ for all $l\in\mathbb{Z}$, $i\in\{0,1\}$.
-We assume the discretization was performed on a regular grid assume and all real numbers are stored in double-precision format.
-The solution of \eqref{eq:stencil} can be calculated with the Leja method. For a fast computation it is crucial to minimize the cost of computing $Au$.    
-We investigate the number of read and write operations. For 
-
-As an motivational example consider stencil codes, which are fixed, geometric update rules for vector elements using a pattern depending on itself its neighbours. Stencils naturally arise in finite difference and finite element schemes. \\ 
-Consider 
-
-Even if the matrix is stored in a sparse format it is still necessary to save $N(2n+1)$ non-zero elements. In the case of two-dimensional five-point stencil method on a rectangular grid we have $n=2$ and $N=N_{x}N_{y}$, where $N_{x}$ and $N_{y}$ is the number of grid points on the $x$- and $y$-axis respectively. This leads to a storage demand of $20N_xN_y$ bytes when saving matrix entries as float data. This means that we surpass $1$ megabyte when we choose $N_x,N_y > 250$, which might cause cache misses. This is especially true for L1 and L2 caches. This problem is further magnified for stencils on three-dimensional domains. \\	
-
-	
 	%%%%%%%%%%%%%%%% CHANGE THIS CHANGE THIS CHANGE THIS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 	In this section we introduce a matrix-free version of the Leja method for the action of a matrix exponential. After a brief motivation we discuss the main advantages and disadvantages of such an approach. \\
 	Performance on most modern systems is limited by memory bandwidth. A matrix-free implementation gives us the opportunity to significantly save memory and thus increase performance. For example, a matrix-free implementation reduces the amount of memory transactions compared to a
