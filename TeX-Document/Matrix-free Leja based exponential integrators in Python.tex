@@ -237,7 +237,7 @@ On modern systems the available memory bandwidth is the bottleneck for the compu
 \end{align}
 for $n\in\mathbb{N}$, $u\in\mathbb{R}^N$ and periodic boundaries i.e. $a_{l+N} = a_{l}$ and $u^{(i)}_{l+N}=u^{(i)}_{l}$ for all $l\in\mathbb{Z}$, $i\in\{0,1\}$.
 We assume the discretization was performed on a regular grid and all real numbers are stored in double-precision format.
-The solution of \eqref{eq:stencil} can be approximated with the Leja method using the matrix-representation of $A$. The Newton interpolation itself can be computed without the explicit knowledge of the matrix coefficients. For fixed interpolation parameters we can compare the performance of the Leja method for the regular and the matrix-free case by counting the number of read and write operations necessary to compute $Av$, where $v$ is an arbitary vector.
+The solution of \eqref{eq:stencil} can be approximated with the Leja method. The Newton interpolation itself can be computed without the explicit knowledge of the matrix coefficients. For fixed interpolation parameters we can compare the performance of the Leja method for the regular and the matrix-free case by counting the number of read and write operations necessary to compute $Av$, where $v$ is an arbitary vector.
 
 %Since the cost of the Leja method mainly depend on the number of matrix-vector products, we can performing a cost analysis in terms of memory operations for $Av$, where $v$ is an arbitrary vector, to investigate the performance of the Leja method.\\ 
 
@@ -247,30 +247,12 @@ In the matrix-free case the $(2n+1)$ coefficients $a_{-n}, \dots, a_{n}$ only ne
 
 This example shows that most of the memory operations are incurred by loading the coefficients of the matrix $A$. Furthermore it motivates the development of a fully matrix-free Leja method for the matrix exponential function. 
 
-Blabla implement as a linear operator, i.e.
-
-loading only the relevant $(2n+1)$ coefficients $a_{-n}, \dots, a_{n}$. This reduces the number of memory operations for the calculation of $Au$ to $2N + n$. In total $32N + 16n$ bytes need to be either read or written. For a simple 5-point stencil, which is commonly used to calculate the numerical derivative in two dimensions, this reduces the number of memory operations necessary by a factor of 4.
-
 
 	%%%%%%%%%%%%%%%% CHANGE THIS CHANGE THIS CHANGE THIS %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-	In this section we introduce a matrix-free version of the Leja method for the action of a matrix exponential. After a brief motivation we discuss the main advantages and disadvantages of such an approach. \\
-	Performance on most modern systems is limited by memory bandwidth. A matrix-free implementation gives us the opportunity to significantly save memory and thus increase performance. For example, a matrix-free implementation reduces the amount of memory transactions compared to a
-	sparse matrix implementation based on the CSR format by at least a
-	factor of 5.
-	Consider finite-difference schemes
-	\[
-	v_k = \sum_{j=-n}^{n} a_{k+j}v_{k+j}
-	\]
-	for $v\in\mathbb{C}^N$, $n\in\mathbb{N}$ and periodic boundaries i.e. $a_{l+N} = a_{l}$ and $v_{l+N}=v_{l}$ for all $l\in\mathbb{Z}$. 
-	This finite difference scheme can be written as an matrix-vector multiplication with an $(2n+1)$-diagonal matrix. Even if the matrix is stored in a sparse format it is still necessary to save $N(2n+1)$ non-zero elements. In the case of two-dimensional five-point stencil method on a rectangular grid we have $n=2$ and $N=N_{x}N_{y}$, where $N_{x}$ and $N_{y}$ is the number of grid points on the $x$- and $y$-axis respectively. This leads to a storage demand of $20N_xN_y$ bytes when saving matrix entries as float data. This means that we surpass $1$ megabyte when we choose $N_x,N_y > 250$, which might cause cache misses. This is especially true for L1 and L2 caches. This problem is further magnified for stencils on three-dimensional domains. \\	
-	We avoid these difficulties with matrix-free methods, meaning that matrix representations are not explicitly given. Instead we consider linear operators of the form
-	\begin{align*}
-	\begin{split}
-	A\!:\mathbb{C}^{N}&\to\mathbb{C}^{N}\\
-	v&\mapsto A(v)
-	\end{split}.
-	\end{align*}
-	Linear operators can be more convenient to work with in applications where the matrix representation is not easily available. They can also be more memory efficient. For the finite difference schemes we discussed at the beginning of this section we only need to store $(2n+1)$ values independent of $N$. This serves as a motivation to propose an alternative for the classical Leja method we discussed in Section \ref{sec:LejaMethod}.
+%	In this section we introduce a matrix-free version of the Leja method for the action of a matrix exponential. After a brief motivation we discuss the main advantages and disadvantages of such an approach. \\
+%	Performance on most modern systems is limited by memory bandwidth. A matrix-free implementation gives us the opportunity to significantly save memory and thus increase performance. For example, a matrix-free implementation reduces the amount of memory transactions compared to asparse matrix implementation based on the CSR format by at least a factor of 5.
+
+%	Linear operators can be more convenient to work with in applications where the matrix representation is not easily available. They can also be more memory efficient. For the finite difference schemes we discussed at the beginning of this section we only need to store $(2n+1)$ values independent of $N$. This serves as a motivation to propose an alternative for the classical Leja method we discussed in Section \ref{sec:LejaMethod}.
 	\subsection{Matrix-free Leja method} \label{sec:MatrixFreeLejaMethod}
 	For the most part it is unproblematic to use linear operators for the Leja method instead of matrices, since the Newton interpolation only relies on computation of matrix-vector products. However, difficulties arise when the interpolation parameters need to be determined. Without the matrix representation it can be expensive to compute the operator norm $\norm A$ in \eqref{eq:ms}. We will circumvent this problem by replacing $\norm{A}$ with the spectral radius $\rho(A)$. 
 	
