@@ -236,14 +236,14 @@ On modern systems the available memory bandwidth is the bottleneck for the compu
 \partial_{t}u = Au = \sum_{j=-n}^{n} a_{k+j}u_{k+j} \label{eq:stencil}
 \end{align}
 for $n\in\mathbb{N}$, $u\in\mathbb{R}^N$ and periodic boundaries i.e. $a_{l+N} = a_{l}$ and $u_{l+N}=u_{l}$ for all $l\in\mathbb{Z}$, $i\in\{0,1\}$.
-We assume the discretization was performed on a regular grid and all real numbers are stored in double-precision format.
+We assume the discretization was performed on a equidistant grid and all real numbers are stored in double-precision floating-point format.
 The solution of \eqref{eq:stencil} can be approximated with the Leja method. The Newton interpolation itself can be computed without the explicit knowledge of the matrix coefficients. For fixed interpolation parameters we can compare the performance of the Leja method for the regular and the matrix-free case by counting the number of read and write operations necessary to compute $Av$, where $v$ is an arbitary vector.
 
 %Since the cost of the Leja method mainly depend on the number of matrix-vector products, we can performing a cost analysis in terms of memory operations for $Av$, where $v$ is an arbitrary vector, to investigate the performance of the Leja method.\\ 
 
 %We count the number of read and write operations necessary to compute $Au$. 
 Reading $v$ and writing the result of $Av$ costs $2N$ memory operations in total. If $A$ is stored as a dense matrix then $N^2$ entries have to be loaded. These costs are reduced to $(2n+1)N$ for sparse matrices, since only $2n+1$ entries have to be loaded for each row in $A$. However, depending on the sparse format chosen, additional information has to be accessed to specify the index of each matrix entry. For example, the compressed sparse row (CSR) format requires storing $N$ and $(2n+1)N$ integers for the row and column indices respectively. Integers need four bytes of memory space compared to 8 bytes for floating point numbers in double precision. Therefore $(24n + 16)N$ bytes need to be accessed for the matrix in CSR format. In total $(24n + 32)N$ bytes are read or written for the computation of $Au$.
-In the matrix-free case the $(2n+1)$ coefficients $a_{-n}, \dots, a_{n}$ only need to be loaded once. This reduces the number of memory operations for the calculation of $Au$ to $2N + 2n + 1$. In total $16N + 16n + 8$ bytes need to be either read or written. For a simple 5-point stencil, which is commonly used to calculate the numerical derivative in two dimensions, this reduces the number of memory operations by at least a factor of 9 for $N\ge 100$.
+In the matrix-free case the $(2n+1)$ coefficients $a_{-n}, \dots, a_{n}$ only need to be loaded once. This reduces the number of memory operations for the calculation of $Au$ to $2N + 2n + 1$. In total $16N + 16n + 8$ bytes need to be either read or written. For a simple 5-point stencil, which is commonly used to calculate the numerical derivative in two dimensions, this reduces the number of memory operations by a factor of up to 5.
 
 This example shows that most of the memory operations are incurred by loading the coefficients of the matrix $A$. Furthermore it motivates the development of a fully matrix-free Leja method for the matrix exponential function. 
 
@@ -274,7 +274,7 @@ This example shows that most of the memory operations are incurred by loading th
 	\end{align}
 	The explicit knowledge of $\norm{\cdot}_{A,\varepsilon}$ is no longer required. Additionally we can choose $c=\rho(A)$ without introducing additional costs, since we have to compute $\rho(A)$ to determine $m_*$ and $s_*$. 
 	For positive and negative semi-definite operators $A$ we select the shift $\mu = -\rho(A)/2$ and $\mu = \rho(A)/2$ respectively. This shift works particularly well if the absolutely smallest eigenvalue of $A$ is close to $0$.\\
-	This approach has some drawbacks though. While we are able to bound the backward error
+	This approach has some drawbacks. Although we are able to bound the backward error
 	\[
 	\frac{\norm{\Delta A}_{A,\varepsilon}}{\norm{A}_{A,\varepsilon}} \le \operatorname{tol}  
 	\]
