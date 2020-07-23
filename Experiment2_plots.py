@@ -27,6 +27,8 @@ DISCRETIZED ONE/TWO DIMENSIONAL NONLINEAR ADVECTION-DIFFUSION EQUATION:
 '''
 CONFIG
 '''
+
+LEGEND_SIZE = 8
 SMALL_SIZE = 8
 MEDIUM_SIZE = 10
 BIGGER_SIZE = 12
@@ -51,7 +53,8 @@ width = 426.79135/72.27
 golden_ratio = (5**.5 - 1) / 2
 fig_dim = lambda fraction: (width*fraction, width*fraction*golden_ratio)
 
-global_plot_parameters(SMALL_SIZE,MEDIUM_SIZE,BIGGER_SIZE,fig_dim(scaling))
+global_plot_parameters(SMALL_SIZE,MEDIUM_SIZE,BIGGER_SIZE,fig_dim(scaling),
+                       LEGEND_SIZE)
 
 '''
 Load data
@@ -181,7 +184,7 @@ for param in params:
     '''
     """
     fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey='row',
-                    figsize=(0.9*width,0.9*width))
+                    figsize=(width,width*golden_ratio))
     axes = axes.flatten()
     fig.subplots_adjust(hspace=0, wspace=0)
     fig.suptitle(paramtext)
@@ -189,6 +192,7 @@ for param in params:
     for k, error in enumerate([2**-10,2**-24]):
         with pd.HDFStore(filelocation) as hdf:
             keys = hdf.keys()
+            keys.remove('/exprb3')
             Integrators = {key:IntegratorData(filelocation,key) for key in keys}
         for key in keys:
             get_optimal_data(Integrators[key], float(error), errortype, param)
@@ -202,10 +206,11 @@ for param in params:
         ax.set_yscale('log')
         if k == 0:
             ax.set_title('Half precision')
-            ax.set_ylabel('Cost')
+            ax.set_ylabel('Megabytes read or written')
+            ax.get_legend().remove()
         else:
+            ax.legend()
             ax.set_title('Single precision')
-        ax.get_legend().remove()
         ax = axes[2+k]
         
         for key in keys:
@@ -215,13 +220,11 @@ for param in params:
         ax.plot(df.Nx, CFLD, label="$C_{dif}$",linestyle=':')
         ax.set_xlabel('{{$N$}}')
         if k == 0:
-            ax.legend()
             ax.set_ylabel('Optimal time step')
-        else:
-            ax.get_legend().remove()
+        ax.get_legend().remove()
         ax.set_yscale('log')
     
     fig.align_ylabels()
-    fig.subplots_adjust(top=0.95)
+    fig.subplots_adjust(top=0.93)
     
     savefig('multi', save, savetext)

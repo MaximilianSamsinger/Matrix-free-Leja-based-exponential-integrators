@@ -33,6 +33,7 @@ Note: We write exprb2, even though we only compute the matrix exponential
 '''
 CONFIG
 '''
+LEGEND_SIZE = 8
 SMALL_SIZE = 8
 MEDIUM_SIZE = 10
 BIGGER_SIZE = 12
@@ -53,8 +54,8 @@ width = 426.79135/72.27
 golden_ratio = (5**.5 - 1) / 2
 fig_dim = lambda fraction: (width*fraction, width*fraction*golden_ratio)
 
-global_plot_parameters(SMALL_SIZE,MEDIUM_SIZE,BIGGER_SIZE,fig_dim(scaling))
-
+global_plot_parameters(SMALL_SIZE,MEDIUM_SIZE,BIGGER_SIZE,fig_dim(scaling),
+                       LEGEND_SIZE)
 '''
 Load data
 '''
@@ -205,7 +206,7 @@ for dif in difs:
     '''
 
     fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey='row',
-                    figsize=(width,width))
+                    figsize=(width,width*golden_ratio))
     axes = axes.flatten()
     fig.subplots_adjust(hspace=0, wspace=0)
     fig.suptitle(paramtext)
@@ -227,9 +228,10 @@ for dif in difs:
         if k == 0:
             ax.set_title('Half precision')
             ax.set_ylabel('Matrix-vector multiplications')
+            ax.get_legend().remove()
         else:
             ax.set_title('Single precision')
-        ax.get_legend().remove()
+            ax.legend()
         ax = axes[2+k]
         
         for key in keys:
@@ -239,14 +241,13 @@ for dif in difs:
         ax.plot(df.Nx, CFLD, label="$CFL_{dif}$",linestyle=':')
         ax.set_xlabel('{{$N$}}')
         if k == 0:
-            ax.get_legend().remove()
             ax.set_ylabel('Optimal time step')
-        else:
-            ax.legend()
+            
+        ax.get_legend().remove()
         ax.set_yscale('log')
     
     fig.align_ylabels()
-    fig.subplots_adjust(top=0.95)
+    fig.subplots_adjust(top=0.93)
     
     savefig('multi', save, savetext)
 

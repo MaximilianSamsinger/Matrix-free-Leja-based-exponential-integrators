@@ -1,5 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
+import os
 
 '''
 Assumption:
@@ -22,13 +23,15 @@ def savefigure(path, number, save=False, *add_to_filename):
         print('File saved')
         plt.close()
 
-def global_plot_parameters(SMALL_SIZE,MEDIUM_SIZE,BIGGER_SIZE,figsize):
+def global_plot_parameters(SMALL_SIZE,MEDIUM_SIZE,BIGGER_SIZE,figsize,
+                           LEGEND_SIZE=None):
+    LEGEND_SIZE = SMALL_SIZE if LEGEND_SIZE==None else LEGEND_SIZE
     plt.rc('font', size=MEDIUM_SIZE)          # controls default text sizes
     plt.rc('axes', titlesize=MEDIUM_SIZE)     # fontsize of the axes title
     plt.rc('axes', labelsize=MEDIUM_SIZE)    # fontsize of the x and y labels
     plt.rc('xtick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
     plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
-    plt.rc('legend', fontsize=SMALL_SIZE)    # legend fontsize
+    plt.rc('legend', fontsize=LEGEND_SIZE)    # legend fontsize
     plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
     plt.rcParams['lines.linewidth'] = 2
     plt.rcParams['text.latex.unicode']=True
@@ -56,14 +59,21 @@ class IntegratorData:
         except KeyError:
             ''' Experiment 2 '''
             self.Experiment = 2
+            filename = os.path.split(filelocation)[-1]
+            assert filename in ['Experiment2.h5', 'Experiment_2D.h5']
+            d = 1 if filename=='Experiment2.h5' else 2
             self.α = self.data['α'].unique()
             self.β = self.data['β'].unique()
             self.γ = self.data['γ'].unique()
+            
+            filename = os.path.split(filelocation)[-1]
+
+            
             self.data['cost'] = (
-                0*self.data.dFeval
-                + self.data.Feval
-                + self.data.mv
-            )
+                0*self.data.dFeval # Number of times dF is initialized
+                + 2*self.data.Feval # Number of times F is evaluated
+                + 3*self.data.mv # Number of times dF(u)v is evaluated
+            ) * (self.data.Nx**(d/2) * 2**(-10))**2 # Cost in megabyte
         self.data['m'] = self.data['cost']/self.data['substeps']
 
 def get_optimal_data(integrator, maxerror, errortype, param,
