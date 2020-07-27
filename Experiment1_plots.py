@@ -38,7 +38,7 @@ SMALL_SIZE = 8
 MEDIUM_SIZE = 10
 BIGGER_SIZE = 12
 
-maxerror = str(2**-24)
+maxerror = str(2**-10)
 
 save = True # Flag: If True, figures will be saved as pdf
 save_path = 'Figures' + os.sep + 'Experiment1' + os.sep
@@ -49,7 +49,7 @@ difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1
 '''
 Global plot parameters
 '''
-scaling = 0.75
+scaling = 0.9
 width = 426.79135/72.27
 golden_ratio = (5**.5 - 1) / 2
 fig_dim = lambda fraction: (width*fraction, width*fraction*golden_ratio)
@@ -177,7 +177,7 @@ for dif in difs:
     number of substeps and assume single precision.
     '''
     
-    fig, ax = plt.subplots(1, 1, sharex=True)
+    fig, ax = plt.subplots(1, 1, sharex=True, figsize=fig_dim(0.75))
  
     fig.suptitle(f'{{{precision_type.capitalize()}}} precision expleja, '
                  + paramtext)
@@ -205,8 +205,7 @@ for dif in difs:
     1. Multi plot of 1.1 and 1.2
     '''
 
-    fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey='row',
-                    figsize=(width,width*golden_ratio))
+    fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey='row')
     axes = axes.flatten()
     fig.subplots_adjust(hspace=0, wspace=0)
     fig.suptitle(paramtext)

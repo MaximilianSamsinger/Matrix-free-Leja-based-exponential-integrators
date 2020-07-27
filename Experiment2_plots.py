@@ -34,7 +34,6 @@ MEDIUM_SIZE = 10
 BIGGER_SIZE = 12
 
 maxerror = str(2**-24)
-save_path = 'Figures' + os.sep + 'Experiment1' + os.sep
 
 isproblem2D = False # Switches between 1D and 2D case
 
@@ -48,7 +47,7 @@ params = [[α, β, γ] for α in [0.1,0.01] for β in [1,0.1,0.01] for γ in [1]
 '''
 Global plot parameters
 '''
-scaling = 0.75
+scaling = 0.9
 width = 426.79135/72.27
 golden_ratio = (5**.5 - 1) / 2
 fig_dim = lambda fraction: (width*fraction, width*fraction*golden_ratio)
@@ -61,6 +60,7 @@ Load data
 '''
 with pd.HDFStore(filelocation) as hdf:
     keys = hdf.keys()
+    keys.remove('/exprb3')
     Integrators = {key:IntegratorData(filelocation,key) for key in keys}
 #keys = [keys[k] for k in [0,1,4,5,2,3]]
     
@@ -99,11 +99,11 @@ for param in params:
     '''
     1.1 Plot matrix dimension (Nx) vs matrix-vector multiplications (m)
     '''
-    #fig, ax = plt.subplots()
+    fig, ax = plt.subplots()
     for key in keys:
         df = Integrators[key].optimaldata
         #df.plot('Nx','cost', label=key[1:], ax=ax)
-    """
+    
     ax.set_title(titletext)
     ax.set_xlabel('{{$N$}}')
     ax.set_ylabel('Cost')
@@ -119,13 +119,13 @@ for param in params:
         df = Integrators[key].optimaldata
         df.plot('Nx','tau', label=key[1:], ax=ax)
 
-    """
+    
     #CFLA = df.gridsize/df.β
     if isproblem2D:
         CFLD = 0.125*df.gridsize**2/df.α 
     else:
         CFLD = 0.25*df.gridsize**2/df.α
-    """
+    
     #ax.plot(df.Nx, CFLA, label="$C_{adv}$",linestyle='-.')
     ax.plot(df.Nx, CFLD, label="$C_{dif}$",linestyle=':')
 
@@ -182,9 +182,8 @@ for param in params:
     '''
     1. Multi plot of 1.1 and 1.2
     '''
-    """
-    fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey='row',
-                    figsize=(width,width*golden_ratio))
+    
+    fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey='row')
     axes = axes.flatten()
     fig.subplots_adjust(hspace=0, wspace=0)
     fig.suptitle(paramtext)
@@ -228,3 +227,4 @@ for param in params:
     fig.subplots_adjust(top=0.93)
     
     savefig('multi', save, savetext)
+    

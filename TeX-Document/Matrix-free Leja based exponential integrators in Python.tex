@@ -287,13 +287,7 @@ This example shows that most of the memory operations are incurred by loading th
 	\[
 		b_{n+1} = \frac{Ab_n}{\norm{Ab_n}}.
 	\]
-	Let $\lambda_{1}$ be a maximal eigenvalue with respect to the modulus. Furthermore let $\lambda_2$ be a maximal eigenvalue satisfying $\abs{\lambda_{1}}\neq\abs{\lambda_2}$. 
-	Both eigenvalues are not necessarily unique.
-	For each iteration we get an approximation to the spectrum of $A$
-	\[ 
-	\norm{Ab_{n}} = \rho(A) + \mathcal{O}\left(\left\lvert\frac{\lambda_2}{\lambda_1}\right\rvert^{n+1}\right).
-	\]  
-	This can be used to compute \eqref{eq:msmatrixfree}. However, the power method underestimates the spectrum of $A$, which might cause the Leja method to not converge. Therefore we have to multiply the estimate with a safety factor. The convergence speed depends on the eigenvalues of $A$. In particular if $\abs{\lambda_{1}}\gg\abs{\lambda_{2}}$ we expect fast convergence for the power method. A more thorough analysis for the discretized linear advection-diffusion equation will be conducted in Section \ref{sec:LinearADe}.
+	In the limit $\norm{Ab_{n}}$ converges to the spectral radius of $A$. This can be used to compute \eqref{eq:msmatrixfree}. However, the power method underestimates $\rho(A)$, which might cause the Leja method to not converge. Therefore we have to multiply the estimate with a safety factor. The convergence speed depends on the eigenvalues of $A$. In particular if $\abs{\lambda_{1}}\gg\abs{\lambda_{2}}$ we expect fast convergence for the power method. A more thorough analysis for the discretized linear advection-diffusion equation will be conducted in Section \ref{sec:LinearADe}.
 
 	From now on we denote matrix-free Leja method for the matrix exponential function as \texttt{expleja}. Depending on the chosen tolerance, see Table \ref{table:thetam}, we will refer to the algorithm as half, single or double precision \texttt{expleja} respectively.
 	
@@ -709,130 +703,133 @@ This example shows that most of the memory operations are incurred by loading th
 			&= \alpha\nabla((u+1)\nabla u) 
 				+ \beta\ \vec{1}\nabla u^2
 				+ u(u-0.5) \\
-			&= \alpha\nabla(0.5\nabla u^2 + \nabla u) 
-				+ \beta\ \vec{1}\nabla u^2 + u(u-0.5) \\
-			&= \alpha\Delta(0.5 u^2 + u) 
-				+ \beta\ \vec{1}\nabla u^2 + u(u-0.5).
+			&= \alpha(u+1)\Delta u + \alpha(\nabla u)^2 
+				+ \beta\ \vec{1}\nabla u^2 + u(u-0.5) 				
+%			&= \alpha\nabla(0.5\nabla u^2 + \nabla u) 
+%				+ \beta\ \vec{1}\nabla u^2 + u(u-0.5) \\
+%			&= \alpha\Delta(0.5 u^2 + u) 
+%				+ \beta\ \vec{1}\nabla u^2 + u(u-0.5).
 	\end{align*}
 	By considering only the terms depending on $\Delta $ and $\vec{1}\nabla $ we get the modified problems
 	\begin{align*}
-		\partial_{t}u &= \alpha\Delta(0.5 u^2 + u) = 
-			\alpha\sum_{k=1}^d \partial_{x_k^2}(0.5 u^2 + u), \\
-		\partial_{t}u &= \beta\vec{1}\nabla u^2 =
-			\beta\sum_{k=1}^d \partial_{x_k^2} u^2
+		\partial_{t}u &= \alpha(u+1)\Delta u
+		 %= \alpha\sum_{k=1}^d \partial_{x_k^2}(0.5 u^2 + u), 
+		 \\
+		\partial_{t}u &= \beta\vec{1}\nabla u^2 .
+		 %= \beta\sum_{k=1}^d \partial_{x_k^2} u^2
 	\end{align*}
-	In order to mitigate numerical instabilities we discretize $\Delta$ with second order centred differences and $\vec{1}\nabla$ with the first-order upwind scheme. Both discretizations induce severe restrictions on the maximal time step size for explicit Runge-Kutta schemes. These conditions are called Courant-Friedrichs-Lewy (CFL) conditions. In our experiments $\abs{u}$ is bounded by 1. Therefore the CFL conditions of the modified problems are given by
-		\[ C_{dif} = \frac{3\alpha\tau}{h^2} \le 1, \quad C_{adv} = \frac{\beta\tau}{h} \le 1.\]
-	
-	
-	
-	\subsection{One-dimensional advection-diffusion equation}
-	Let $\alpha,\beta,\ge 0$ and 
-	\begin{align*}
-		F(u) = \alpha\partial_x((u+1)\partial_xu) + 2\beta u\partial_x u + u(u-0.5)
-	\end{align*}
-	With $\alpha$ and $\beta$ we control the relative strength of the diffusion compared to the advection respectively. The differential equation can be rewritten using the product rule. This leads to
-	\begin{align*}
-	F(u) &= 
-	\alpha((u+1)\partial_{xx}u + (\partial_{x}u)^2) 
-	+ 2\beta u\partial_x(u) 
-	+ u(u-0.5).
-	\end{align*}
-	All instances of $\partial_{x}$ are discretized with the upwind scheme, while $\partial_{xx}$ is discretized by centred finite differences approximation.
-	By considering only the terms depending $\partial_{xx}$ or $\partial_{x}$ we get the modified problem
-	\begin{align*}
-	\partial_{t}u &= \alpha (u+1)\partial_{xx}u, \\
-	\partial_{t}u &= (2\beta u+\alpha\partial_xu)\partial_xu.
-	\end{align*}
-	Both discretizations introduce CFL-Conditions which are given by 
-	\[ C_{dif} = \frac{\alpha(u+1)\tau}{h^2} \le \frac{1}{2}, \quad C_{adv} = \frac{2\beta(u+\partial_{x}u)\tau}{h} \le 1.\]
-	Since $u$ is bounded by $1$ and $\partial_{x}(u)$ is negligible THIS IS FALSE, REPLACE REPLACE REPLACE, we replace  $C_{dif}$ and $C_{adv}$ with
-	\[ C_{dif} = \frac{4\alpha\tau}{h^2} \le 1, \quad C_{adv} = \frac{2\beta(1+\partial_{x}u)\tau}{h} \le 1.\]
-	
-%   We approximate $\partial_{x}$ using the upwind scheme for numerical stability. The matrix representation of both discretized operators is given by
-%	\[
-%		 B = \frac{1}{h^2}
-%		\begin{bmatrix}
-%			-2 & 1      &        &    \\
-%			1  & \ddots & \ddots &    \\
-%			   & \ddots & \ddots & 1  \\
-%			   &        & 1      & -2
-%		\end{bmatrix}
-%		,~~ C = \frac{1}{h}
-%		\begin{bmatrix}
-%			-1 & 1      &        &    \\
-%			  & \ddots & \ddots &    \\
-%			   & & \ddots & 1  \\
-%			   &        &       & -1
-%		\end{bmatrix}.
-%	\]
-%	
-	By considering only the terms depending $\partial_{xx}$ we get the modified problem
-	\[
-		\partial_{t}u = \alpha (u+1)\partial_{xx}u.
-	\] 
-	Since num
-	\[
-		\tau \le \frac{h^2}{2\alpha} \eqdefn C_{dif}
-	\]
-	restricts the maximum possible step size for explicit Runge-Kutta methods. This constraint can be seen in Figure \ref{fig:multi1DNonlinear} on the bottom row for the original problem.
-	\begin{figure}[H]
+	In order to mitigate numerical instabilities we discretize $\Delta$ with second order centred differences and $\vec{1}\nabla$ with the first-order upwind scheme. Both discretizations induce severe restrictions on the maximal time step size for explicit Runge-Kutta schemes. These conditions are known as Courant-Friedrichs-Lewy (CFL) conditions. In our experiments $\abs{u}$ is bounded by 1. Therefore the CFL conditions of the modified problems are given by
+		\[ C_{dif} = \frac{2\alpha\tau}{h^2} \le \frac{1}{2}, \quad C_{adv} = \frac{\beta\tau}{h} \le 1.\]
+	This constraint can be seen in Figure \ref{fig:multi1DNonlinear} on the bottom row for the original problem.
+	\begin{figure}[h]
 		\newcommand{\dif}{\detokenize{α}=0.1}
 		\newcommand{\adv}{\detokenize{β}=0.01}
 		\centering
 		\includegraphics[width=0.9\columnwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
-		\caption{Comparison of different integrators for fixed alsolute tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-10}$). We calculated the cost-minimizing time step size for each integrator, as shown in the bottom row. The top row displays the corresponding cost incurred. We chose $\alpha\dif$, $\beta\adv$.}
+		\caption{Comparison of different integrators for the one-dimensional case and the absolute tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-10}$). We calculated the cost-minimizing time step size for each integrator, as shown in the bottom row. The top row displays the corresponding cost incurred. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the maximal time step, where the CFL conditions are not violated.}
 		\label{fig:multi1DNonlinear}
 	\end{figure}
-	
-	\subsection{Two-dimensional advection-diffusion equation}
-	Let $\alpha,\beta,\ge 0$ and 
-	\begin{align*}
-	\partial_tu &= F(u) = \alpha\nabla(u\nabla_xu) + \beta\partial_x(u^2) + u(u-0.5)
-	\end{align*}
-	With $\alpha$ and $\beta$ we control the relative strength of the diffusion compared to the advection respectively. The differential equation can be rewritten using $\partial_x(u\partial_xu) = \partial_{xx}u + u\partial_{x}u$ and $\partial_x(u^2) = 2u\partial_{x}u$
-	This leads to
-	\[
-	F(u) = 
-	\alpha(\partial_{xx}u + u\partial_{x}u) 
-	+ 2\beta u\partial_x(u) 
-	+ u(u-0.5)
-	\]
-	All instances $\partial_{xx}$ are discretized with centred finite differences. We approximate $\partial_{x}$ using the upwind scheme for numerical stability.
-	
-	\subsection{Experiment 1: Linear advection diffusion equation}
-	Consider the one-dimensional advection-diffusion equation
-	\begin{align*}
-	\partial_tu &= a\partial_{xx}u + b\partial_xu \quad a,b\ge 0\\
-	u_0(t) &= e^{-80\cdot(t-0.45)^2} \quad t\in[0,0.1]
-	\end{align*}
-	with homogeneous Dirichlet boundary conditions on the domain $\Omega = [0,1]$. 
-	For a fixed $N\in\mathbb N$ we approximate the diffusive part with second-order central differences on an equidistant grid with grid size $h = \frac{1}{N}$ and grid points $x_i = ih$, $i=0\dots,N$.
-	\[\partial_{xx}u(x_i) = \frac{u(x_{i+1}) - 2u(x_i) + u(x_{i-1})}{{h}^2} + \mathcal{O}({h}^2)\]
-	In order to limit numerical instabilities we discretize the advective part with forward differences, similar to the upwind scheme.\footnote{Maybe create a seperate section on hybrid difference schemes? There we can also analyze the resulting matrix $A$ itself and plot the eigenvalues. I need sources for that though.}
-	\[\partial_{x}u(x_i) = \frac{u(x_{i+1}) - u(x_i)}{h} + \mathcal{O}(h)\]
-	The resulting system of ordinary differential equation is given by
-	\begin{align*}
-	\partial_tu &= Au.
-	\end{align*} 
-	Some eigenvalues of $A$ can have an extremely large negative real part. Therefore, since no explicit Runge-Kutta method is A-stable, this imposes very stingend conditions on the time step size $\tau$ for $\operatorname{rk2}$ and $\operatorname{rk4}$. We will refer to the Courant-Friedrich-Lewy (CFL) conditions imposed by the advective and diffusive part of $A$ respectively by $C_{adv}$ and $C_{dif}$.  
-	\[ C_{adv} = \frac{b\tau}{h} \le 1, \quad C_{dif} = \frac{a\tau}{h^2} \le \frac{1}{2}\] 
-	
-	
-	
-	In our case the problem is fully linear and therefore $\texttt{exprb2}$ simplifies to the computation of the action of the matrix exponential function with the Leja method. We write $\texttt{expleja}$ for the single precision Leja method approximation. The reference solution was computed with double precision and therefore uses different nodes.
-	
-	In order to keep the solution from vanishing, we fix $b = 1$ and only consider coefficients $a\in[0,1]$. The advection-diffusion ratio scaled by the grid size $h$ is represented by the grid P\'eclet number
-	
-	
-	\subsection{Experiment 2: 1D Nonlinear advection diffusion equation}
-	\[ \partial_tu = \alpha\partial_{x}((u+1)\partial_{x}u) + \partial_{x}(u^2) + u(u-0.5) \]
-	
-	We discretize, solve again with rk2, rk4, cn2 and exprb2.
-	
-	\section{Appendix}
-	Matrix analysis, Horn and Johnson, Lemma 5.6.10
-	\[\rho(A) = \inf\{\norm{A} : \norm{\cdot} \text{ is an induced operator norm} \} \]
+%	
+%	
+%	\subsection{One-dimensional advection-diffusion equation}
+%	Let $\alpha,\beta,\ge 0$ and 
+%	\begin{align*}
+%		F(u) = \alpha\partial_x((u+1)\partial_xu) + 2\beta u\partial_x u + u(u-0.5)
+%	\end{align*}
+%	With $\alpha$ and $\beta$ we control the relative strength of the diffusion compared to the advection respectively. The differential equation can be rewritten using the product rule. This leads to
+%	\begin{align*}
+%	F(u) &= 
+%	\alpha((u+1)\partial_{xx}u + (\partial_{x}u)^2) 
+%	+ 2\beta u\partial_x(u) 
+%	+ u(u-0.5).
+%	\end{align*}
+%	All instances of $\partial_{x}$ are discretized with the upwind scheme, while $\partial_{xx}$ is discretized by centred finite differences approximation.
+%	By considering only the terms depending $\partial_{xx}$ or $\partial_{x}$ we get the modified problem
+%	\begin{align*}
+%	\partial_{t}u &= \alpha (u+1)\partial_{xx}u, \\
+%	\partial_{t}u &= (2\beta u+\alpha\partial_xu)\partial_xu.
+%	\end{align*}
+%	Both discretizations introduce CFL-Conditions which are given by 
+%	\[ C_{dif} = \frac{\alpha(u+1)\tau}{h^2} \le \frac{1}{2}, \quad C_{adv} = \frac{2\beta(u+\partial_{x}u)\tau}{h} \le 1.\]
+%	Since $u$ is bounded by $1$ and $\partial_{x}(u)$ is negligible THIS IS FALSE, REPLACE REPLACE REPLACE, we replace  $C_{dif}$ and $C_{adv}$ with
+%	\[ C_{dif} = \frac{4\alpha\tau}{h^2} \le 1, \quad C_{adv} = \frac{2\beta(1+\partial_{x}u)\tau}{h} \le 1.\]
+%	
+%%   We approximate $\partial_{x}$ using the upwind scheme for numerical stability. The matrix representation of both discretized operators is given by
+%%	\[
+%%		 B = \frac{1}{h^2}
+%%		\begin{bmatrix}
+%%			-2 & 1      &        &    \\
+%%			1  & \ddots & \ddots &    \\
+%%			   & \ddots & \ddots & 1  \\
+%%			   &        & 1      & -2
+%%		\end{bmatrix}
+%%		,~~ C = \frac{1}{h}
+%%		\begin{bmatrix}
+%%			-1 & 1      &        &    \\
+%%			  & \ddots & \ddots &    \\
+%%			   & & \ddots & 1  \\
+%%			   &        &       & -1
+%%		\end{bmatrix}.
+%%	\]
+%%	
+%	By considering only the terms depending $\partial_{xx}$ we get the modified problem
+%	\[
+%		\partial_{t}u = \alpha (u+1)\partial_{xx}u.
+%	\] 
+%	Since num
+%	\[
+%		\tau \le \frac{h^2}{2\alpha} \eqdefn C_{dif}
+%	\]
+%	restricts the maximum possible step size for explicit Runge-Kutta methods. 
+%	
+%	\subsection{Two-dimensional advection-diffusion equation}
+%	Let $\alpha,\beta,\ge 0$ and 
+%	\begin{align*}
+%	\partial_tu &= F(u) = \alpha\nabla(u\nabla_xu) + \beta\partial_x(u^2) + u(u-0.5)
+%	\end{align*}
+%	With $\alpha$ and $\beta$ we control the relative strength of the diffusion compared to the advection respectively. The differential equation can be rewritten using $\partial_x(u\partial_xu) = \partial_{xx}u + u\partial_{x}u$ and $\partial_x(u^2) = 2u\partial_{x}u$
+%	This leads to
+%	\[
+%	F(u) = 
+%	\alpha(\partial_{xx}u + u\partial_{x}u) 
+%	+ 2\beta u\partial_x(u) 
+%	+ u(u-0.5)
+%	\]
+%	All instances $\partial_{xx}$ are discretized with centred finite differences. We approximate $\partial_{x}$ using the upwind scheme for numerical stability.
+%	
+%	\subsection{Experiment 1: Linear advection diffusion equation}
+%	Consider the one-dimensional advection-diffusion equation
+%	\begin{align*}
+%	\partial_tu &= a\partial_{xx}u + b\partial_xu \quad a,b\ge 0\\
+%	u_0(t) &= e^{-80\cdot(t-0.45)^2} \quad t\in[0,0.1]
+%	\end{align*}
+%	with homogeneous Dirichlet boundary conditions on the domain $\Omega = [0,1]$. 
+%	For a fixed $N\in\mathbb N$ we approximate the diffusive part with second-order central differences on an equidistant grid with grid size $h = \frac{1}{N}$ and grid points $x_i = ih$, $i=0\dots,N$.
+%	\[\partial_{xx}u(x_i) = \frac{u(x_{i+1}) - 2u(x_i) + u(x_{i-1})}{{h}^2} + \mathcal{O}({h}^2)\]
+%	In order to limit numerical instabilities we discretize the advective part with forward differences, similar to the upwind scheme.\footnote{Maybe create a seperate section on hybrid difference schemes? There we can also analyze the resulting matrix $A$ itself and plot the eigenvalues. I need sources for that though.}
+%	\[\partial_{x}u(x_i) = \frac{u(x_{i+1}) - u(x_i)}{h} + \mathcal{O}(h)\]
+%	The resulting system of ordinary differential equation is given by
+%	\begin{align*}
+%	\partial_tu &= Au.
+%	\end{align*} 
+%	Some eigenvalues of $A$ can have an extremely large negative real part. Therefore, since no explicit Runge-Kutta method is A-stable, this imposes very stingend conditions on the time step size $\tau$ for $\operatorname{rk2}$ and $\operatorname{rk4}$. We will refer to the Courant-Friedrich-Lewy (CFL) conditions imposed by the advective and diffusive part of $A$ respectively by $C_{adv}$ and $C_{dif}$.  
+%	\[ C_{adv} = \frac{b\tau}{h} \le 1, \quad C_{dif} = \frac{a\tau}{h^2} \le \frac{1}{2}\] 
+%	
+%	
+%	
+%	In our case the problem is fully linear and therefore $\texttt{exprb2}$ simplifies to the computation of the action of the matrix exponential function with the Leja method. We write $\texttt{expleja}$ for the single precision Leja method approximation. The reference solution was computed with double precision and therefore uses different nodes.
+%	
+%	In order to keep the solution from vanishing, we fix $b = 1$ and only consider coefficients $a\in[0,1]$. The advection-diffusion ratio scaled by the grid size $h$ is represented by the grid P\'eclet number
+%	
+%	
+%	\subsection{Experiment 2: 1D Nonlinear advection diffusion equation}
+%	\[ \partial_tu = \alpha\partial_{x}((u+1)\partial_{x}u) + \partial_{x}(u^2) + u(u-0.5) \]
+%	
+%	We discretize, solve again with rk2, rk4, cn2 and exprb2.
+%	
+%	\section{Appendix}
+%	Matrix analysis, Horn and Johnson, Lemma 5.6.10
+%	\[\rho(A) = \inf\{\norm{A} : \norm{\cdot} \text{ is an induced operator norm} \} \]
 	
 	%
 	%\subsection{CFL Condition} \label{CFL}
@@ -841,8 +838,16 @@ This example shows that most of the memory operations are incurred by loading th
 	%The eigenfunctions of $\partial_{xx}$ are given by
 	%\[ u_k(x) = e^{ikx} \]
 	%with eigenvalues $-k^2$.
+
+	\section{TODO}
+
+\begin{itemize}
+	\item Section 4.1 Erkläre warum $v=\sum_{j=1}^N v_j$ eine gute Wahl ist. (Gleichverteilung aller EV)
+	\item Plots for CSR Matrix case		
+	\item Appendix mit vielen Plots?
+\end{itemize}
 	
-	\subsection{Experiment Linear}
+	\subsection{Fully Linear Case}
 	\newcommand{\Pe}{Pe=10.0}
 	\newcommand{\precision}{single}
 	\newcommand{\safe}{sf=1.1}
@@ -853,97 +858,87 @@ This example shows that most of the memory operations are incurred by loading th
 %		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 %	\end{figure}
 	
-	\section{TODO}
 
-	\begin{itemize}
-		\item Section 3, adapt introduction with RAM constraints, not cache
-		\item Section 4.1 Explain $v=\sum_{j=1}^N v_j$, Gleichverteilung aller EV		
-	\end{itemize}
-	
+	\newcommand{\plotwidth}{0.9\columnwidth}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/multi, \Pe.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment1/multi, \Pe.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/3, \precision, \Pe.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment1/3, \precision, \Pe.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/5, \precision, \Pe.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment1/5, \precision, \Pe.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/4, \precision, \Pe.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment1/4, \precision, \Pe.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	
 	\newpage
-	\subsection{Experiment Nonlinear 1D}
+	\subsection{Nonlinear 1D case}
 	\newcommand{\dif}{\detokenize{α}=0.1}
-	\newcommand{\adv}{\detokenize{β}=1}
-	\renewcommand{\precision}{half}
+	\newcommand{\adv}{\detokenize{β}=0.01}
+	\renewcommand{\precision}{single}
 	{1, \precision, \dif, \adv}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=1\columnwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment2/2, \precision, \dif, \adv.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment2/2, \precision, \dif, \adv.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment2/3, \precision, \dif, \adv.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment2/3, \precision, \dif, \adv.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment2/4, \precision, \dif, \adv.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment2/4, \precision, \dif, \adv.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
-	\subsection{Experiment Nonlinear 2D}
+	\subsection{Nonlinear 2D case}
 	{1, \precision, \dif, \adv}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.9\columnwidth]{../Figures/Experiment_2D/multi, \dif, \adv.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/multi, \dif, \adv.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
+
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=1\columnwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
-		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
-	\end{figure}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment_2D/2, \precision, \dif, \adv.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/2, \precision, \dif, \adv.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment_2D/3, \precision, \dif, \adv.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/3, \precision, \dif, \adv.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment_2D/4, \precision, \dif, \adv.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/4, \precision, \dif, \adv.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
 	
