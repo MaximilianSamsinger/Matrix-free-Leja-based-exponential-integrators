@@ -102,11 +102,11 @@ for param in params:
     fig, ax = plt.subplots()
     for key in keys:
         df = Integrators[key].optimaldata
-        #df.plot('Nx','cost', label=key[1:], ax=ax)
+        df.plot('Nx','cost', label=key[1:], ax=ax)
     
     ax.set_title(titletext)
     ax.set_xlabel('{{$N$}}')
-    ax.set_ylabel('Cost')
+    ax.set_ylabel('Megabytes read or written')
     ax.set_yscale('log')
 
     savefig(1, save, precision_type, savetext)
@@ -138,7 +138,7 @@ for param in params:
     savefig(2, save, precision_type, savetext)
 
     '''
-    1.3 Plot matrix dimension (Nx) vs costs/substep (mv)
+    1.3 Plot matrix dimension (Nx) vs Jacobian-vector products (mv)
     '''
     
     fig, ax = plt.subplots()
@@ -148,13 +148,13 @@ for param in params:
         df.plot('Nx','m', label=key[1:], ax=ax)
     ax.set_title(titletext)
     ax.set_xlabel('{{$N$}}')
-    ax.set_ylabel('Costs per timestep')
+    ax.set_ylabel('Jacobian-vector products per time step')
     #ax.set_ylim([0,100])
 
     savefig(3, save, precision_type, savetext)
     
     '''
-    1.4 Plot Matrix-vector multiplications (Nx) vs optimal time step size (tau)
+    1.4 Plot cost (cost) vs optimal time step size (tau)
     '''
     
     fig, ax = plt.subplots()
@@ -169,13 +169,13 @@ for param in params:
     
     ax.set_title(titletext)
     ax.legend()
-    ax.set_xlabel('Matrix-vector multiplications')
+    ax.set_xlabel('Megabytes read or written')
     ax.set_ylabel('Optimal time step')
     ax.set_xscale('log')
     ax.set_yscale('log')
     
-    ax.set_xlim([1e1,1e5])
-    ax.set_ylim([1e-5,1e-1])
+    #ax.set_xlim([1e1,1e5])
+    #ax.set_ylim([1e-5,1e-1])
     
     savefig(4, save, precision_type, savetext)
     

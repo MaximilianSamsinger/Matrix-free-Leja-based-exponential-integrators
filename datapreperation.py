@@ -74,7 +74,7 @@ class IntegratorData:
                 + 2*self.data.Feval # Number of times F is evaluated
                 + 3*self.data.mv # Number of times dF(u)v is evaluated
             ) * (self.data.Nx**(d/2) * 2**(-10))**2 # Cost in megabyte
-        self.data['m'] = self.data['cost']/self.data['substeps']
+        self.data['m'] = self.data['mv']/self.data['substeps']
 
 def get_optimal_data(integrator, maxerror, errortype, param,
                      subset='Nx'):
