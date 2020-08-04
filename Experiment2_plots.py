@@ -33,9 +33,9 @@ SMALL_SIZE = 8
 MEDIUM_SIZE = 10
 BIGGER_SIZE = 12
 
-maxerror = str(2**-24)
+maxerror = str(2**-10)
 
-isproblem2D = False # Switches between 1D and 2D case
+isproblem2D = True # Switches between 1D and 2D case
 
 filename = 'Experiment_2D' if isproblem2D else 'Experiment2'
 filelocation = 'HDF5-Files' + os.sep + filename + '.h5'
@@ -138,22 +138,6 @@ for param in params:
     savefig(2, save, precision_type, savetext)
 
     '''
-    1.3 Plot matrix dimension (Nx) vs Jacobian-vector products (mv)
-    '''
-    
-    fig, ax = plt.subplots()
-    #fig.suptitle(suptitle)
-    for key in keys:
-        df = Integrators[key].optimaldata
-        df.plot('Nx','m', label=key[1:], ax=ax)
-    ax.set_title(titletext)
-    ax.set_xlabel('{{$N$}}')
-    ax.set_ylabel('Jacobian-vector products per time step')
-    #ax.set_ylim([0,100])
-
-    savefig(3, save, precision_type, savetext)
-    
-    '''
     1.4 Plot cost (cost) vs optimal time step size (tau)
     '''
     
@@ -178,6 +162,41 @@ for param in params:
     #ax.set_ylim([1e-5,1e-1])
     
     savefig(4, save, precision_type, savetext)
+
+    '''
+    1.3 Plot matrix dimension (Nx) vs Jacobian-vector products (mv)
+    '''
+    
+    fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True, sharey='row')
+    axes = axes.flatten()
+    fig.subplots_adjust(hspace=0, wspace=0)
+    fig.suptitle(paramtext)
+    
+    for k, error in enumerate([2**-10,2**-24]):
+        with pd.HDFStore(filelocation) as hdf:
+            keys = hdf.keys()
+            keys.remove('/exprb3')
+            Integrators = {key:IntegratorData(filelocation,key) for key in keys}
+        for key in keys:
+            get_optimal_data(Integrators[key], float(error), errortype, param)
+        
+        ax = axes[k]
+        for key in keys:
+            df = Integrators[key].optimaldata
+            df.plot('Nx','m', label=key[1:], ax=ax)
+        ax.set_xlabel('{{$N$}}')
+        if k == 0:
+            ax.set_title('Half precision')
+            ax.set_ylabel('Jacobian-vector products per time step')
+            ax.get_legend().remove()
+        else:
+            ax.legend()
+            ax.set_title('Single precision')
+    fig.align_ylabels()
+    fig.subplots_adjust(top=0.93)
+    
+    savefig(3, save, precision_type, savetext)
+    
     
     '''
     1. Multi plot of 1.1 and 1.2

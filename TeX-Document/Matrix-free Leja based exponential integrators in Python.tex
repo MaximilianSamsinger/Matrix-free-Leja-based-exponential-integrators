@@ -13,6 +13,7 @@
 \usepackage{float}
 \usepackage{hyperref}
 \usepackage{mathdots}
+\usepackage[title]{appendix}
 
 \newcommand{\argmax}{\operatornamewithlimits{argmax}}
 \newcommand{\defneq}{\mathrel{\mathop:}=}
@@ -659,7 +660,7 @@ This example shows that most of the memory operations are incurred by loading th
 	\begin{align*}
 		F(u) &= 
 		\alpha\nabla((u+1)\nabla u) 
-		+ \beta\ \vec{1}\nabla u^2
+		+ \beta\ \vec{1}\cdot\nabla u^2
 		+ u(u-0.5).
 	\end{align*}
 	For all experiments we assume Dirichlet boundary conditions. \\ We compare the behavior of exponential integrators with other matrix-free ODE solvers.
@@ -701,34 +702,46 @@ This example shows that most of the memory operations are incurred by loading th
 	\begin{align*}
 		\partial_{t}u = F(u) 
 			&= \alpha\nabla((u+1)\nabla u) 
-				+ \beta\ \vec{1}\nabla u^2
+				+ \beta\ \vec{1}\cdot\nabla u^2
 				+ u(u-0.5) \\
 			&= \alpha(u+1)\Delta u + \alpha(\nabla u)^2 
-				+ \beta\ \vec{1}\nabla u^2 + u(u-0.5) 				
+				+ \beta\ \vec{1}\cdot\nabla u^2 + u(u-0.5) 				
 %			&= \alpha\nabla(0.5\nabla u^2 + \nabla u) 
-%				+ \beta\ \vec{1}\nabla u^2 + u(u-0.5) \\
+%				+ \beta\ \vec{1}\cdot\nabla u^2 + u(u-0.5) \\
 %			&= \alpha\Delta(0.5 u^2 + u) 
-%				+ \beta\ \vec{1}\nabla u^2 + u(u-0.5).
+%				+ \beta\ \vec{1}\cdot\nabla u^2 + u(u-0.5).
 	\end{align*}
-	By considering only the terms depending on $\Delta $ and $\vec{1}\nabla $ we get the modified problems
+	By considering only the terms depending on $\Delta $ and $\vec{1}\cdot\nabla $ we get the modified problems
 	\begin{align*}
 		\partial_{t}u &= \alpha(u+1)\Delta u
 		 %= \alpha\sum_{k=1}^d \partial_{x_k^2}(0.5 u^2 + u), 
 		 \\
-		\partial_{t}u &= \beta\vec{1}\nabla u^2 .
+		\partial_{t}u &= \beta\vec{1}\cdot\nabla u^2 .
 		 %= \beta\sum_{k=1}^d \partial_{x_k^2} u^2
 	\end{align*}
-	In order to mitigate numerical instabilities we discretize $\Delta$ with second order centred differences and $\vec{1}\nabla$ with the first-order upwind scheme. Both discretizations induce severe restrictions on the maximal time step size for explicit Runge-Kutta schemes. These conditions are known as Courant-Friedrichs-Lewy (CFL) conditions. In our experiments $\abs{u}$ is bounded by 1. Therefore the CFL conditions of the modified problems are given by
-		\[ C_{dif} = \frac{2\alpha\tau}{h^2} \le \frac{1}{2}, \quad C_{adv} = \frac{\beta\tau}{h} \le 1.\]
-	This constraint can be seen in Figure \ref{fig:multi1DNonlinear} on the bottom row for the original problem.
+	In order to mitigate numerical instabilities we discretize $\Delta$ with second order centred differences and $\vec{1}\cdot\nabla$ with the first-order upwind scheme. Both discretizations induce severe restrictions on the maximal time step size for explicit Runge-Kutta schemes. These conditions are known as Courant-Friedrichs-Lewy (CFL) conditions. In our experiments $\abs{u}$ is bounded by 1. Therefore the CFL conditions of the modified problems are given by
+	\begin{align} \label{eq:CFL}
+		C_{dif} = \frac{2\alpha\tau}{h^2} \le \frac{1}{2}, \quad C_{adv} = \frac{\beta\tau}{h} \le 1.
+	\end{align}
+	This constraint can be seen in Figure \ref{fig:multi1DNonlinear} and INSERT OTHER FIGURE on the bottom row for the original problem. 
+	
 	\begin{figure}[h]
 		\newcommand{\dif}{\detokenize{α}=0.1}
-		\newcommand{\adv}{\detokenize{β}=0.01}
+		\newcommand{\adv}{\detokenize{β}=1}
 		\centering
 		\includegraphics[width=0.9\columnwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
-		\caption{Comparison of different integrators for the one-dimensional case and the absolute tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-10}$). We calculated the cost-minimizing time step size for each integrator, as shown in the bottom row. The top row displays the corresponding cost incurred. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the maximal time step, where the CFL conditions are not violated.}
+		\caption{Comparison of different integrators for the one-dimensional case and the absolute tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the bottom row. The top row displays the corresponding cost incurred. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the maximal time step, where the CFL conditions are not violated.}
 		\label{fig:multi1DNonlinear}
 	\end{figure}
+	
+	
+	\paragraph{Experiment setup}
+	We considered $\alpha\in\{0.1,0.01\}$, $\beta\in\{1, 0.1, 0.01\}$ and $\operatorname{tol}\in \{2^{-10},2^{-24}\}$. For each integrator we compute the cost-minimizing time step sizes given $\alpha, \beta$ and an absolute tolerance $\operatorname{tol}$.
+	%As discussed in the previous section the maximal time step size of \texttt{rk2} and \texttt{rk4} is severely limited by the CFL conditions \ref{eq:CFL}.  while all other integrators are unaffected. 
+	
+	\subsection{One-dimensional advection-diffusion equation}
+	We consider the one-dimensional case see, Figure \ref{fig:multi1DNonlinear} and Appendix \ref{sec:1dim}. Despite these CFL constraints \ref{eq:CFL} \texttt{rk2} is a robust choice for all $\alpha$ and $\beta$ we considered. SEE APPENDIX. The 
+
 %	
 %	
 %	\subsection{One-dimensional advection-diffusion equation}
@@ -846,44 +859,24 @@ This example shows that most of the memory operations are incurred by loading th
 	\item Plots for CSR Matrix case		
 	\item Appendix mit vielen Plots?
 \end{itemize}
+\begin{appendices}
+\section{One-dimensional advection-diffusion equation}\label{sec:1dim}
+\section{Two}
+\end{appendices}
 	
-	\subsection{Fully Linear Case}
-	\newcommand{\Pe}{Pe=10.0}
-	\newcommand{\precision}{single}
-	\newcommand{\safe}{sf=1.1}
-	
+\newcommand{\Pe}{Pe=10.0}
+\newcommand{\precision}{single}
+\newcommand{\safe}{sf=1.1}
+
 %	\begin{figure}[H]
 %		\centering
 %		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/12, \precision, \Pe.pdf}
 %		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 %	\end{figure}
-	
 
-	\newcommand{\plotwidth}{0.9\columnwidth}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment1/multi, \Pe.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment1/3, \precision, \Pe.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment1/5, \precision, \Pe.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment1/4, \precision, \Pe.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
+
+\newcommand{\plotwidth}{0.9\columnwidth}
+
 	
 	
 	\newpage
@@ -969,5 +962,28 @@ This example shows that most of the memory operations are incurred by loading th
 		\bibitem{matplotlib} J. Hunter. Matplotlib: A 2D Graphics Environment, Computing in Science \& Engineering, 9, 90-95 (2007).
 		\bibitem{pandas} W. McKinney. Data Structures for Statistical Computing in Python, Proceedings of the 9th Python in Science Conference, 51-56 (2010).
 	\end{thebibliography}
+	\subsection{Fully Linear Case}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\plotwidth]{../Figures/Experiment1/multi, \Pe.pdf}
+		%	\caption{A picture of a gull.}
+	\end{figure}
 	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\plotwidth]{../Figures/Experiment1/3, \precision, \Pe.pdf}
+		%	\caption{A picture of a gull.}
+	\end{figure}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\plotwidth]{../Figures/Experiment1/5, \precision, \Pe.pdf}
+		%	\caption{A picture of a gull.}
+	\end{figure}
+	
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\plotwidth]{../Figures/Experiment1/4, \precision, \Pe.pdf}
+		%	\caption{A picture of a gull.}
+	\end{figure}
 \end{document}
