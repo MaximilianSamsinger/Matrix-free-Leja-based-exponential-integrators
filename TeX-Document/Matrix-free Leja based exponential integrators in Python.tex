@@ -14,6 +14,7 @@
 \usepackage{hyperref}
 \usepackage{mathdots}
 \usepackage[title]{appendix}
+\usepackage{pgffor}
 
 \newcommand{\argmax}{\operatornamewithlimits{argmax}}
 \newcommand{\defneq}{\mathrel{\mathop:}=}
@@ -660,7 +661,7 @@ This example shows that most of the memory operations are incurred by loading th
 	\begin{align*}
 		F(u) &= 
 		\alpha\nabla((u+1)\nabla u) 
-		+ \beta\ \vec{1}\cdot\nabla u^2
+		+ \beta\ \vec{1}\!\cdot\!\nabla u^2
 		+ u(u-0.5).
 	\end{align*}
 	For all experiments we assume Dirichlet boundary conditions. \\ We compare the behavior of exponential integrators with other matrix-free ODE solvers.
@@ -688,7 +689,7 @@ This example shows that most of the memory operations are incurred by loading th
 	F'(u)v \approx \frac{F(u+\epsilon v)-F(u)}{\epsilon} ~~\text{with}~~ \epsilon > 0
 	\]
 	for $u, v\in\mathbb{R}^{N}$.
-	Either way $u$ and $v$ need to loaded into memory and the result needs to be stored, resulting in $3N^d$ memory operations. In a matrix-free setting all other costs are negligible. If $(u,v)\mapsto F'(u)v$ is implemented as a sparse matrix-vector product additional costs for loading the matrix coefficients have to be considered. Discretizing the diffusive part of $F$ with a second order central difference scheme results in a Jacobian of $F$ with $(2d+1)N$ entries. All other discretizations do not affect this structure. If the matrix is stored in CSR-format an additional $8(2d+1)N^d$ bytes for all entries and $4(2d+2)N^d$ bytes for all indices have to be accessed to compute the directional derivative. For a more elaborate explanation see section \ref{sec:FDS}.
+	Either way $u$ and $v$ need to be loaded into memory and the result needs to be stored, resulting in $3N^d$ memory operations. In a matrix-free setting all other costs are negligible. If $(u,v)\mapsto F'(u)v$ is implemented as a sparse matrix-vector product additional costs for loading the matrix coefficients have to be considered. Discretizing the diffusive part of $F$ with a second order central difference scheme results in a Jacobian of $F$ with $(2d+1)N$ entries. All other discretizations do not affect this structure. If the matrix is stored in CSR-format an additional $8(2d+1)N^d$ bytes for all entries and $4(2d+2)N^d$ bytes for all indices have to be accessed to compute the directional derivative. For a more elaborate explanation see section \ref{sec:FDS}.
 	In summary
 	\begin{enumerate}
 		\item evaluating $u \mapsto F(u)$ requires $16N^d$ bytes,
@@ -702,24 +703,24 @@ This example shows that most of the memory operations are incurred by loading th
 	\begin{align*}
 		\partial_{t}u = F(u) 
 			&= \alpha\nabla((u+1)\nabla u) 
-				+ \beta\ \vec{1}\cdot\nabla u^2
+				+ \beta\ \vec{1}\!\cdot\!\nabla u^2
 				+ u(u-0.5) \\
 			&= \alpha(u+1)\Delta u + \alpha(\nabla u)^2 
-				+ \beta\ \vec{1}\cdot\nabla u^2 + u(u-0.5) 				
+				+ \beta\ \vec{1}\!\cdot\!\nabla u^2 + u(u-0.5) 				
 %			&= \alpha\nabla(0.5\nabla u^2 + \nabla u) 
-%				+ \beta\ \vec{1}\cdot\nabla u^2 + u(u-0.5) \\
+%				+ \beta\ \vec{1}\!\cdot\!\nabla u^2 + u(u-0.5) \\
 %			&= \alpha\Delta(0.5 u^2 + u) 
-%				+ \beta\ \vec{1}\cdot\nabla u^2 + u(u-0.5).
+%				+ \beta\ \vec{1}\!\cdot\!\nabla u^2 + u(u-0.5).
 	\end{align*}
-	By considering only the terms depending on $\Delta $ and $\vec{1}\cdot\nabla $ we get the modified problems
+	By considering only the terms depending on $\Delta $ and $\vec{1}\!\cdot\!\nabla $ we get the modified problems
 	\begin{align*}
 		\partial_{t}u &= \alpha(u+1)\Delta u
 		 %= \alpha\sum_{k=1}^d \partial_{x_k^2}(0.5 u^2 + u), 
 		 \\
-		\partial_{t}u &= \beta\vec{1}\cdot\nabla u^2 .
+		\partial_{t}u &= \beta~\vec{1}\!\cdot\!\nabla u^2 .
 		 %= \beta\sum_{k=1}^d \partial_{x_k^2} u^2
 	\end{align*}
-	In order to mitigate numerical instabilities we discretize $\Delta$ with second order centred differences and $\vec{1}\cdot\nabla$ with the first-order upwind scheme. Both discretizations induce severe restrictions on the maximal time step size for explicit Runge-Kutta schemes. These conditions are known as Courant-Friedrichs-Lewy (CFL) conditions. In our experiments $\abs{u}$ is bounded by 1. Therefore the CFL conditions of the modified problems are given by
+	In order to mitigate numerical instabilities we discretize $\Delta$ with second order centred differences and $\vec{1}\!\cdot\!\nabla$ with the first-order upwind scheme. Both discretizations induce severe restrictions on the maximal time step size for explicit Runge-Kutta schemes. These conditions are known as Courant-Friedrichs-Lewy (CFL) conditions. In our experiments $\abs{u}$ is bounded by 1. Therefore the CFL conditions of the modified problems are given by
 	\begin{align} \label{eq:CFL}
 		C_{dif} = \frac{2\alpha\tau}{h^2} \le \frac{1}{2}, \quad C_{adv} = \frac{\beta\tau}{h} \le 1.
 	\end{align}
@@ -739,9 +740,17 @@ This example shows that most of the memory operations are incurred by loading th
 	We considered $\alpha\in\{0.1,0.01\}$, $\beta\in\{1, 0.1, 0.01\}$ and $\operatorname{tol}\in \{2^{-10},2^{-24}\}$. For each integrator we compute the cost-minimizing time step sizes given $\alpha, \beta$ and an absolute tolerance $\operatorname{tol}$.
 	%As discussed in the previous section the maximal time step size of \texttt{rk2} and \texttt{rk4} is severely limited by the CFL conditions \ref{eq:CFL}.  while all other integrators are unaffected. 
 	
-	\subsection{One-dimensional advection-diffusion equation}
+	\begin{figure}[H]
+		\newcommand{\dif}{\detokenize{α}=0.1}
+		\newcommand{\adv}{\detokenize{β}=1}
+		\centering
+		\includegraphics[width=0.9\columnwidth]{../Figures/Experiment2/3, single, \detokenize{α}=0.1, \detokenize{β}=1.pdf}
+		\caption{Comparison of different integrators for the one-dimensional case and the absolute tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). Shows the }
+	\end{figure}
+	
+	
+	\subsection{One-dimensional advection-diffusion equation} \label{sec:Experiment1dim}
 	We consider the one-dimensional case see, Figure \ref{fig:multi1DNonlinear} and Appendix \ref{sec:1dim}. Despite these CFL constraints \ref{eq:CFL} \texttt{rk2} is a robust choice for all $\alpha$ and $\beta$ we considered. SEE APPENDIX. The 
-
 %	
 %	
 %	\subsection{One-dimensional advection-diffusion equation}
@@ -859,14 +868,33 @@ This example shows that most of the memory operations are incurred by loading th
 	\item Plots for CSR Matrix case		
 	\item Appendix mit vielen Plots?
 \end{itemize}
-\begin{appendices}
-\section{One-dimensional advection-diffusion equation}\label{sec:1dim}
-\section{Two}
-\end{appendices}
+
+\begin{thebibliography}{13}
+	\bibitem{rosenbr} M. Caliari, A. Ostermann. Implementation of exponential Rosenbrock-type integrators, Applied Numerical Mathematics 59 (2009), 568-581.
+	\bibitem{action} A. Al-Mohy, N. Higham. Computing the action of the matrix exponential, with an application to exponential integrators, SIAM Journal on Scientific Computing 33 (2011), 488-511.
+	\bibitem{newt} L. Reichel. Newton interpolation at Leja points, BIT Numerical Mathematics 30 (1990), 332-346.
+	\bibitem{advdif} M. Caliari, M. Vianello, L. Bergamaschi. Interpolating discrete advection-diffusion propagators at Leja sequences, Journal of Computational and Applied Mathematics 172 (2004), 79-99.
+	\bibitem{lejarev} M. Caliari, P. Kandolf, A. Ostermann, S. Rainer. The Leja method revisited: backward error analysis for the matrix exponential, SIAM Journal on Scientific Computation, Accepted for publication (2016). arXiv:1506.08665.
+	\bibitem{bible} M. Hochbruck, A. Ostermann. Exponential integrators, Acta Numerica 19 (2010), 209-286
+	\bibitem{polynomialmethods} P. Novati, Polynomial methods for the computation of functions of large unsymmetric matrices, Ph.D. Thesis in Computational Mathematics, University of Trieste, advisor I. Moret (2000).
+	\bibitem{newtoninterpolation} L. Reichel, Newton interpolation at Leja points, BIT 30 (2) (1990), 332–346.
+	\bibitem{matrixanalysis} R. Horn, C. Johnson, Matrix Analysis, Cambridge University Press (2012).
+	\bibitem{trapezoidal} L. N. Trefethen, J.A.C. Weideman, The exponentially convergent trapezoidal rule, SIAM Review 56-3 (2014), 385-458.
+	
+	\bibitem{python} Python Software Foundation. Python Language Reference, version 3.7. Available at https://www.python.org. Manual at https://docs.python.org/3/. [Online; accessed 2020-02-19]
+	\bibitem{numpy} S. v. d. Walt, C. Colbert, G Varoquaux. The NumPy Array: A Structure for Efficient Numerical Computation, Computing in Science \& Engineering, 13 (2011), 22-30.
+	\bibitem{numpyguide} T. Oliphant. A guide to NumPy, USA: Trelgol Publishing, (2006).
+	\bibitem{scipy} P. Virtanen, R. Gommers, T. Oliphant, M. Haberland, T. Reddy, D. Cournapeau, E. Burovski, P. Peterson, W. Weckesser, J. Bright, S. v. d. Walt, M. Brett, J. Wilson, J. Millman, N. Mayorov, A. Nelson, E. Jones, R. Kern, E. Larson, C. Carey, İ. Polat, Y. Feng, E. Moore, J. VanderPlas, D. Laxalde, J. Perktold, R. Cimrman, I. Henriksen, E. Quintero, C. Harris, A. Archibald, A. Ribeiro, F. Pedregosa, P. v. Mulbregt, and SciPy 1.0 Contributors. SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python. Nature Methods, in press.
+	\bibitem{matplotlib} J. Hunter. Matplotlib: A 2D Graphics Environment, Computing in Science \& Engineering, 9, 90-95 (2007).
+	\bibitem{pandas} W. McKinney. Data Structures for Statistical Computing in Python, Proceedings of the 9th Python in Science Conference, 51-56 (2010).
+\end{thebibliography}
+\clearpage
+
 	
 \newcommand{\Pe}{Pe=10.0}
 \newcommand{\precision}{single}
 \newcommand{\safe}{sf=1.1}
+\newcommand{\plotwidth}{0.9\columnwidth}
 
 %	\begin{figure}[H]
 %		\centering
@@ -874,67 +902,97 @@ This example shows that most of the memory operations are incurred by loading th
 %		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 %	\end{figure}
 
+\begin{appendices}
+	\section{One-dimensional advection-diffusion equation}\label{sec:1dim}
+\end{appendices}
 
-\newcommand{\plotwidth}{0.9\columnwidth}
-
-	
-	
-	\newpage
-	\subsection{Nonlinear 1D case}
-	\newcommand{\dif}{\detokenize{α}=0.1}
-	\newcommand{\adv}{\detokenize{β}=0.01}
-	\renewcommand{\precision}{single}
-	{1, \precision, \dif, \adv}
+\newcommand{\dif}{\detokenize{α}=0.1}
+\newcommand{\adv}{\detokenize{β}=0.01}
+\renewcommand{\precision}{single}
+This shows the result for all the experiments specified in Section \ref{sec:Experiment1dim}. We consider $\alpha\in\{0.1, 0.01\}$, $\beta\in\{1, 0.1, 0.01\}$.
+\newpage
+\foreach \DIF in {0.1, 0.01}
+\foreach \ADV in {1, 0.1, 0.01}
+{
+	%Nonlinear 1D  {\precision, $\alpha\dif$, $\beta\adv$}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment2/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
-	
+%}
+%\foreach \DIF in {0.1, 0.01}
+%\foreach \ADV in {1, 0.1, 0.01}
+%\foreach \PRECISION in {half, single}
+%{
+%	\begin{figure}[H]
+%		\centering
+%		\includegraphics[width=\plotwidth]{../Figures/Experiment2/2, \PRECISION, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
+%		%	\caption{A picture of a gull.}
+%	\end{figure}
+%}
+%\foreach \DIF in {0.1, 0.01}
+%\foreach \ADV in {1, 0.1, 0.01}
+%{	
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment2/2, \precision, \dif, \adv.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment2/3, single, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
-	
+}
+%\foreach \DIF in {0.1, 0.01}
+%\foreach \ADV in {1, 0.1, 0.01}
+%\foreach \PRECISION in {half, single}
+%{	
+%	\begin{figure}[H]
+%		\centering
+%		\includegraphics[width=\plotwidth]{../Figures/Experiment2/4, \PRECISION, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
+%		%	\caption{A picture of a gull.}
+%	\end{figure}
+%}
+\clearpage
+\begin{appendices}
+\section{Two-dimensional advection-diffusion equation}\label{sec:2dim}
+\end{appendices}
+
+\foreach \DIF in {0.1, 0.01}
+\foreach \ADV in {1, 0.1, 0.01}
+{
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment2/3, \precision, \dif, \adv.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment2/4, \precision, \dif, \adv.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
-	
-	\subsection{Nonlinear 2D case}
-	{1, \precision, \dif, \adv}
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/multi, \dif, \adv.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
-
+%}
+%\foreach \DIF in {0.1, 0.01}
+%\foreach \ADV in {1, 0.1, 0.01}
+%\foreach \PRECISION in {half, single}
+%{	
+%	\begin{figure}[H]
+%		\centering
+%		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/2, \PRECISION, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
+%		%	\caption{A picture of a gull.}
+%	\end{figure}
+%}
+%\foreach \DIF in {0.1, 0.01}
+%\foreach \ADV in {1, 0.1, 0.01}
+%{		
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/2, \precision, \dif, \adv.pdf}
+		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/3, half, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
 		%	\caption{A picture of a gull.}
 	\end{figure}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/3, \precision, \dif, \adv.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/4, \precision, \dif, \adv.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
-	
+}
+%\foreach \DIF in {0.1, 0.01}
+%\foreach \ADV in {1, 0.1, 0.01}
+%\foreach \PRECISION in {half, single}
+%{		
+%	\begin{figure}[H]
+%		\centering
+%		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/4, \PRECISION, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
+%		%	\caption{A picture of a gull.}
+%	\end{figure}
+%	
 	
 	%DESCRIPTION OF THE EXPERIMENT, NUMBER OF POWERITS, SAFETYFACTOR, HOW STABLE IS THE COMPUTATION???
 	%First that the matrix $A = A(t)$ changes at every time step and therefore
@@ -942,48 +1000,30 @@ This example shows that most of the memory operations are incurred by loading th
 	
 	
 	
-	\clearpage
-	\begin{thebibliography}{13}
-		\bibitem{rosenbr} M. Caliari, A. Ostermann. Implementation of exponential Rosenbrock-type integrators, Applied Numerical Mathematics 59 (2009), 568-581.
-		\bibitem{action} A. Al-Mohy, N. Higham. Computing the action of the matrix exponential, with an application to exponential integrators, SIAM Journal on Scientific Computing 33 (2011), 488-511.
-		\bibitem{newt} L. Reichel. Newton interpolation at Leja points, BIT Numerical Mathematics 30 (1990), 332-346.
-		\bibitem{advdif} M. Caliari, M. Vianello, L. Bergamaschi. Interpolating discrete advection-diffusion propagators at Leja sequences, Journal of Computational and Applied Mathematics 172 (2004), 79-99.
-		\bibitem{lejarev} M. Caliari, P. Kandolf, A. Ostermann, S. Rainer. The Leja method revisited: backward error analysis for the matrix exponential, SIAM Journal on Scientific Computation, Accepted for publication (2016). arXiv:1506.08665.
-		\bibitem{bible} M. Hochbruck, A. Ostermann. Exponential integrators, Acta Numerica 19 (2010), 209-286
-		\bibitem{polynomialmethods} P. Novati, Polynomial methods for the computation of functions of large unsymmetric matrices, Ph.D. Thesis in Computational Mathematics, University of Trieste, advisor I. Moret (2000).
-		\bibitem{newtoninterpolation} L. Reichel, Newton interpolation at Leja points, BIT 30 (2) (1990), 332–346.
-		\bibitem{matrixanalysis} R. Horn, C. Johnson, Matrix Analysis, Cambridge University Press (2012).
-		\bibitem{trapezoidal} L. N. Trefethen, J.A.C. Weideman, The exponentially convergent trapezoidal rule, SIAM Review 56-3 (2014), 385-458.
-		
-		\bibitem{python} Python Software Foundation. Python Language Reference, version 3.7. Available at https://www.python.org. Manual at https://docs.python.org/3/. [Online; accessed 2020-02-19]
-		\bibitem{numpy} S. v. d. Walt, C. Colbert, G Varoquaux. The NumPy Array: A Structure for Efficient Numerical Computation, Computing in Science \& Engineering, 13 (2011), 22-30.
-		\bibitem{numpyguide} T. Oliphant. A guide to NumPy, USA: Trelgol Publishing, (2006).
-		\bibitem{scipy} P. Virtanen, R. Gommers, T. Oliphant, M. Haberland, T. Reddy, D. Cournapeau, E. Burovski, P. Peterson, W. Weckesser, J. Bright, S. v. d. Walt, M. Brett, J. Wilson, J. Millman, N. Mayorov, A. Nelson, E. Jones, R. Kern, E. Larson, C. Carey, İ. Polat, Y. Feng, E. Moore, J. VanderPlas, D. Laxalde, J. Perktold, R. Cimrman, I. Henriksen, E. Quintero, C. Harris, A. Archibald, A. Ribeiro, F. Pedregosa, P. v. Mulbregt, and SciPy 1.0 Contributors. SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python. Nature Methods, in press.
-		\bibitem{matplotlib} J. Hunter. Matplotlib: A 2D Graphics Environment, Computing in Science \& Engineering, 9, 90-95 (2007).
-		\bibitem{pandas} W. McKinney. Data Structures for Statistical Computing in Python, Proceedings of the 9th Python in Science Conference, 51-56 (2010).
-	\end{thebibliography}
-	\subsection{Fully Linear Case}
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment1/multi, \Pe.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment1/3, \precision, \Pe.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment1/5, \precision, \Pe.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
-	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment1/4, \precision, \Pe.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
+
+
+%	\subsection{Fully Linear Case}
+%	\begin{figure}[H]
+%		\centering
+%		\includegraphics[width=\plotwidth]{../Figures/Experiment1/multi, \Pe.pdf}
+%		%	\caption{A picture of a gull.}
+%	\end{figure}
+%	
+%	\begin{figure}[H]
+%		\centering
+%		\includegraphics[width=\plotwidth]{../Figures/Experiment1/3, \precision, \Pe.pdf}
+%		%	\caption{A picture of a gull.}
+%	\end{figure}
+%	
+%	\begin{figure}[H]
+%		\centering
+%		\includegraphics[width=\plotwidth]{../Figures/Experiment1/5, \precision, \Pe.pdf}
+%		%	\caption{A picture of a gull.}
+%	\end{figure}
+%	
+%	\begin{figure}[H]
+%		\centering
+%		\includegraphics[width=\plotwidth]{../Figures/Experiment1/4, \precision, \Pe.pdf}
+%		%	\caption{A picture of a gull.}
+%	\end{figure}
 \end{document}
