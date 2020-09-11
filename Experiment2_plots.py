@@ -35,7 +35,7 @@ BIGGER_SIZE = 12
 
 maxerror = str(2**-10)
 
-isproblem2D = True # Switches between 1D and 2D case
+isproblem2D = False # Switches between 1D and 2D case
 
 filename = 'Experiment_2D' if isproblem2D else 'Experiment2'
 filelocation = 'HDF5-Files' + os.sep + filename + '.h5'
@@ -99,25 +99,25 @@ for param in params:
     '''
     1.1 Plot matrix dimension (Nx) vs matrix-vector multiplications (m)
     '''
-    fig, ax = plt.subplots()
+    #fig, ax = plt.subplots()
     for key in keys:
         df = Integrators[key].optimaldata
-        df.plot('Nx','cost', label=key[1:], ax=ax)
+        #df.plot('Nx','cost', label=key[1:], ax=ax)
     
-    ax.set_title(titletext)
-    ax.set_xlabel('{{$N$}}')
-    ax.set_ylabel('Megabytes read or written')
-    ax.set_yscale('log')
+    # ax.set_title(titletext)
+    # ax.set_xlabel('{{$N$}}')
+    # ax.set_ylabel('Megabytes read or written')
+    # ax.set_yscale('log')
 
-    savefig(1, save, precision_type, savetext)
+    # savefig(1, save, precision_type, savetext)
     
-    '''
-    1.2 Plot matrix dimension (Nx) vs optimal time step size (tau)
-    '''
-    fig, ax = plt.subplots()
-    for key in keys:
-        df = Integrators[key].optimaldata
-        df.plot('Nx','tau', label=key[1:], ax=ax)
+    # '''
+    # 1.2 Plot matrix dimension (Nx) vs optimal time step size (tau)
+    # '''
+    # fig, ax = plt.subplots()
+    # for key in keys:
+    #     df = Integrators[key].optimaldata
+    #     df.plot('Nx','tau', label=key[1:], ax=ax)
 
     
     #CFLA = df.gridsize/df.β
@@ -126,83 +126,84 @@ for param in params:
     else:
         CFLD = 0.25*df.gridsize**2/df.α
     
-    #ax.plot(df.Nx, CFLA, label="$C_{adv}$",linestyle='-.')
-    ax.plot(df.Nx, CFLD, label="$C_{dif}$",linestyle=':')
+    # #ax.plot(df.Nx, CFLA, label="$C_{adv}$",linestyle='-.')
+    # ax.plot(df.Nx, CFLD, label="$C_{dif}$",linestyle=':')
 
-    ax.set_title(titletext)
-    ax.legend()
-    ax.set_xlabel('{{$N$}}')
-    ax.set_ylabel('Optimal time step')
-    ax.set_yscale('log')
+    # ax.set_title(titletext)
+    # ax.legend()
+    # ax.set_xlabel('{{$N$}}')
+    # ax.set_ylabel('Optimal time step')
+    # ax.set_yscale('log')
 
-    savefig(2, save, precision_type, savetext)
+    # savefig(2, save, precision_type, savetext)
 
-    '''
-    1.4 Plot cost (cost) vs optimal time step size (tau)
-    '''
+    # '''
+    # 1.4 Plot cost (cost) vs optimal time step size (tau)
+    # '''
     
-    fig, ax = plt.subplots()
+    # fig, ax = plt.subplots()
     
-    for key in keys:
-        df = Integrators[key].optimaldata
-        df.plot('cost','tau', label=key[1:], ax=ax)
+    # for key in keys:
+    #     df = Integrators[key].optimaldata
+    #     df.plot('cost','tau', label=key[1:], ax=ax)
     
-        for i,j in df.Nx.items():
-            if j in [df.Nx.iloc[k] for k in [0,-1]]:
-                ax.annotate('N=' + str(j), xy=(df.cost[i], df.tau[i]))
+    #     for i,j in df.Nx.items():
+    #         if j in [df.Nx.iloc[k] for k in [0,-1]]:
+    #             ax.annotate('N=' + str(j), xy=(df.cost[i], df.tau[i]))
     
-    ax.set_title(titletext)
-    ax.legend()
-    ax.set_xlabel('Megabytes read or written')
-    ax.set_ylabel('Optimal time step')
-    ax.set_xscale('log')
-    ax.set_yscale('log')
+    # ax.set_title(titletext)
+    # ax.legend()
+    # ax.set_xlabel('Megabytes read or written')
+    # ax.set_ylabel('Optimal time step')
+    # ax.set_xscale('log')
+    # ax.set_yscale('log')
     
-    #ax.set_xlim([1e1,1e5])
-    #ax.set_ylim([1e-5,1e-1])
+    # #ax.set_xlim([1e1,1e5])
+    # #ax.set_ylim([1e-5,1e-1])
     
-    savefig(4, save, precision_type, savetext)
+    # savefig(4, save, precision_type, savetext)
 
-    '''
-    1.3 Plot matrix dimension (Nx) vs Jacobian-vector products (mv)
-    '''
+    # '''
+    # 1.3 Plot matrix dimension (Nx) vs Jacobian-vector products (mv)
+    # '''
     
-    fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True, sharey='row')
-    axes = axes.flatten()
-    fig.subplots_adjust(hspace=0, wspace=0)
-    fig.suptitle(paramtext)
+    # fig, axes = plt.subplots(nrows=1, ncols=2, sharex=True, sharey='row')
+    # axes = axes.flatten()
+    # fig.subplots_adjust(hspace=0, wspace=0)
+    # fig.suptitle(paramtext)
     
-    for k, error in enumerate([2**-10,2**-24]):
-        with pd.HDFStore(filelocation) as hdf:
-            keys = hdf.keys()
-            keys.remove('/exprb3')
-            Integrators = {key:IntegratorData(filelocation,key) for key in keys}
-        for key in keys:
-            get_optimal_data(Integrators[key], float(error), errortype, param)
+    # for k, error in enumerate([2**-10,2**-24]):
+    #     with pd.HDFStore(filelocation) as hdf:
+    #         keys = hdf.keys()
+    #         keys.remove('/exprb3')
+    #         Integrators = {key:IntegratorData(filelocation,key) for key in keys}
+    #     for key in keys:
+    #         get_optimal_data(Integrators[key], float(error), errortype, param)
         
-        ax = axes[k]
-        for key in keys:
-            df = Integrators[key].optimaldata
-            df.plot('Nx','m', label=key[1:], ax=ax)
-        ax.set_xlabel('{{$N$}}')
-        if k == 0:
-            ax.set_title('Half precision')
-            ax.set_ylabel('Jacobian-vector products per time step')
-            ax.get_legend().remove()
-        else:
-            ax.legend()
-            ax.set_title('Single precision')
-    fig.align_ylabels()
-    fig.subplots_adjust(top=0.93)
+    #     ax = axes[k]
+    #     for key in keys:
+    #         df = Integrators[key].optimaldata
+    #         df.plot('Nx','m', label=key[1:], ax=ax)
+    #     ax.set_xlabel('{{$N$}}')
+    #     if k == 0:
+    #         ax.set_title('Half precision')
+    #         ax.set_ylabel('Jacobian-vector products per time step')
+    #         ax.get_legend().remove()
+    #     else:
+    #         ax.legend()
+    #         ax.set_title('Single precision')
+    # fig.align_ylabels()
+    # fig.subplots_adjust(top=0.93)
     
-    savefig(3, save, precision_type, savetext)
+    # savefig(3, save, precision_type, savetext)
     
     
     '''
     1. Multi plot of 1.1 and 1.2
     '''
     
-    fig, axes = plt.subplots(nrows=2, ncols=2, sharex=True, sharey='row')
+    fig, axes = plt.subplots(nrows=3, ncols=2, sharex=True, sharey='row',
+                         figsize=((width*0.95, width*0.95*0.8)))
     axes = axes.flatten()
     fig.subplots_adjust(hspace=0, wspace=0)
     fig.suptitle(paramtext)
@@ -218,29 +219,41 @@ for param in params:
         ax = axes[0+k]
         for key in keys:
             df = Integrators[key].optimaldata
-            df.plot('Nx','cost', label=key[1:], ax=axes[0+k])
+            df.plot('Nx','cost', label=key[1:], ax=ax)
             
         ax.set_xlabel('{{$N$}}')
         ax.set_yscale('log')
         if k == 0:
             ax.set_title('Half precision')
-            ax.set_ylabel('Megabytes read or written')
-            ax.get_legend().remove()
+            ax.set_ylabel('Megabytes\n read or written')
         else:
-            ax.legend()
             ax.set_title('Single precision')
+        ax.get_legend().remove()
+            
         ax = axes[2+k]
         
         for key in keys:
             df = Integrators[key].optimaldata
-            df.plot('Nx','tau', label=key[1:], ax=axes[2+k])
+            df.plot('Nx','tau', label=key[1:], ax=ax)
+            
         #ax.plot(df.Nx, CFLA, label="$C_{adv}$",linestyle='-.')
         ax.plot(df.Nx, CFLD, label="$C_{dif}$",linestyle=':')
         ax.set_xlabel('{{$N$}}')
         if k == 0:
-            ax.set_ylabel('Optimal time step')
+            ax.set_ylabel('Optimal\n time step')
         ax.get_legend().remove()
         ax.set_yscale('log')
+        
+        ax = axes[4+k]
+        for key in keys:
+            df = Integrators[key].optimaldata
+            df.plot('Nx','m', label=key[1:], ax=ax)
+        ax.set_xlabel('{{$N$}}')
+        if k == 0:
+            ax.set_ylabel('Jacobian-vector\n products per\n time step')
+            ax.get_legend().remove()
+        else:
+            ax.legend(loc = 'upper left')
     
     fig.align_ylabels()
     fig.subplots_adjust(top=0.93)
