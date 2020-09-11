@@ -1,4 +1,4 @@
-% !TeX spellcheck = en_GB
+% !TeX spellcheck = en_US
 \documentclass{scrartcl}
 \usepackage[utf8]{inputenc}
 \usepackage[ngerman,english]{babel}
@@ -379,7 +379,8 @@ This example shows that most of the memory operations are incurred by loading th
 	\lambda_j =-\frac{4}{h^2}\sin^2\!\left(\frac{\pi j}{N}\right).
 	\end{align*}
 	The modulus is maximized for $j=\lfloor N/2\rfloor$, i.e.  $\lambda_{max} = \lambda_{\lfloor N/2\rfloor}$.
-	From now on we study the behaviour of $v = \frac{1}{N}\sum_{j=0}^{N-1} v_j$, the normalized sum of all eigenvectors. Let $n\in\mathbb{N}$ be the number of power iterations. We begin our analysis with the following auxiliary calculation
+	The convergence speed of the power method depends on the starting vector $v$, which can represented as a linear combination of eigenvectors $v_j$. The simplest, non-trivial choice for $v$ is given by $\frac{1}{N}\sum_{j=0}^{N-1} v_j$, which is the normalized sum of all eigenvectors. We use this choice for the remainder of this section as it is comparatively easy to study, while providing insight to a more general setting. 
+	Let $n\in\mathbb{N}$ be the number of power iterations. We begin our analysis with the following auxiliary calculation
 	\begin{align*}
 	\norm{A^nv}_2
 	&= \sqrt{\frac{1}{N}\sum_{j=0}^{N-1}{\abs{\lambda_j}^{2n}}}
@@ -664,7 +665,7 @@ This example shows that most of the memory operations are incurred by loading th
 		+ \beta\ \vec{1}\!\cdot\!\nabla u^2
 		+ u(u-0.5).
 	\end{align*}
-	For all experiments we assume Dirichlet boundary conditions. \\ We compare the behavior of exponential integrators with other matrix-free ODE solvers.
+	For all experiments we assume Dirichlet boundary conditions. We compare the behavior of exponential integrators with other matrix-free ODE solvers.
 	
 	\paragraph{Crank-Nicolson method:}
 	We refer to the Crank-Nicolson method of order 2 as \texttt{cn2}.
@@ -726,27 +727,27 @@ This example shows that most of the memory operations are incurred by loading th
 	\end{align}
 	This constraint can be seen in Figure \ref{fig:multi1DNonlinear} and INSERT OTHER FIGURE on the bottom row for the original problem. 
 	
-	\begin{figure}[h]
+
+	
+	\begin{figure}[ht]
 		\newcommand{\dif}{\detokenize{α}=0.1}
-		\newcommand{\adv}{\detokenize{β}=1}
+		\newcommand{\adv}{\detokenize{β}=0.1}
 		\centering
-		\includegraphics[width=0.9\columnwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
-		\caption{Comparison of different integrators for the one-dimensional case and the absolute tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the bottom row. The top row displays the corresponding cost incurred. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the maximal time step, where the CFL conditions are not violated.}
+		\includegraphics[width=0.95\columnwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
+		\caption{Comparison of different matrix-free integrators for the one-dimensional case given absolute tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
 		\label{fig:multi1DNonlinear}
 	\end{figure}
-	
-	
 	\paragraph{Experiment setup}
 	We considered $\alpha\in\{0.1,0.01\}$, $\beta\in\{1, 0.1, 0.01\}$ and $\operatorname{tol}\in \{2^{-10},2^{-24}\}$. For each integrator we compute the cost-minimizing time step sizes given $\alpha, \beta$ and an absolute tolerance $\operatorname{tol}$.
 	%As discussed in the previous section the maximal time step size of \texttt{rk2} and \texttt{rk4} is severely limited by the CFL conditions \ref{eq:CFL}.  while all other integrators are unaffected. 
 	
-	\begin{figure}[H]
-		\newcommand{\dif}{\detokenize{α}=0.1}
-		\newcommand{\adv}{\detokenize{β}=1}
-		\centering
-		\includegraphics[width=0.9\columnwidth]{../Figures/Experiment2/3, single, \detokenize{α}=0.1, \detokenize{β}=1.pdf}
-		\caption{Comparison of different integrators for the one-dimensional case and the absolute tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). Shows the }
-	\end{figure}
+%	\begin{figure}[H]
+%		\newcommand{\dif}{\detokenize{α}=0.1}
+%		\newcommand{\adv}{\detokenize{β}=1}
+%		\centering
+%		\includegraphics[width=0.9\columnwidth]{../Figures/Experiment2/3, single, \detokenize{α}=0.1, \detokenize{β}=1.pdf}
+%		\caption{This will be merged with Figure \ref{fig:multi1DNonlinear} to a $3\times 2$ plot.}
+%	\end{figure}
 	
 	
 	\subsection{One-dimensional advection-diffusion equation} \label{sec:Experiment1dim}
@@ -864,9 +865,7 @@ This example shows that most of the memory operations are incurred by loading th
 	\section{TODO}
 
 \begin{itemize}
-	\item Section 4.1 Erkläre warum $v=\sum_{j=1}^N v_j$ eine gute Wahl ist. (Gleichverteilung aller EV)
 	\item Plots for CSR Matrix case		
-	\item Appendix mit vielen Plots?
 \end{itemize}
 
 \begin{thebibliography}{13}
@@ -934,11 +933,11 @@ This shows the result for all the experiments specified in Section \ref{sec:Expe
 %\foreach \DIF in {0.1, 0.01}
 %\foreach \ADV in {1, 0.1, 0.01}
 %{	
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment2/3, single, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
+%	\begin{figure}[H]
+%		\centering
+%		\includegraphics[width=\plotwidth]{../Figures/Experiment2/3, single, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
+%		%	\caption{A picture of a gull.}
+%	\end{figure}
 }
 %\foreach \DIF in {0.1, 0.01}
 %\foreach \ADV in {1, 0.1, 0.01}
@@ -977,11 +976,11 @@ This shows the result for all the experiments specified in Section \ref{sec:Expe
 %\foreach \DIF in {0.1, 0.01}
 %\foreach \ADV in {1, 0.1, 0.01}
 %{		
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/3, half, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
-		%	\caption{A picture of a gull.}
-	\end{figure}
+%	\begin{figure}[H]
+%		\centering
+%		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/3, half, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
+%		%	\caption{A picture of a gull.}
+%	\end{figure}
 }
 %\foreach \DIF in {0.1, 0.01}
 %\foreach \ADV in {1, 0.1, 0.01}
