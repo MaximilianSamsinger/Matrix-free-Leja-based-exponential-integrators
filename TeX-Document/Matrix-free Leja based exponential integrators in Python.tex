@@ -721,22 +721,26 @@ This example shows that most of the memory operations are incurred by loading th
 		\partial_{t}u &= \beta~\vec{1}\!\cdot\!\nabla u^2 .
 		 %= \beta\sum_{k=1}^d \partial_{x_k^2} u^2
 	\end{align*}
+	
+	
 	In order to mitigate numerical instabilities we discretize $\Delta$ with second order centred differences and $\vec{1}\!\cdot\!\nabla$ with the first-order upwind scheme. Both discretizations induce severe restrictions on the maximal time step size for explicit Runge-Kutta schemes. These conditions are known as Courant-Friedrichs-Lewy (CFL) conditions. In our experiments $\abs{u}$ is bounded by 1. Therefore the CFL conditions of the modified problems are given by
 	\begin{align} \label{eq:CFL}
 		C_{dif} = \frac{2\alpha\tau}{h^2} \le \frac{1}{2}, \quad C_{adv} = \frac{\beta\tau}{h} \le 1.
 	\end{align}
 	This constraint can be seen in Figure \ref{fig:multi1DNonlinear} and INSERT OTHER FIGURE on the bottom row for the original problem. 
 	
-
-	
-	\begin{figure}[ht]
+	\begin{figure}[t]
 		\newcommand{\dif}{\detokenize{α}=0.1}
 		\newcommand{\adv}{\detokenize{β}=0.1}
 		\centering
-		\includegraphics[width=0.95\columnwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
-		\caption{Comparison of different matrix-free integrators for the one-dimensional case given absolute tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
+		\includegraphics[width=\columnwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
+		\caption{One-dimensional case. Comparison of different matrix-free integrators given absolute tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
 		\label{fig:multi1DNonlinear}
 	\end{figure}
+	
+
+	
+	
 	\paragraph{Experiment setup}
 	We considered $\alpha\in\{0.1,0.01\}$, $\beta\in\{1, 0.1, 0.01\}$ and $\operatorname{tol}\in \{2^{-10},2^{-24}\}$. For each integrator we compute the cost-minimizing time step sizes given $\alpha, \beta$ and an absolute tolerance $\operatorname{tol}$.
 	%As discussed in the previous section the maximal time step size of \texttt{rk2} and \texttt{rk4} is severely limited by the CFL conditions \ref{eq:CFL}.  while all other integrators are unaffected. 
@@ -751,7 +755,17 @@ This example shows that most of the memory operations are incurred by loading th
 	
 	
 	\subsection{One-dimensional advection-diffusion equation} \label{sec:Experiment1dim}
-	We consider the one-dimensional case see, Figure \ref{fig:multi1DNonlinear} and Appendix \ref{sec:1dim}. Despite these CFL constraints \ref{eq:CFL} \texttt{rk2} is a robust choice for all $\alpha$ and $\beta$ we considered. SEE APPENDIX. The 
+	We consider the one-dimensional case, see Figure \ref{fig:multi1DNonlinear} and Appendix \ref{sec:1dim}. Despite these CFL constraints \ref{eq:CFL} \texttt{rk2} is a robust choice for all $\alpha$ and $\beta$ we considered. SEE APPENDIX. The 
+	
+	\begin{figure}[t]
+		\newcommand{\dif}{\detokenize{α}=0.1}
+		\newcommand{\adv}{\detokenize{β}=0.1}
+		\centering
+		\includegraphics[width=\columnwidth]{../Figures/Experiment_2D/multi, \dif, \adv.pdf}
+		\caption{Two-dimensional case. Comparison of different matrix-free integrators given absolute tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
+		\label{fig:multi2DNonlinear}
+	\end{figure}
+	
 %	
 %	
 %	\subsection{One-dimensional advection-diffusion equation}
@@ -861,7 +875,7 @@ This example shows that most of the memory operations are incurred by loading th
 	%The eigenfunctions of $\partial_{xx}$ are given by
 	%\[ u_k(x) = e^{ikx} \]
 	%with eigenvalues $-k^2$.
-
+\clearpage
 	\section{TODO}
 
 \begin{itemize}
@@ -893,7 +907,7 @@ This example shows that most of the memory operations are incurred by loading th
 \newcommand{\Pe}{Pe=10.0}
 \newcommand{\precision}{single}
 \newcommand{\safe}{sf=1.1}
-\newcommand{\plotwidth}{0.9\columnwidth}
+\newcommand{\plotwidth}{\columnwidth}
 
 %	\begin{figure}[H]
 %		\centering
@@ -914,11 +928,13 @@ This shows the result for all the experiments specified in Section \ref{sec:Expe
 \foreach \ADV in {1, 0.1, 0.01}
 {
 	%Nonlinear 1D  {\precision, $\alpha\dif$, $\beta\adv$}
-	\begin{figure}[H]
+	\begin{figure}
 		\centering
 		\includegraphics[width=\plotwidth]{../Figures/Experiment2/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 	\end{figure}
+
+
 %}
 %\foreach \DIF in {0.1, 0.01}
 %\foreach \ADV in {1, 0.1, 0.01}

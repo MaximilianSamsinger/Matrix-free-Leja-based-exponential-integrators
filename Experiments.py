@@ -272,7 +272,7 @@ if __name__ == '__main__':
     if isproblem2D:
         assert(not LinearCase)
         assert(asLinearOp)
-        Nxlist = list(range(350,401,50))
+        Nxlist = list(range(50,401,50))
         params = [[α, β, γ] for α in 
                   [0.1, 0.01] for β in [1, 0.1, 0.01] for γ in [1]]
         problem_to_solve = Nonlinear_Advection_Diffusion_Equation2D

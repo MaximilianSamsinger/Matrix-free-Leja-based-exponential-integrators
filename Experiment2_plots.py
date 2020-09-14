@@ -33,9 +33,9 @@ SMALL_SIZE = 8
 MEDIUM_SIZE = 10
 BIGGER_SIZE = 12
 
-maxerror = str(2**-10)
+maxerror = str(2**-24)
 
-isproblem2D = False # Switches between 1D and 2D case
+isproblem2D = True # Switches between 1D and 2D case
 
 filename = 'Experiment_2D' if isproblem2D else 'Experiment2'
 filelocation = 'HDF5-Files' + os.sep + filename + '.h5'
@@ -203,7 +203,7 @@ for param in params:
     '''
     
     fig, axes = plt.subplots(nrows=3, ncols=2, sharex=True, sharey='row',
-                         figsize=((width*0.95, width*0.95*0.8)))
+                         figsize=((width, width)))
     axes = axes.flatten()
     fig.subplots_adjust(hspace=0, wspace=0)
     fig.suptitle(paramtext)
@@ -250,13 +250,13 @@ for param in params:
             df.plot('Nx','m', label=key[1:], ax=ax)
         ax.set_xlabel('{{$N$}}')
         if k == 0:
-            ax.set_ylabel('Jacobian-vector\n products per\n time step')
+            ax.set_ylabel('Jacobian-vector\n products per time step')
             ax.get_legend().remove()
         else:
             ax.legend(loc = 'upper left')
     
     fig.align_ylabels()
-    fig.subplots_adjust(top=0.93)
+    fig.subplots_adjust(top=0.95)
     
     savefig('multi', save, savetext)
     
