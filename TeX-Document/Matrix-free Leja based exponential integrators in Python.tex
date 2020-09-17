@@ -667,14 +667,14 @@ This example shows that most of the memory operations are incurred by loading th
 	\end{align*}
 	For all experiments we assume Dirichlet boundary conditions. We compare the behavior of exponential integrators with other matrix-free ODE solvers.
 	
-	\paragraph{Crank-Nicolson method:}
+	\paragraph{Crank-Nicolson method}
 	We refer to the Crank-Nicolson method of order 2 as \texttt{cn2}.
 	In our implementation of \texttt{cn2} we use the Newton-Raphson method to solve the nonlinear system of equations. We treat the Jacobian-vector product $v\mapsto F'(u)v$ as a linear operator. For the resulting system of linear equations we use the SciPy package \texttt{scipy.sparse.linalg.gmres}. For all experiments the relative tolerance is set to $\texttt{tol}/N_\tau$, where $N_\tau$ is the total number of time steps used for solving the ODE. No preconditioner was used for \texttt{gmres}. The Crank-Nicolson method is unconditionally stable and therefore does not have to satisfy the Courant-Friedrichs-Lewy (CFL) conditions for the differential equations we investigate in our experiments.
 	
-	\paragraph{Explicit Runge-Kutta method:}
+	\paragraph{Explicit Runge-Kutta method}
 	We refer to the explicit midpoint method of order 2 as \texttt{rk2} and refer to the classical Runge-Kutta method of order 4 as \texttt{rk4}. No explicit Runge-Kutta method is A-stable. Therefore small time step sizes have to be chosen when solving stiff differential equations. In our experiments this is the case when the considered differential equation is diffusion-dominated.
 	
-	\paragraph{Exponential Rosenbrock methods:}
+	\paragraph{Exponential Rosenbrock methods}
 	We refer to the exponential Rosenbrock methods of order 2, 3 and 4 discussed in~\ref{sec:expint} as \texttt{exprb2}, \texttt{exprb3} and \texttt{exprb4} respectively.
 	The action of the matrix exponential is approximated with the matrix-free \texttt{expleja} algorithm. At each time step we compute the optimal interpolation degree and substep parameter $s$ according to \eqref{eq:msmatrixfree}. For \texttt{expleja} we set the relative tolerance per time step to $\texttt{tol}/s$.
 	The maximal interpolation degree is set to 100. Note that the total number of matrix-vector multiplication per time step $s$ can still exceed 100 for $s>1$. At each time step we compute the spectral radius using the power method with at most four power iterations.\\
@@ -729,7 +729,7 @@ This example shows that most of the memory operations are incurred by loading th
 	
 	\begin{figure}[t]
 		\newcommand{\dif}{\detokenize{α}=0.1}
-		\newcommand{\adv}{\detokenize{β}=0.01}
+		\newcommand{\adv}{\detokenize{β}=1}
 		\centering
 		\includegraphics[width=\columnwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
 		\caption{One-dimensional matrix-free case. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
@@ -748,21 +748,34 @@ This example shows that most of the memory operations are incurred by loading th
 	
 	
 	\subsection{Results} \label{sec:Experiment1dim}
-	We considered $\alpha\in\{0.1,0.01\}$, $\beta\in\{1, 0.1, 0.01\}$.  For each integrator we compute the cost-minimizing time step sizes given $\alpha$, $\beta$ and a relative tolerance $\operatorname{tol}\in \{2^{-10},2^{-24}\}$. This was done by computing the relative error and computational costs for multiple pre-chosen, but fixed time step sizes $\tau$ as follows. For each integrator we subdivided the time domain into $N_\tau$ equidistant parts. The time step taken by each integrators corresponds $\tau = 0.1/N_\tau$. Initially we set $N_\tau=1$. Whenever the computation finished we check if the desired tolerance has been reached and no further cost improvements can be expected. If this is not the case we restart the experiment after replacing $N_\tau$ with a larger integer value close to $1.1N_\tau$. 
+	We consider $\alpha\in\{0.1,0.01\}$, $\beta\in\{1, 0.1, 0.01\}$.  For each integrator we compute the cost-minimizing time step sizes given $\alpha$, $\beta$ and a relative tolerance $\operatorname{tol}\in \{2^{-10},2^{-24}\}$. This was done by computing the relative error and computational costs for multiple pre-chosen, but fixed time step sizes $\tau$ as follows. For each integrator we subdivided the time domain into $N_\tau$ equidistant parts. The time step taken by each integrators corresponds $\tau = 0.1/N_\tau$. Initially we set $N_\tau=1$. Whenever the computation finished we check if the desired tolerance has been reached and no further cost improvements can be expected. If this is not the case we restart the experiment after replacing $N_\tau$ with a larger integer value close to $1.1N_\tau$. 
 	    
 	The results for the one-dimensional and two-dimensional advection-diffusion equations are shown in Figure~\ref{fig:multi1DNonlinear} and Figure~\ref{fig:multi2DNonlinear} respectively. 
-	These figures show the matrix-free case with $\alpha=0.1$, $\beta=0.1$. The results for CSR-matrix case, as well as all other choices for $\alpha$ and $\beta$, are shown in Appendix~\ref{sec:1dim}.
+	These figures show the matrix-free case with $\alpha=0.1$, $\beta=0.1$. The results for CSR-matrix case, as well as all other choices for $\alpha$ and $\beta$, are shown in Appendix~\ref{sec:1dim}. We discuss the results of the matrix-free case, unless otherwise noted.
+	
+	\paragraph{Crank-Nicholson method}
+	The Crank-Nicholson method \texttt{cn2}
+	The Crank-Nicholson method is a viable choice for diffusion-dominated problems. This is no longer the case in the single precision setting.
+	We remark that the tolerance setting used by \texttt{cn2} can be overly restrictive. However, in some experiments even conservative, but static choices such as $\texttt{tol}/100$ lead to solutions with insufficient accuracy for all considered time step sizes.
+	
+	\paragraph{Runge-Kutta methods}
+	The stiffness of the differential equation increases with $N$ and $\alpha$, leading to higher computational costs for all integrators. For sufficiently large values of $N$ the maximal time step size of \texttt{rk2} and \texttt{rk4} is limited by the CFL conditions~\ref{eq:CFL}. This causes both integrators to have relatively high optimal costs in the \textit{half} precision setting ($\operatorname{tol}=2^{-10}$). In the \textit{single} precision setting ($\operatorname{tol}=2^{-24}$) integrators naturally have to take smaller time step sizes to achieve the necessary relative tolerance. This is more beneficial for Runge-Kutta methods compared to all other integrators. In the CSR-matrix case Runge-Kutta methods outperform all other methods considered, since they do not rely on the expensive computation of Jacobian-vector products. Generally \texttt{rk2} outperforms \texttt{rk4} in every setting we considered. No hyperparameter can be adjusted to further decrease the computational costs of both Runge-Kutta methods, which is not the case for \texttt{cn2}, \texttt{exprb2} and \texttt{exprb4}.
+	
+	\paragraph{Exponential integrators}
+	Exponential integrators are not limited by CFL conditions, allowing \texttt{exprb2} and \texttt{exprb4} to take larger time step sizes. However, smaller time step sizes lead to higher costs for the computation of \texttt{expleja}. Despite the cost increase both \texttt{exprb2} and \texttt{exprb4} minimize their respective costs when choosing relatively small time steps. In the half precision setting \texttt{exprb2} outperforms \texttt{exprb4} for all $\alpha$, $\beta$ we considered. This relationship is flipped in the single precision setting. The relative tolerance can be achieved with \texttt{exprb4} using much larger step sizes compared to the exponential Euler method. We observe that \texttt{exprb4} is in particular well suited in the single precision setting given a low diffusion coefficient ($\alpha = 0.01$). We remark that the costs of the exponential integrators can be decreased by changing the tolerance setting used by \texttt{expleja}. However, the settings we used for \texttt{expleja} match \cite{lejarev} and are comparable to the choice we made for \texttt{cn2}. 
+	
+
 	
 	\paragraph{Half precision setting}
-	The stiffness of the differential equation increases with $N$ and $\alpha$, leading to higher computational costs for all integrators. For sufficiently large values of $N$ the maximal time step size of \texttt{rk2} and \texttt{rk4} is limited by the CFL conditions~\ref{eq:CFL}. This causes both integrators to have relatively high optimal costs in the \textit{half} precision setting ($\operatorname{tol}=2^{-10}$). In this setting \texttt{exprb2} is a robust choice for all values of $\alpha$ and $\beta$ we considered. Generally \texttt{rk2} and \texttt{exprb2} tend to outperform \texttt{rk4} and \texttt{exprb4} respectively. This is true for both the one-dimensional case, as well as the two-dimensional case. The Crank-Nicholson method \texttt{cn2} is a viable choice for diffusion-dominated problems.
+	The stiffness of the differential equation increases with $N$ and $\alpha$, leading to higher computational costs for all integrators. For sufficiently large values of $N$ the maximal time step size of \texttt{rk2} and \texttt{rk4} is limited by the CFL conditions~\ref{eq:CFL}. This causes both integrators to have relatively high optimal costs in the \textit{half} precision setting ($\operatorname{tol}=2^{-10}$). In this setting \texttt{exprb2} is a robust choice for all values of $\alpha$ and $\beta$ we considered. Generally \texttt{rk2} and \texttt{exprb2} tend to outperform \texttt{rk4} and \texttt{exprb4} respectively. This is true for both the one-dimensional case, as well as the two-dimensional case. 
 	
 	\paragraph{Single precision setting}
-	In the single precision setting ($\operatorname{tol}=2^{-10}$) the Crank-Nich
+	In the \textit{single} precision setting ($\operatorname{tol}=2^{-24}$) integrators may have to take smaller time step sizes to achieve the necessary relative tolerance. Furthermore, the stiffness of the differential equation is increased compared to the half precision case. This setting is beneficial for \texttt{rk2} and \texttt{rk4}. 
 	The stiffness of the differential equation increases with $N$ and $\alpha$, leading to higher computational costs for all integrators. For sufficiently large values of $N$ the maximal time step size of \texttt{rk2} and \texttt{rk4} is limited by the CFL conditions~\ref{eq:CFL}. This causes both integrators to have relatively high optimal costs in the \textit{half} precision setting ($\operatorname{tol}=2^{-10}$). In this setting \texttt{exprb2} is a robust choice for all values of $\alpha$ and $\beta$ we considered. Generally \texttt{rk2} and \texttt{exprb2} tend to outperform \texttt{rk4} and \texttt{exprb4} respectively. This is true for both the one-dimensional case, as well as the two-dimensional case. The Crank-Nicholson method \texttt{cn2} is a viable choice for diffusion-dominated problems.
 	
 	
 	\begin{figure}[t]
-	\newcommand{\dif}{\detokenize{α}=0.1}
+	\newcommand{\dif}{\detokenize{α}=0.01}
 	\newcommand{\adv}{\detokenize{β}=1}
 	\centering
 	\includegraphics[width=\columnwidth]{../Figures/Experiment_2D/multi, \dif, \adv.pdf}
@@ -773,13 +786,13 @@ This example shows that most of the memory operations are incurred by loading th
 	\section{Conclusion}
 	We developed a matrix-free version of the Leja method for the matrix exponential function with applications to exponential integrators. 
 
-\clearpage
 
 \begin{itemize}
-	\item Plots for CSR Matrix case		
+	\item TODO: Plots for CSR Matrix case		
 \end{itemize}
 
-\
+\clearpage
+
 
 \begin{thebibliography}{13}
 	\bibitem{rosenbr} M. Caliari, A. Ostermann. Implementation of exponential Rosenbrock-type integrators, Applied Numerical Mathematics 59 (2009), 568-581.
