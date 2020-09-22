@@ -49,7 +49,7 @@ def Nonlinear_Advection_Diffusion_Equation2D(Nx, param, asLinearOp, filename,
         h = u*(u-0.5)
         return param[0]*f + param[1]*g + param[2]*h
     
-    if Nx >= 200:
+    if Nx >= 300:
         try:
             Adv_gpu = csr_gpu(Adv)
             Dif_gpu = csr_gpu(Dif)
@@ -201,7 +201,7 @@ def SettingsNonlinear(dF):
     }
 
     ''' Define Integrators '''
-    methods = [exprb2, exprb3, exprb4]
+    methods = [exprb2]
     
     return Settings, methods
 

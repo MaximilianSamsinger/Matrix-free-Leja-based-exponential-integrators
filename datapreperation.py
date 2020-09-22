@@ -71,8 +71,8 @@ class IntegratorData:
             
             self.data['cost'] = (
                 0*self.data.dFeval # Number of times dF is initialized
-                + 2*self.data.Feval # Number of times F is evaluated
-                + 3*self.data.mv # Number of times dF(u)v is evaluated
+                + 16*self.data.Feval # Number of times F is evaluated
+                + 24*self.data.mv # Number of times dF(u)v is evaluated
             ) * (self.data.Nx**(d/2) * 2**(-10))**2 # Cost in megabyte
         self.data['m'] = self.data['mv']/self.data['substeps']
 

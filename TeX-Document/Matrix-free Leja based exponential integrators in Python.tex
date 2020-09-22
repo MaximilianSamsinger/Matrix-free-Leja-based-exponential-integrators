@@ -751,16 +751,16 @@ This example shows that most of the memory operations are incurred by loading th
 	We consider $\alpha\in\{0.1,0.01\}$, $\beta\in\{1, 0.1, 0.01\}$. For each integrator we calculate the cost-minimizing time step size given $\alpha$, $\beta$ and a relative tolerance $\operatorname{tol}\in \{2^{-10},2^{-24}\}$. This was done by comparing their computational costs for multiple pre-chosen, but fixed time step sizes $\tau$ as follows. For each integrator we subdivided the time domain into $N_\tau$ equidistant parts. The time step taken by each integrators corresponds $\tau = 0.1/N_\tau$. Initially we set $N_\tau=1$. Whenever the computation finished we check if the desired tolerance has been reached and no further cost improvements can be expected. If this is not the case we restart the experiment after replacing $N_\tau$ with a larger integer value close to $1.1N_\tau$. 
 	    
 	The results for the one-dimensional and two-dimensional advection-diffusion equations are shown in Figure~\ref{fig:multi1DNonlinear} and Figure~\ref{fig:multi2DNonlinear} respectively. 
-	These figures show the matrix-free case with $\alpha=0.1$, $\beta=0.1$. Since \texttt{exprb3} was always outperformed by either \texttt{exprb2} or \texttt{exprb4} we excluded from all plots to increase readability. The results for CSR-matrix case, as well as all other choices for $\alpha$ and $\beta$, are shown in Appendix~\ref{sec:1dim} and \ref{sec:2dim}. We discuss the results of the matrix-free case, unless otherwise noted.
+	These figures show the matrix-free case with $\alpha=0.1$, $\beta=0.1$. Since \texttt{exprb3} was always outperformed by either \texttt{exprb2} or \texttt{exprb4} we excluded from all plots to increase readability. The results for CSR-matrix case, as well as all other choices for $\alpha$ and $\beta$, are shown in Appendix~\ref{sec:1dim}, \ref{sec:2dim}, \ref{sec:1dimCSR} and \ref{sec:2dimCSR}. We discuss the results of the matrix-free case, unless otherwise noted.
 	
 	\paragraph{Runge-Kutta methods}
-	The stiffness of the differential equation increases with $N$ and $\alpha$, leading to higher computational costs for all integrators. For sufficiently large values of $N$ the maximal time step size of \texttt{rk2} and \texttt{rk4} is limited by the CFL conditions~\ref{eq:CFL}. This causes both integrators to have relatively high optimal costs in the \textit{half} precision setting ($\operatorname{tol}=2^{-10}$). In the \textit{single} precision setting ($\operatorname{tol}=2^{-24}$) integrators naturally have to take smaller time step sizes to achieve the necessary relative tolerance. This is more beneficial for Runge-Kutta methods compared to all other integrators. In the CSR-matrix case Runge-Kutta methods outperform all other methods considered, since they do not rely on the expensive computation of Jacobian-vector products. Generally \texttt{rk2} outperforms \texttt{rk4} in every setting we considered. No hyperparameter can be adjusted to further decrease the computational costs of both Runge-Kutta methods, which is not the case for \texttt{cn2}, \texttt{exprb2} and \texttt{exprb4}.
+	The stiffness of the differential equation increases with $N$ and $\alpha$, leading to higher computational costs for all integrators. For sufficiently large values of $N$ the maximal time step size of \texttt{rk2} and \texttt{rk4} is limited by the CFL conditions~\ref{eq:CFL}. This causes both integrators to have relatively high optimal costs in the \textit{half} precision setting ($\operatorname{tol}=2^{-10}$). In the \textit{single} precision setting ($\operatorname{tol}=2^{-24}$) integrators naturally have to take smaller time step sizes to achieve the necessary relative tolerance. This is more beneficial for Runge-Kutta methods compared to all other integrators. In the CSR-matrix case Runge-Kutta methods outperform all other methods considered since they do not rely on the expensive computation of Jacobian-vector products. Generally \texttt{rk2} outperforms \texttt{rk4} in every setting we considered. No hyperparameter can be adjusted to further decrease the computational costs of both Runge-Kutta methods, which is not the case for \texttt{cn2}, \texttt{exprb2} and \texttt{exprb4}.
 	
 	\paragraph{Exponential integrators}
 	Exponential integrators are not limited by CFL conditions, allowing \texttt{exprb2} and \texttt{exprb4} to take larger time step sizes. However, larger time step sizes lead to higher costs for the computation of \texttt{expleja}. Despite the cost increase both \texttt{exprb2} and \texttt{exprb4} minimize their respective costs when choosing relatively large time steps. In the half precision setting \texttt{exprb2} outperforms \texttt{exprb4}. This relationship is flipped in the single precision setting; unlike the exponential Euler method \texttt{exprb4} can take large time steps due to its higher order, despite the tolerance constraint. We observe that \texttt{exprb4} is in particular well suited in the single precision setting given a low diffusion coefficient ($\alpha = 0.01$). In the half precision setting \texttt{exprb2} is a robust choice for all $\alpha$ and $\beta$ we considered. We remark that the costs of the exponential integrators can be further decreased by changing the tolerance setting used by \texttt{expleja}. However, the settings we used for \texttt{expleja} match \cite{lejarev} and are comparable to the choice we made for \texttt{cn2}. 
 	
 	\paragraph{Crank-Nicholson method}
-	The Crank-Nicholson method is unconditionally stable and is therefor not restricted by the CFL conditions. In the half precision setting we observe that the Crank-Nicholson method is a suitable choice for diffusion-dominated problems. This is no longer the case in the single precision setting, where it is outperformed by every other integrator. The tolerance setting used by \texttt{cn2} can be overly restrictive. However, in some experiments even conservative, but static choices such as $\texttt{tol}/100$ lead to solutions with insufficient accuracy for all considered time step sizes.
+	The Crank-Nicholson method is unconditionally stable and is therefor not restricted by the CFL conditions. In the half precision setting we observe that the Crank-Nicholson method is a suitable choice for diffusion-dominated problems. In the single precision setting it is outperformed by every other integrator. The tolerance setting used by \texttt{cn2} can be overly restrictive. However, in some experiments even conservative, but static choices such as $\texttt{tol}/100$ lead to solutions with insufficient accuracy for all considered time step sizes. 
 	
 	\begin{figure}[t]
 	\newcommand{\dif}{\detokenize{α}=0.1}
@@ -772,12 +772,8 @@ This example shows that most of the memory operations are incurred by loading th
 	\end{figure}
 	
 	\section{Conclusion}
-	We developed a matrix-free variant of the Leja method for the matrix exponential function. All computations relying on the calculation of a matrix norm have been replaced by estimates of the spectral radius. This esimate was in turn approximated by the power method. We applied the matrix-free Leja method to exponential integrators a advection-diffusion equation   Finally we applied the matrix-free Leja method to exponential integrators and compared the result against other matrix-free methods.
-
-
-\begin{itemize}
-	\item TODO: Plots for CSR Matrix case for the Appendix. Spoiler: \texttt{rk2} always wins.
-\end{itemize}
+	We developed a matrix-free variant of the Leja method for the matrix exponential function. All computations relying on the calculation of a matrix norm have been replaced by estimates of the spectral radius. This esimate was in turn approximated by the power method. 
+	We applied the matrix-free Leja method to exponential integrators and studied the linear advection-diffusion equation. This lead us to a theoretically and empirically robust choice for the number of power iterations. Finally we solved the nonlinear advection-diffusion equation with exponential integrators and compared the result against other matrix-free integrators.
 
 \clearpage
 
@@ -802,32 +798,30 @@ This example shows that most of the memory operations are incurred by loading th
 	\bibitem{pandas} W. McKinney. Data Structures for Statistical Computing in Python, Proceedings of the 9th Python in Science Conference, 51-56 (2010).
 \end{thebibliography}
 \clearpage
-
 	
 \newcommand{\Pe}{Pe=10.0}
 \newcommand{\precision}{single}
 \newcommand{\safe}{sf=1.1}
 \newcommand{\plotwidth}{\columnwidth}
+\newcommand{\dif}{\detokenize{α}=0.1}
+\newcommand{\adv}{\detokenize{β}=0.01}
+\renewcommand{\precision}{single}
 
 %	\begin{figure}[H]
 %		\centering
 %		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/12, \precision, \Pe.pdf}
 %		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
 %	\end{figure}
-
+\newpage
 \begin{appendices}
 	\section{One-dimensional advection-diffusion equation}\label{sec:1dim}
 \end{appendices}
-\newcommand{\dif}{\detokenize{α}=0.1}
-\newcommand{\adv}{\detokenize{β}=0.01}
-\renewcommand{\precision}{single}
 This shows the result for all the experiments specified in Section~\ref{sec:Experiment1dim}. We consider $\alpha\in\{0.1, 0.01\}$, $\beta\in\{1, 0.1, 0.01\}$.
-\newpage
 \foreach \DIF in {0.1, 0.01}
 \foreach \ADV in {1, 0.1, 0.01}
 {
 	%Nonlinear 1D  {\precision, $\alpha\dif$, $\beta\adv$}
-	\begin{figure}
+	\begin{figure}[H]
 		\centering
 		\includegraphics[width=\plotwidth]{../Figures/Experiment2/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
 		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
@@ -864,7 +858,7 @@ This shows the result for all the experiments specified in Section~\ref{sec:Expe
 %		%	\caption{A picture of a gull.}
 %	\end{figure}
 %}
-\clearpage
+\newpage
 \begin{appendices}
 \section{Two-dimensional advection-diffusion equation}\label{sec:2dim}
 \end{appendices}
@@ -910,12 +904,37 @@ This shows the result for all the experiments specified in Section~\ref{sec:Expe
 	
 	%DESCRIPTION OF THE EXPERIMENT, NUMBER OF POWERITS, SAFETYFACTOR, HOW STABLE IS THE COMPUTATION???
 	%First that the matrix $A = A(t)$ changes at every time step and therefore
-	
-	
-	
-	
-
-
+\newpage
+\renewcommand{\dif}{\detokenize{α}=0.1}
+\renewcommand{\adv}{\detokenize{β}=0.01}
+\renewcommand{\precision}{single}
+\begin{appendices}
+	\section{One-dimensional advection-diffusion equation}[CSR-matrix case]\label{sec:1dimCSR}
+\end{appendices}
+This shows the result for all the experiments specified in Section~\ref{sec:Experiment1dim}. We consider $\alpha\in\{0.1, 0.01\}$, $\beta\in\{1, 0.1, 0.01\}$.
+\foreach \DIF in {0.1, 0.01}
+\foreach \ADV in {1, 0.1, 0.01}
+{
+	%Nonlinear 1D  {\precision, $\alpha\dif$, $\beta\adv$}
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\plotwidth]{../Figures/CSRExperiment2/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
+		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
+	\end{figure}	
+}
+\newpage
+\begin{appendices}
+	\section{Two-dimensional advection-diffusion equation}[CSR-matrix case]\label{sec:2dimCSR}
+\end{appendices}
+\foreach \DIF in {0.1, 0.01}
+\foreach \ADV in {1, 0.1, 0.01}
+{
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\plotwidth]{../Figures/CSRExperiment_2D/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
+		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
+	\end{figure}
+}
 %	\subsection{Fully Linear Case}
 %	\begin{figure}[H]
 %		\centering
