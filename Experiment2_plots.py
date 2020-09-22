@@ -39,7 +39,7 @@ isproblem2D = True # Switches between 1D and 2D case
 
 filename = 'Experiment_2D' if isproblem2D else 'Experiment2'
 filelocation = 'HDF5-Files' + os.sep + filename + '.h5'
-save = True # Flag: If True, figures will be saved (as pdf)
+save = False # Flag: If True, figures will be saved (as pdf)
 save_path = 'Figures' + os.sep + filename + os.sep
 
 params = [[α, β, γ] for α in [0.1,0.01] for β in [1,0.1,0.01] for γ in [1]]
@@ -216,16 +216,21 @@ for param in params:
         for key in keys:
             get_optimal_data(Integrators[key], float(error), errortype, param)
         
+        rk2cost = Integrators['/rk2'].optimaldata.cost
+        for key in keys:
+            cost = Integrators[key].optimaldata.cost
+            Integrators[key].optimaldata['costnormalized'] = cost/rk2cost
+        
         ax = axes[0+k]
         for key in keys:
             df = Integrators[key].optimaldata
-            df.plot('Nx','cost', label=key[1:], ax=ax)
+            df.plot('Nx','costnormalized', label=key[1:], ax=ax)
             
         ax.set_xlabel('{{$N$}}')
         ax.set_yscale('log')
         if k == 0:
             ax.set_title('Half precision')
-            ax.set_ylabel('Megabytes\n read or written')
+            ax.set_ylabel('Normalized bytes\n read or written')
         else:
             ax.set_title('Single precision')
         ax.get_legend().remove()
@@ -247,14 +252,15 @@ for param in params:
         ax = axes[4+k]
         for key in keys:
             df = Integrators[key].optimaldata
-            df.plot('Nx','m', label=key[1:], ax=ax)
+            df.plot('Nx','m', label=key[1:], ax=ax, logy=True)
         ax.set_xlabel('{{$N$}}')
         if k == 0:
             ax.set_ylabel('Jacobian-vector\n products per time step')
             ax.get_legend().remove()
         else:
             ax.legend(loc = 'upper left')
-    
+        ax.set_ylim([1,5000])    
+        
     fig.align_ylabels()
     fig.subplots_adjust(top=0.95)
     
