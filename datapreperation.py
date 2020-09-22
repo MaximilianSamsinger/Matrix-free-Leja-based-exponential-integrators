@@ -1,6 +1,7 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import os
+import matplotlib.colors as mcolors
 
 '''
 Assumption:
@@ -33,9 +34,16 @@ def global_plot_parameters(SMALL_SIZE,MEDIUM_SIZE,BIGGER_SIZE,figsize,
     plt.rc('ytick', labelsize=SMALL_SIZE)    # fontsize of the tick labels
     plt.rc('legend', fontsize=LEGEND_SIZE)    # legend fontsize
     plt.rc('figure', titlesize=MEDIUM_SIZE)  # fontsize of the figure title
-    plt.rcParams['lines.linewidth'] = 2
-    plt.rcParams['text.latex.unicode']=True
+    plt.rcParams['lines.linewidth'] = 1.5
+    try:
+        plt.rcParams['text.latex.unicode']=True
+    except KeyError:
+        pass
     plt.rc('text', usetex=True)
+    default_colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
+    plt.rcParams['axes.prop_cycle'] = plt.cycler(color=[
+        default_colors[k] for k in [2,1,3,9,0,5]
+    ])
     plt.rcParams['figure.figsize'] = figsize
     plt.rc('font', family='serif')
 
