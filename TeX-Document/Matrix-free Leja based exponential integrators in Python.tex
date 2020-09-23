@@ -244,7 +244,7 @@ The solution of \eqref{eq:stencil} can be approximated with the Leja method. The
 %Since the cost of the Leja method mainly depend on the number of matrix-vector products, we can performing a cost analysis in terms of memory operations for $Av$, where $v$ is an arbitrary vector, to investigate the performance of the Leja method.\\ 
 
 %We count the number of read and write operations necessary to compute $Au$. 
-Reading $v$ and writing the result of $Av$ costs $2N$ memory operations in total. If $A$ is stored as a dense matrix then $N^2$ entries have to be loaded. These costs are reduced to $(2n+1)N$ for sparse matrices, since only $2n+1$ entries have to be loaded for each row in $A$. However, depending on the sparse format chosen, additional information has to be accessed that specifies the index of each matrix entry. For example, the compressed sparse row (CSR) format requires storing $N$ and $(2n+1)N$ integers for the row and column indices respectively. Integers need four bytes of memory space compared to 8 bytes for floating point numbers in double precision. Therefore $(24n + 16)N$ bytes need to be accessed for the matrix in CSR format. In total $(24n + 32)N$ bytes are read or written for the computation of $Au$.
+Reading $v$ and writing the result of $Av$ costs $2N$ memory operations in total. If $A$ is stored as a dense matrix then $N^2$ entries have to be loaded. These costs are reduced to $(2n+1)N$ for sparse matrices, since only $2n+1$ entries have to be loaded for each row in $A$. However, depending on the sparse format chosen, additional information has to be accessed that specifies the index of each matrix entry. For example, the compressed sparse row (CSR) format requires storing $N$ and $(2n+1)N$ integers for the row and column indices respectively. Integers need four bytes of memory space compared to 8 bytes for floating point numbers in double precision. Therefore $(24n + 16)N$ bytes need to be accessed for the matrix in the CSR format. In total $(24n + 32)N$ bytes are read or written for the computation of $Au$.
 In the matrix-free case the $(2n+1)$ coefficients $a_{-n}, \dots, a_{n}$ only need to be loaded once. This reduces the number of memory operations for the calculation of $Au$ to $2N + 2n + 1$. In total $16N + 16n + 8$ bytes need to be either read or written. For a simple 5-point stencil, which is commonly used to calculate the numerical derivative in two dimensions, this reduces the number of memory operations by a factor of up to 5.
 
 This example shows that most of the memory operations are incurred by loading the coefficients of the matrix $A$. Furthermore it motivates the development of a fully matrix-free Leja method for the matrix exponential function. 
@@ -374,7 +374,7 @@ This example shows that most of the memory operations are incurred by loading th
 	\lambda_j &= \frac{a}{h^2}\left(e^{i\frac{2\pi}{N}j} - 2 + e^{-i\frac{2\pi}{N}j}\right)-\frac{b}{h}\left(e^{i\frac{2\pi}{N}j}-1\right) \\ 
 	&=-\left(\frac{4a}{h^2}-\frac{2b}{h}\right) \sin^2\!\left(\frac{\pi j}{N}\right) + i\frac{b}{h}\sin\!\left(\frac{2\pi j}{N}\right),
 	\end{align*}
-	see Figure~\ref{fig:spectrum}. We restrict our analysis to the case $a=0$ and $b=1$, i.e.
+	see Figure~\ref{fig:spectrum}. We restrict our analysis to the case $a=1$ and $b=0$, i.e.
 	\begin{align*}
 	\lambda_j =-\frac{4}{h^2}\sin^2\!\left(\frac{\pi j}{N}\right).
 	\end{align*}
@@ -676,7 +676,7 @@ This example shows that most of the memory operations are incurred by loading th
 	
 	\paragraph{Exponential Rosenbrock methods}
 	We refer to the exponential Rosenbrock methods of order 2, 3 and 4 discussed in~\ref{sec:expint} as \texttt{exprb2}, \texttt{exprb3} and \texttt{exprb4} respectively.
-	The action of the matrix exponential is approximated with the matrix-free \texttt{expleja} algorithm. At each time step we compute the optimal interpolation degree and substep parameter $s$ according to \eqref{eq:msmatrixfree}. For \texttt{expleja} we set the relative tolerance per time step to $\texttt{tol}/s$.
+	The action of the matrix exponential is approximated with the matrix-free \texttt{expleja} algorithm. At each time step we compute the optimal interpolation degree and substep parameter $s$ according to \eqref{eq:msmatrixfree}. We choose $\theta_m$ based on \texttt{tol} as showin in Table~\ref{table:thetam}. During the Newton interpolation we calculate the 2-norm of each term added to the polynomial. We use the two most recent terms as an error estimate. We terminate the Newton interpolation early if the relative error is smaller than $\texttt{tol}/N_\tau$. 
 	The maximal interpolation degree is set to 100. Note that the total number of matrix-vector multiplication per time step $s$ can still exceed 100 for $s>1$. At each time step we compute the spectral radius using the power method with at most four power iterations.\\
 	\\
 	Our goal is to investigate the respective computational costs of these methods while achieving a prescribed relative tolerance \texttt{tol}.
@@ -690,7 +690,7 @@ This example shows that most of the memory operations are incurred by loading th
 	F'(u)v \approx \frac{F(u+\epsilon v)-F(u)}{\epsilon} ~~\text{with}~~ \epsilon > 0
 	\]
 	for $u, v\in\mathbb{R}^{N}$.
-	Either way $u$ and $v$ need to be loaded into memory and the result needs to be stored, resulting in $3N^d$ memory operations. In a matrix-free setting all other costs are negligible. If $(u,v)\mapsto F'(u)v$ is implemented as a sparse matrix-vector product additional costs for loading the matrix coefficients have to be considered. Discretizing the diffusive part of $F$ with a second order central difference scheme results in a Jacobian of $F$ with $(2d+1)N$ entries. All other discretizations do not affect this structure. If the matrix is stored in CSR-format an additional $8(2d+1)N^d$ bytes for all entries and $4(2d+2)N^d$ bytes for all indices have to be accessed to compute the directional derivative. For a more elaborate explanation see section~\ref{sec:FDS}.
+	Either way $u$ and $v$ need to be loaded into memory and the result needs to be stored, resulting in $3N^d$ memory operations. In a matrix-free setting all other costs are negligible. If $(u,v)\mapsto F'(u)v$ is implemented as a sparse matrix-vector product additional costs for loading the matrix coefficients have to be considered. Discretizing the diffusive part of $F$ with a second order central difference scheme results in a Jacobian of $F$ with $(2d+1)N$ entries. All other discretizations do not affect this structure. If the matrix is stored in CSR-format an additional $8(2d+1)N^d$ bytes for all entries and $4(2d+2)N^d$ bytes for all indices have to be accessed to compute the directional derivative. For a more detailed explanation see section~\ref{sec:FDS}.
 	In summary
 	\begin{enumerate}
 		\item evaluating $u \mapsto F(u)$ requires $16N^d$ bytes,
@@ -747,20 +747,20 @@ This example shows that most of the memory operations are incurred by loading th
 %	\end{figure}
 	
 	
-	\subsection{Results} \label{sec:Experiment1dim}
-	We consider $\alpha\in\{0.1,0.01\}$, $\beta\in\{1, 0.1, 0.01\}$. For each integrator we calculate the cost-minimizing time step size given $\alpha$, $\beta$ and a relative tolerance $\operatorname{tol}\in \{2^{-10},2^{-24}\}$. This was done by comparing their computational costs for multiple pre-chosen, but fixed time step sizes $\tau$ as follows. For each integrator we subdivided the time domain into $N_\tau$ equidistant parts. The time step taken by each integrators corresponds $\tau = 0.1/N_\tau$. Initially we set $N_\tau=1$. Whenever the computation finished we check if the desired tolerance has been reached and no further cost improvements can be expected. If this is not the case we restart the experiment after replacing $N_\tau$ with a larger integer value close to $1.1N_\tau$. 
+	\subsection{Results} \label{sec:Experiments}
+	We consider $\alpha\in\{0.1,0.01\}$, $\beta\in\{1, 0.1, 0.01\}$. For each integrator we calculate the cost-minimizing time step size given $\alpha$, $\beta$ and a relative tolerance $\operatorname{tol}\in \{2^{-10},2^{-24}\}$. This was done by comparing their computational costs for multiple pre-chosen, but fixed time step sizes $\tau$ as follows. For each integrator we subdivided the time domain into $N_\tau$ equidistant parts. The time step taken by each integrator corresponds $\tau = 0.1/N_\tau$. Initially we set $N_\tau=1$. Whenever the computation finished we check if the desired tolerance has been reached and no further cost improvements can be expected. If this is not the case we restart the experiment after replacing $N_\tau$ with a larger integer value close to $1.1N_\tau$. 
 	    
 	The results for the one-dimensional and two-dimensional advection-diffusion equations are shown in Figure~\ref{fig:multi1DNonlinear} and Figure~\ref{fig:multi2DNonlinear} respectively. 
-	These figures show the matrix-free case with $\alpha=0.1$, $\beta=0.1$. Since \texttt{exprb3} was always outperformed by either \texttt{exprb2} or \texttt{exprb4} we excluded from all plots to increase readability. The results for CSR-matrix case, as well as all other choices for $\alpha$ and $\beta$, are shown in Appendix~\ref{sec:1dim}, \ref{sec:2dim}, \ref{sec:1dimCSR} and \ref{sec:2dimCSR}. We discuss the results of the matrix-free case, unless otherwise noted.
+	These figures show the matrix-free case with $\alpha=0.1$, $\beta=0.1$. Since \texttt{exprb3} was always outperformed by either \texttt{exprb2} or \texttt{exprb4} we exclude it from all plots to increase readability. The results for CSR-matrix case, as well as all other choices for $\alpha$ and $\beta$, are shown in Appendix~\ref{sec:1dim}-\ref{sec:2dimCSR}. We discuss the results of the matrix-free case, unless otherwise noted.
 	
 	\paragraph{Runge-Kutta methods}
-	The stiffness of the differential equation increases with $N$ and $\alpha$, leading to higher computational costs for all integrators. For sufficiently large values of $N$ the maximal time step size of \texttt{rk2} and \texttt{rk4} is limited by the CFL conditions~\ref{eq:CFL}. This causes both integrators to have relatively high optimal costs in the \textit{half} precision setting ($\operatorname{tol}=2^{-10}$). In the \textit{single} precision setting ($\operatorname{tol}=2^{-24}$) integrators naturally have to take smaller time step sizes to achieve the necessary relative tolerance. This is more beneficial for Runge-Kutta methods compared to all other integrators. In the CSR-matrix case Runge-Kutta methods outperform all other methods considered since they do not rely on the expensive computation of Jacobian-vector products. Generally \texttt{rk2} outperforms \texttt{rk4} in every setting we considered. No hyperparameter can be adjusted to further decrease the computational costs of both Runge-Kutta methods, which is not the case for \texttt{cn2}, \texttt{exprb2} and \texttt{exprb4}.
+	The stiffness of the differential equation increases with $N$ and $\alpha$, leading to higher computational costs for all integrators. For sufficiently large values of $N$ the maximal time step size of \texttt{rk2} and \texttt{rk4} is limited by the CFL conditions~\ref{eq:CFL}. This causes both integrators to have relatively high optimal costs in the \textit{half} precision setting ($\operatorname{tol}=2^{-10}$). In the \textit{single} precision setting ($\operatorname{tol}=2^{-24}$) integrators naturally have to take smaller time step sizes to achieve the necessary relative tolerance. This is more beneficial for Runge-Kutta methods compared to all other integrators. In the CSR-matrix case Runge-Kutta methods outperform all other methods considered, since they do not rely on the expensive computation of Jacobian-vector products. Generally \texttt{rk2} outperforms \texttt{rk4} in every setting we considered. No hyperparameter can be adjusted to further decrease the computational costs of both Runge-Kutta methods, which is not the case for \texttt{cn2}, \texttt{exprb2} and \texttt{exprb4}.
 	
 	\paragraph{Exponential integrators}
 	Exponential integrators are not limited by CFL conditions, allowing \texttt{exprb2} and \texttt{exprb4} to take larger time step sizes. However, larger time step sizes lead to higher costs for the computation of \texttt{expleja}. Despite the cost increase both \texttt{exprb2} and \texttt{exprb4} minimize their respective costs when choosing relatively large time steps. In the half precision setting \texttt{exprb2} outperforms \texttt{exprb4}. This relationship is flipped in the single precision setting; unlike the exponential Euler method \texttt{exprb4} can take large time steps due to its higher order, despite the tolerance constraint. We observe that \texttt{exprb4} is in particular well suited in the single precision setting given a low diffusion coefficient ($\alpha = 0.01$). In the half precision setting \texttt{exprb2} is a robust choice for all $\alpha$ and $\beta$ we considered. We remark that the costs of the exponential integrators can be further decreased by changing the tolerance setting used by \texttt{expleja}. However, the settings we used for \texttt{expleja} match \cite{lejarev} and are comparable to the choice we made for \texttt{cn2}. 
 	
 	\paragraph{Crank-Nicholson method}
-	The Crank-Nicholson method is unconditionally stable and is therefor not restricted by the CFL conditions. In the half precision setting we observe that the Crank-Nicholson method is a suitable choice for diffusion-dominated problems. In the single precision setting it is outperformed by every other integrator. The tolerance setting used by \texttt{cn2} can be overly restrictive. However, in some experiments even conservative, but static choices such as $\texttt{tol}/100$ lead to solutions with insufficient accuracy for all considered time step sizes. 
+	The Crank-Nicholson method is unconditionally stable and is therefor not restricted by the CFL conditions. In the half precision setting we observe that the Crank-Nicholson method is a suitable choice for diffusion-dominated problems. This is no longer the case in the single precision setting, where it is outperformed by every other integrator. The tolerance setting used by \texttt{cn2} can be overly restrictive. However, in some experiments even conservative, but static choices such as $\texttt{tol}/100$ lead to solutions with insufficient accuracy for all considered time step sizes.
 	
 	\begin{figure}[t]
 	\newcommand{\dif}{\detokenize{α}=0.1}
@@ -772,11 +772,9 @@ This example shows that most of the memory operations are incurred by loading th
 	\end{figure}
 	
 	\section{Conclusion}
-	We developed a matrix-free variant of the Leja method for the matrix exponential function. All computations relying on the calculation of a matrix norm have been replaced by estimates of the spectral radius. This esimate was in turn approximated by the power method. 
-	We applied the matrix-free Leja method to exponential integrators and studied the linear advection-diffusion equation. This lead us to a theoretically and empirically robust choice for the number of power iterations. Finally we solved the nonlinear advection-diffusion equation with exponential integrators and compared the result against other matrix-free integrators.
+	We developed a matrix-free variant of the Leja method for the matrix exponential function. All computations relying on the calculation of a matrix norm have been replaced by estimates of the spectral radius. This esimate was in turn approximated by the power method. We applied the matrix-free Leja method to exponential integrators a advection-diffusion equation   Finally we applied the matrix-free Leja method to exponential integrators and compared the result against other matrix-free methods.
 
 \clearpage
-
 
 \begin{thebibliography}{13}
 	\bibitem{rosenbr} M. Caliari, A. Ostermann. Implementation of exponential Rosenbrock-type integrators, Applied Numerical Mathematics 59 (2009), 568-581.
@@ -797,166 +795,56 @@ This example shows that most of the memory operations are incurred by loading th
 	\bibitem{matplotlib} J. Hunter. Matplotlib: A 2D Graphics Environment, Computing in Science \& Engineering, 9, 90-95 (2007).
 	\bibitem{pandas} W. McKinney. Data Structures for Statistical Computing in Python, Proceedings of the 9th Python in Science Conference, 51-56 (2010).
 \end{thebibliography}
-\clearpage
-	
-\newcommand{\Pe}{Pe=10.0}
-\newcommand{\precision}{single}
-\newcommand{\safe}{sf=1.1}
-\newcommand{\plotwidth}{\columnwidth}
-\newcommand{\dif}{\detokenize{α}=0.1}
-\newcommand{\adv}{\detokenize{β}=0.01}
-\renewcommand{\precision}{single}
+\newcommand{\plotwidth}{0.97866\columnwidth}\filbreak
 
-%	\begin{figure}[H]
-%		\centering
-%		\includegraphics[width=0.75\columnwidth]{../Figures/Experiment1/12, \precision, \Pe.pdf}
-%		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
-%	\end{figure}
-\newpage
 \begin{appendices}
-	\section{One-dimensional advection-diffusion equation}\label{sec:1dim}
-\end{appendices}
-This shows the result for all the experiments specified in Section~\ref{sec:Experiment1dim}. We consider $\alpha\in\{0.1, 0.01\}$, $\beta\in\{1, 0.1, 0.01\}$.
+\section{One-dimensional advection-diffusion equation}\label{sec:1dim}
+%%% 1D MATRIX-FREE CASE\noindent
+\subsection{Matrix-free case}
 \foreach \DIF in {0.1, 0.01}
 \foreach \ADV in {1, 0.1, 0.01}
 {
-	%Nonlinear 1D  {\precision, $\alpha\dif$, $\beta\adv$}
 	\begin{figure}[H]
 		\centering
-		\includegraphics[width=\plotwidth]{../Figures/Experiment2/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
-		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
+		\includegraphics*[width=\plotwidth]{../Figures/Experiment2/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
+		\caption{One-dimensional matrix-free case of the experiment specified in Section~\ref{sec:Experiments}. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose ${\alpha=\DIF}$, ${\beta=\ADV}$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
 	\end{figure}
-
-
-%}
-%\foreach \DIF in {0.1, 0.01}
-%\foreach \ADV in {1, 0.1, 0.01}
-%\foreach \PRECISION in {half, single}
-%{
-%	\begin{figure}[H]
-%		\centering
-%		\includegraphics[width=\plotwidth]{../Figures/Experiment2/2, \PRECISION, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
-%		%	\caption{A picture of a gull.}
-%	\end{figure}
-%}
-%\foreach \DIF in {0.1, 0.01}
-%\foreach \ADV in {1, 0.1, 0.01}
-%{	
-%	\begin{figure}[H]
-%		\centering
-%		\includegraphics[width=\plotwidth]{../Figures/Experiment2/3, single, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
-%		%	\caption{A picture of a gull.}
-%	\end{figure}
 }
-%\foreach \DIF in {0.1, 0.01}
-%\foreach \ADV in {1, 0.1, 0.01}
-%\foreach \PRECISION in {half, single}
-%{	
-%	\begin{figure}[H]
-%		\centering
-%		\includegraphics[width=\plotwidth]{../Figures/Experiment2/4, \PRECISION, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
-%		%	\caption{A picture of a gull.}
-%	\end{figure}
-%}
-\newpage
-\begin{appendices}
-\section{Two-dimensional advection-diffusion equation}\label{sec:2dim}
-\end{appendices}
 
+%%% 1D CSR-MATRIX CASE
+\subsection{CSR-Matrix case}
+\foreach \DIF in {0.1, 0.01}
+\foreach \ADV in {1, 0.1, 0.01}
+{
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\plotwidth]{../Figures/CSRExperiment2/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
+		\caption{One-dimensional CSR-matrix case of the experiment specified in Section~\ref{sec:Experiments}. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose ${\alpha=\DIF}$, ${\beta=\ADV}$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
+	\end{figure}
+}
+%%% 2D MATRIX-FREE CASE
+\section{Two-dimensional advection-diffusion equation}\label{sec:2dim}
+\subsection{Matrix-free case}
 \foreach \DIF in {0.1, 0.01}
 \foreach \ADV in {1, 0.1, 0.01}
 {
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
-		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
+		\caption{Two-dimensional matrix-free case of the experiment specified in Section~\ref{sec:Experiments}. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose ${\alpha=\DIF}$, ${\beta=\ADV}$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
 	\end{figure}
-%}
-%\foreach \DIF in {0.1, 0.01}
-%\foreach \ADV in {1, 0.1, 0.01}
-%\foreach \PRECISION in {half, single}
-%{	
-%	\begin{figure}[H]
-%		\centering
-%		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/2, \PRECISION, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
-%		%	\caption{A picture of a gull.}
-%	\end{figure}
-%}
-%\foreach \DIF in {0.1, 0.01}
-%\foreach \ADV in {1, 0.1, 0.01}
-%{		
-%	\begin{figure}[H]
-%		\centering
-%		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/3, half, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
-%		%	\caption{A picture of a gull.}
-%	\end{figure}
 }
-%\foreach \DIF in {0.1, 0.01}
-%\foreach \ADV in {1, 0.1, 0.01}
-%\foreach \PRECISION in {half, single}
-%{		
-%	\begin{figure}[H]
-%		\centering
-%		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/4, \PRECISION, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
-%		%	\caption{A picture of a gull.}
-%	\end{figure}
-%	
-	
-	%DESCRIPTION OF THE EXPERIMENT, NUMBER OF POWERITS, SAFETYFACTOR, HOW STABLE IS THE COMPUTATION???
-	%First that the matrix $A = A(t)$ changes at every time step and therefore
-\newpage
-\renewcommand{\dif}{\detokenize{α}=0.1}
-\renewcommand{\adv}{\detokenize{β}=0.01}
-\renewcommand{\precision}{single}
-\begin{appendices}
-	\section{One-dimensional advection-diffusion equation}[CSR-matrix case]\label{sec:1dimCSR}
-\end{appendices}
-This shows the result for all the experiments specified in Section~\ref{sec:Experiment1dim}. We consider $\alpha\in\{0.1, 0.01\}$, $\beta\in\{1, 0.1, 0.01\}$.
-\foreach \DIF in {0.1, 0.01}
-\foreach \ADV in {1, 0.1, 0.01}
-{
-	%Nonlinear 1D  {\precision, $\alpha\dif$, $\beta\adv$}
-	\begin{figure}[H]
-		\centering
-		\includegraphics[width=\plotwidth]{../Figures/CSRExperiment2/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
-		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
-	\end{figure}	
-}
-\newpage
-\begin{appendices}
-	\section{Two-dimensional advection-diffusion equation}[CSR-matrix case]\label{sec:2dimCSR}
-\end{appendices}
+
+%%% 2D CSR-MATRIX CASE
+\subsection{CSR-Matrix case}
 \foreach \DIF in {0.1, 0.01}
 \foreach \ADV in {1, 0.1, 0.01}
 {
 	\begin{figure}[H]
 		\centering
 		\includegraphics[width=\plotwidth]{../Figures/CSRExperiment_2D/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
-		%	\caption{Remark: In this case $N$ is equal to the grid P\'eclet number $\operatorname{pe}$.}
+		\caption{Two-dimensional CSR-matrix case of the experiment specified in Section~\ref{sec:Experiments}. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose ${\alpha=\DIF}$, ${\beta=\ADV}$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
 	\end{figure}
 }
-%	\subsection{Fully Linear Case}
-%	\begin{figure}[H]
-%		\centering
-%		\includegraphics[width=\plotwidth]{../Figures/Experiment1/multi, \Pe.pdf}
-%		%	\caption{A picture of a gull.}
-%	\end{figure}
-%	
-%	\begin{figure}[H]
-%		\centering
-%		\includegraphics[width=\plotwidth]{../Figures/Experiment1/3, \precision, \Pe.pdf}
-%		%	\caption{A picture of a gull.}
-%	\end{figure}
-%	
-%	\begin{figure}[H]
-%		\centering
-%		\includegraphics[width=\plotwidth]{../Figures/Experiment1/5, \precision, \Pe.pdf}
-%		%	\caption{A picture of a gull.}
-%	\end{figure}
-%	
-%	\begin{figure}[H]
-%		\centering
-%		\includegraphics[width=\plotwidth]{../Figures/Experiment1/4, \precision, \Pe.pdf}
-%		%	\caption{A picture of a gull.}
-%	\end{figure}
+\end{appendices}
 \end{document}
