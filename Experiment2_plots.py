@@ -4,10 +4,8 @@ import pandas as pd
 import numpy as np
 import os
 from matplotlib import pyplot as plt
-from itertools import chain, product
 from datapreperation import IntegratorData, get_optimal_data, \
     global_plot_parameters, savefigure
-import matplotlib as mlp
 
 '''
 DISCRETIZED ONE/TWO DIMENSIONAL NONLINEAR ADVECTION-DIFFUSION EQUATION:
@@ -226,12 +224,14 @@ for param in params:
         for key in keys:
             cost = Integrators[key].optimaldata.cost
             Integrators[key].optimaldata['costnormalized'] = cost/rk2cost
+         
         
         ax = axes[0+k]
         for key in keys:
             df = Integrators[key].optimaldata
-            df.plot('Nx','cost', label=key[1:], ax=ax)
-            
+            df.plot('Nx','costnormalized', label=key[1:], ax=ax)
+        ax.set_ylim([5e-2,5e1])  
+        ax.yaxis.grid(which='both')
         ax.set_xlabel('{{$N$}}')
         ax.set_yscale('log')
         if k == 0:
