@@ -32,7 +32,7 @@ class Integrator:
         self.solve = solve
         self.columns = columns.copy()
         self.name = name = method.__name__
-        assert(name in ['cn2','exprb2','rk2','rk4'] or 'exprb' in name)
+        assert(name in ['cn2','rk2','rk4'] or 'exprb' in name)
 
 def rk2(F, u, t, t_end, linearCase, s):
     if len(u) >= 40000:
@@ -210,16 +210,12 @@ def exprb2(F, u, t, t_end, linearCase, s,
 
     ''' Nonlinear Case '''
     v = np.vstack((np.zeros((Nx,1)),1))
+    kwargs = {**normEstimator[1]}
     for k in range(s):
         X = LinOpX(u, F(u), dF(u))
         
-        if k==0:
-            kwargs = normEstimator[1]
-            [λ, EV, its] = normEstimator[0](X,**kwargs)
-        else:
-            kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ, 1.1
-            [λ, EV, its] = normEstimator[0](X,**kwargs)
-
+        [λ, EV, its] = normEstimator[0](X,**kwargs)
+        kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ, 1.1     
 
         u, t, mvstep = exprbstep(u, t, τ, X, v, s, tol, normEstimate=λ)
         mv += mvstep + its # Number of matrix-vector multiplications
@@ -232,6 +228,9 @@ def exprb2(F, u, t, t_end, linearCase, s,
 def exprb3(F, u, t, t_end, linearCase, s, 
            tol=None, normEstimator=None, dF=None):
     
+    if linearCase:
+        raise(NotImplementedError)
+
     functionEvaluations = 0
     derivativeEvaluations = 0
     mv = 0
@@ -239,22 +238,16 @@ def exprb3(F, u, t, t_end, linearCase, s,
     u = u.copy()
     τ = (t_end-t)/s
     Nx = len(u)
-    if linearCase:
-        raise(NotImplementedError)
 
     v = np.vstack((np.zeros((Nx,1)),1))
     v3 = np.vstack((np.zeros((Nx+2,1)),1))
-    tol = [tol[0]/s, tol[1]/s] + tol[2:]
+    kwargs = {**normEstimator[1]}
     for k in range(s):
         Fu, J = F(u), dF(u)
         X = LinOpX(u, Fu, J)
         
-        if k==0:
-            kwargs = normEstimator[1]
-            [λ, EV, its] = normEstimator[0](X,**kwargs)
-        else:
-            kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ, 1.1
-            [λ, EV, its] = normEstimator[0](X,**kwargs)
+        [λ, EV, its] = normEstimator[0](X,**kwargs)
+        kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ, 1.1        
 
         U2, _, mv2 = exprbstep(u, t, τ, X, v, s, tol, normEstimate=λ) 
         D2 = F(U2)-Fu - J@(U2-u)
@@ -273,6 +266,9 @@ def exprb3(F, u, t, t_end, linearCase, s,
 def exprb4(F, u, t, t_end, linearCase, s, 
            tol=None, normEstimator=None, dF=None):
     
+    if linearCase:
+        raise(NotImplementedError)
+    
     functionEvaluations = 0
     derivativeEvaluations = 0
     mv = 0
@@ -280,22 +276,16 @@ def exprb4(F, u, t, t_end, linearCase, s,
     u = u.copy()
     τ = (t_end-t)/s
     Nx = len(u)
-    if linearCase:
-        raise(NotImplementedError)
 
     v1 = np.vstack((np.zeros((Nx,1)),1))
     v4 = np.vstack((np.zeros((Nx+3,1)),1))
-    tol = [tol[0]/s, tol[1]/s] + tol[2:]
+    kwargs = {**normEstimator[1]}
     for k in range(s):
         Fu, J = F(u), dF(u)
         X = LinOpX(u, Fu, J)
         
-        if k==0:
-            kwargs = normEstimator[1]
-            [λ, EV, its] = normEstimator[0](X,**kwargs)
-        else:
-            kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ, 1.1
-            [λ, EV, its] = normEstimator[0](X,**kwargs)
+        [λ, EV, its] = normEstimator[0](X,**kwargs)
+        kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ, 1.1   
 
         U2, _, mv2 = exprbstep(u, t, τ/2, X, v1, s, tol, normEstimate=λ)       
         D2 = F(U2)-Fu - J@(U2-u) # 1 function evaluation and mv
@@ -321,14 +311,12 @@ def exprbstep(u, t, τ, X, v, s, tol, normEstimate):
 
     
     if para[0] > 10**10:
-        raise MemoryError("I don't have that much RAM. " +
-                          "Furthermore we prevent some ValueErrors later on ")
-
+        raise ValueError("Too many substeps, computation will fail")
 
     atol, rtol, vectornorm = tol[:3]
     
     # Similar to calling expleja, but we choose a different atol and rtol
-    expXv, _, info, c, _, _, _ =newton_wrapper(τ, v, *para, 
+    expXv, _, info, c, _, _, _ = newton_wrapper(τ, v, *para, 
                                                atol/s, rtol/s, vectornorm)
 
     mv = int(sum(info))
