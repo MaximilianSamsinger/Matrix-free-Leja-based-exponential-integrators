@@ -35,7 +35,7 @@ BIGGER_SIZE = 12
 
 maxerror = str(2**-24)
 
-isproblem2D = True # Switches between 1D and 2D case
+isproblem2D = False # Switches between 1D and 2D case
 
 filename = 'Experiment_2D' if isproblem2D else 'Experiment2'
 filelocation = 'HDF5-Files' + os.sep + filename + '.h5'
@@ -60,7 +60,10 @@ Load data
 '''
 with pd.HDFStore(filelocation) as hdf:
     keys = hdf.keys()
-    keys.remove('/exprb3')
+    try:
+        keys.remove('/exprb3')
+    except ValueError:
+        pass
     Integrators = {key:IntegratorData(filelocation,key) for key in keys}
 #keys = [keys[k] for k in [0,1,4,5,2,3]]
     
@@ -211,7 +214,10 @@ for param in params:
     for k, error in enumerate([2**-10,2**-24]):
         with pd.HDFStore(filelocation) as hdf:
             keys = hdf.keys()
-            keys.remove('/exprb3')
+            try:
+                keys.remove('/exprb3')
+            except ValueError:
+                pass
             Integrators = {key:IntegratorData(filelocation,key) for key in keys}
         for key in keys:
             get_optimal_data(Integrators[key], float(error), errortype, param)
@@ -224,7 +230,7 @@ for param in params:
         ax = axes[0+k]
         for key in keys:
             df = Integrators[key].optimaldata
-            df.plot('Nx','costnormalized', label=key[1:], ax=ax)
+            df.plot('Nx','cost', label=key[1:], ax=ax)
             
         ax.set_xlabel('{{$N$}}')
         ax.set_yscale('log')

@@ -107,10 +107,14 @@ def expleja(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
     if interp_para is None:
         interp_para = select_interp_para(h, A, v, tol, m_max=99, p=p)
 
-    return newton_wrapper(h, v, tol, *interp_para, vectornorm = tol[2])
+    nsteps = interp_para[0]
+    atol, rtol, vectornorm = tol[:3]    
+    
+    return newton_wrapper(h, v, *interp_para, 
+                          atol/nsteps, rtol/nsteps, vectornorm)
 
-def newton_wrapper(h, v, tol, nsteps, gamma2, xi, dd, A, mu, c, m,
-                   vectornorm = float('inf')):
+def newton_wrapper(h, v, nsteps, gamma2, xi, dd, A, mu, c, m,
+                   atol, rtol, vectornorm):
     '''
     Set norm for the newton interpolation
     '''
@@ -127,15 +131,16 @@ def newton_wrapper(h, v, tol, nsteps, gamma2, xi, dd, A, mu, c, m,
                 return abs(a).max() #Works for complex numbers
     else:
         raise ValueError('Specified norm is not implemented')
-
+    
+    nsteps = int(nsteps)
     expAv = v
-    errest = np.zeros(int(nsteps))
-    info = np.zeros(int(nsteps))
+    errest = np.zeros(nsteps)
+    info = np.zeros(nsteps)
 
     for k in range(int(nsteps)):
         pexpAv, errest[k], info[k] = newton(h/nsteps, A, expAv, xi, dd,
-                      tol[0]/nsteps, tol[1]/nsteps, norm=norm, m_max=m)
-        expAv = pexpAv * np.exp(mu*h/float(nsteps))  # Compensate for shifting
+                      atol, rtol, norm=norm, m_max=m)
+        expAv = pexpAv * np.exp(mu*h/nsteps)  # Compensate for shifting
     return expAv, errest, info, c, m, mu, gamma2
 
 
@@ -230,7 +235,7 @@ def select_interp_para(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
     return nsteps, gamma2, xi.flatten(), dd, A, mu, mv, m
 
 
-def newton(h, A, v, xi, dd, abstol, reltol, norm, m_max):
+def newton(h, A, v, xi, dd, atol, rtol, norm, m_max):
     '''
     Newton
 
@@ -253,7 +258,7 @@ def newton(h, A, v, xi, dd, abstol, reltol, norm, m_max):
         old_ydiff_norm, new_ydiff_norm = new_ydiff_norm, norm(ydiff)
 
         normerrest = new_ydiff_norm + old_ydiff_norm
-        if normerrest < reltol * norm(y) or normerrest < abstol:
+        if normerrest < rtol*norm(y) or normerrest < atol:
             break
     return y, normerrest, m+1
 

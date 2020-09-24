@@ -184,7 +184,7 @@ def Nonlinear_Advection_Diffusion_Equation(Nx, param, asLinearOp, filename, lock
 
 def SettingsNonlinear(dF):
     Settings = {}
-    Settings['all'] = {'tol':[2**-24], "dF": dF} 
+    Settings['all'] = {'tol':[2**-10, 2**-24], "dF": dF} 
     Settings['rk2'] = [{}]
     Settings['rk4'] = [{}]
     Settings['cn2'] = [{'tol': te} for te in Settings['all']['tol']]
@@ -201,7 +201,7 @@ def SettingsNonlinear(dF):
     }
 
     ''' Define Integrators '''
-    methods = [exprb2]
+    methods = [exprb2, exprb4]
     
     return Settings, methods
 

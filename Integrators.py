@@ -3,7 +3,7 @@ import numpy as np
 from scipy.sparse import identity, issparse
 from scipy.sparse.linalg import gmres, LinearOperator
 from scipy.sparse.linalg.interface import IdentityOperator
-from expleja import expleja, normAmp
+from expleja import expleja, normAmp, newton_wrapper
 import scipy.io as sio
 from copy import deepcopy
 try:
@@ -69,6 +69,7 @@ def rk2(F, u, t, t_end, linearCase, s):
     return u, cost
 
 def rk4(F, u, t, t_end, linearCase, s):
+    # Using GPU for speedups
     if len(u) >= 40000:
         try:
             u = cp.array(u)
@@ -109,7 +110,6 @@ def cn2(F, u, t, t_end, linearCase, s, tol=None, dF=None):
     The choice tol/s in gmres guarantees that the compounding error
     is low enough'''
     
-
     mv = 0
     
     ushape = u.shape
@@ -194,6 +194,7 @@ def exprb2(F, u, t, t_end, linearCase, s,
     u = u.copy()
     τ = (t_end-t)/s
     Nx = len(u)
+    
     ''' Linear Case '''
     if linearCase:
         M = F(u, returnMatrix=True)
@@ -208,18 +209,7 @@ def exprb2(F, u, t, t_end, linearCase, s,
         return expMu, (mv,)
 
     ''' Nonlinear Case '''
-    def LinOpX(u, Fu, J):
-        def mv(v):
-            w = np.zeros(v.shape)
-            if v.ndim == 2:
-                w[:-1] = J@v[:-1] + Fu*v[-1]
-            else:
-                w[:-1] = J@v[:-1] + Fu.flatten()*v[-1]
-            return w
-        return LinearOperator((Nx+1,Nx+1), matvec = mv)
-
     v = np.vstack((np.zeros((Nx,1)),1))
-    
     for k in range(s):
         X = LinOpX(u, F(u), dF(u))
         
@@ -239,24 +229,6 @@ def exprb2(F, u, t, t_end, linearCase, s,
     
     return u, (functionEvaluations, derivativeEvaluations, mv)
 
-def exprbstep(u, t, τ, X, v, s, tol, normEstimate):
-    para = select_interp_para_tmp(
-        τ, X, v, tol, normEstimate = normEstimate)
-
-    
-    if para[0] > 10**10:
-        raise MemoryError("I don't have that much RAM. " +
-                          "Furthermore we prevent some ValueErrors later on ")
-
-    expXv, _, info, c, _, _, _ = expleja(
-        τ, X, v, tol, p=0, interp_para=para)
-
-
-    mv = int(sum(info))
-    assert(c==0)
-    return u + expXv[:len(u)], t + τ, mv
-
-
 def exprb3(F, u, t, t_end, linearCase, s, 
            tol=None, normEstimator=None, dF=None):
     
@@ -269,29 +241,6 @@ def exprb3(F, u, t, t_end, linearCase, s,
     Nx = len(u)
     if linearCase:
         raise(NotImplementedError)
-        
-    def LinOpX(u, Fu, J):
-        def mv(v):
-            w = np.zeros(v.shape)
-            if v.ndim == 2:
-                w[:-1] = J@v[:-1] + Fu*v[-1]
-            else:
-                w[:-1] = J@v[:-1] + Fu.flatten()*v[-1]
-            return w
-        return LinearOperator((Nx+1,Nx+1), matvec = mv)
-    
-    def LinOpX3(u, Fu, J, U2):
-        D2 = 2*(F(U2)-Fu - J@(U2-u))/τ**2
-        def mv(v):
-            w = np.zeros(v.shape)
-            if v.ndim == 2:
-                w[:-3] = J@v[:-3] + v[-1]*Fu + v[-3]*D2 # +v[-2]*D1 
-                w[-3:-1] = v[-2:]
-            else:
-                w[:-3] = J@v[:-3] + v[-1]*Fu.flatten() + v[-3]*D2.flatten()
-                w[-3:-1] = v[-2:]
-            return w
-        return LinearOperator((Nx+3,Nx+3), matvec = mv)
 
     v = np.vstack((np.zeros((Nx,1)),1))
     v3 = np.vstack((np.zeros((Nx+2,1)),1))
@@ -307,8 +256,11 @@ def exprb3(F, u, t, t_end, linearCase, s,
             kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ, 1.1
             [λ, EV, its] = normEstimator[0](X,**kwargs)
 
-        k2, _, mv2 = exprbstep(u, t, τ, X, v, s, tol, normEstimate=λ)       
-        X3 = LinOpX3(u, Fu, J, k2) # 1 extra mv
+        U2, _, mv2 = exprbstep(u, t, τ, X, v, s, tol, normEstimate=λ) 
+        D2 = F(U2)-Fu - J@(U2-u)
+        
+        k3 = 2*D2/τ**2 # 1 function evaluation and mv
+        X3 = LinOpX3(u, Fu, J, k3) 
         
         u, t, mvstep = exprbstep(u, t, τ, X3, v3, s, tol, normEstimate=λ)
         mv += mv2 + mvstep + its + 1
@@ -330,30 +282,6 @@ def exprb4(F, u, t, t_end, linearCase, s,
     Nx = len(u)
     if linearCase:
         raise(NotImplementedError)
-        
-    def LinOpX(u, Fu, J):
-        def mv(v):
-            w = np.zeros(v.shape)
-            if v.ndim == 2:
-                w[:-1] = J@v[:-1] + Fu*v[-1]
-            else:
-                w[:-1] = J@v[:-1] + Fu.flatten()*v[-1]
-            return w
-        return LinearOperator((Nx+1,Nx+1), matvec = mv)
-    
-    def LinOpX4(u, Fu, J, D2, D3):
-        k3 = ( 16*D2 -  2*D3)/τ**2
-        k4 = (-48*D2 + 12*D3)/τ**3
-        def mv(v):
-            w = np.zeros(v.shape)
-            if v.ndim == 2:
-                w[:-4] = J@v[:-4] + v[-1]*Fu + v[-3]*k3 + v[-4]*k4 
-                w[-4:-1] = v[-3:]
-            else:
-                w[:-4] = J@v[:-4] + (v[-1]*Fu + v[-3]*k3 + v[-4]*k4).flatten()
-                w[-4:-1] = v[-3:]
-            return w
-        return LinearOperator((Nx+4,Nx+4), matvec = mv)
 
     v1 = np.vstack((np.zeros((Nx,1)),1))
     v4 = np.vstack((np.zeros((Nx+3,1)),1))
@@ -375,8 +303,9 @@ def exprb4(F, u, t, t_end, linearCase, s,
         U3, _, mv3 = exprbstep(u, t,   τ, X, v1, s, tol, normEstimate=λ)       
         D3 = F(U3)-Fu - J@(U3-u) # 1 function evaluation and mv
         
-        X4 = LinOpX4(u, Fu, J, D2, D3) 
-        
+        k3 = ( 16*D2 -  2*D3)/τ**2 
+        k4 = (-48*D2 + 12*D3)/τ**3
+        X4 = LinOpX4(u, Fu, J, k3, k4) 
         
         u, t, mvstep = exprbstep(u, t, τ, X4, v4, s, tol, normEstimate=λ)
         mv += mv2 + mvstep + its + 2
@@ -385,6 +314,60 @@ def exprb4(F, u, t, t_end, linearCase, s,
     derivativeEvaluations = s
     
     return u, (functionEvaluations, derivativeEvaluations, mv)
+
+def exprbstep(u, t, τ, X, v, s, tol, normEstimate):
+    para = select_interp_para_tmp(
+        τ, X, v, tol, normEstimate = normEstimate)
+
+    
+    if para[0] > 10**10:
+        raise MemoryError("I don't have that much RAM. " +
+                          "Furthermore we prevent some ValueErrors later on ")
+
+
+    atol, rtol, vectornorm = tol[:3]
+    
+    # Similar to calling expleja, but we choose a different atol and rtol
+    expXv, _, info, c, _, _, _ =newton_wrapper(τ, v, *para, 
+                                               atol/s, rtol/s, vectornorm)
+
+    mv = int(sum(info))
+    assert(c==0)
+    return u + expXv[:len(u)], t + τ, mv
+
+def LinOpX(u, Fu, J):
+    def mv(v):
+        w = np.zeros(v.shape)
+        if v.ndim == 2:
+            w[:-1] = J@v[:-1] + Fu*v[-1]
+        else:
+            w[:-1] = J@v[:-1] + Fu.flatten()*v[-1]
+        return w
+    return LinearOperator((len(u)+1,len(u)+1), matvec = mv)
+
+def LinOpX3(u, Fu, J, k3):
+    def mv(v):
+        w = np.zeros(v.shape)
+        if v.ndim == 2:
+            w[:-3] = J@v[:-3] + v[-1]*Fu + v[-3]*k3 
+            w[-3:-1] = v[-2:]
+        else:
+            w[:-3] = J@v[:-3] + v[-1]*Fu.flatten() + v[-3]*k3.flatten()
+            w[-3:-1] = v[-2:]
+        return w
+    return LinearOperator((len(u)+3,len(u)+3), matvec = mv)
+
+def LinOpX4(u, Fu, J, k3, k4):
+    def mv(v):
+        w = np.zeros(v.shape)
+        if v.ndim == 2:
+            w[:-4] = J@v[:-4] + v[-1]*Fu + v[-3]*k3 + v[-4]*k4 
+            w[-4:-1] = v[-3:]
+        else:
+            w[:-4] = J@v[:-4] + (v[-1]*Fu + v[-3]*k3 + v[-4]*k4).flatten()
+            w[-4:-1] = v[-3:]
+        return w
+    return LinearOperator((len(u)+4,len(u)+4), matvec = mv)
 
 def largestEV(A, x=None, λ = float('inf'), powerits=100, safetyfactor=1.1,
               tol=0):
@@ -459,7 +442,6 @@ def select_interp_para_tmp(h, A, v, tol, normEstimate = None, m_max=99):
     The code is shortened version select_interp_para from expleja
     and forces
         a fixed interpolation degree m,
-        a fixed number of substeps s,
         no hump reduction.
     '''
     n = v.shape[0]
