@@ -306,22 +306,17 @@ def exprb4(F, u, t, t_end, linearCase, s,
     return u, (functionEvaluations, derivativeEvaluations, mv)
 
 def exprbstep(u, t, τ, X, v, s, tol, normEstimate):
-    para = select_interp_para_tmp(
-        τ, X, v, tol, normEstimate = normEstimate)
+    tol = [tol[0]/s, tol[1]/s, tol[2], tol[3]]
+    para = select_interp_para_tmp(τ, X, v, tol, normEstimate = normEstimate)
 
-    
     if para[0] > 10**10:
-        raise ValueError("Too many substeps, computation will fail")
-
-    atol, rtol, vectornorm = tol[:3]
-    
-    # Similar to calling expleja, but we choose a different atol and rtol
-    expXv, _, info, c, _, _, _ = newton_wrapper(τ, v, *para, 
-                                               atol/s, rtol/s, vectornorm)
+        raise MemoryError("Too many substeps, computation will fail")
+        
+    expXv, _, info, c, _, _, _ = newton_wrapper(τ, v, *para, *tol[:3])
 
     mv = int(sum(info))
     assert(c==0)
-    return u + expXv[:len(u)], t + τ, mv
+    return u+expXv[:len(u)], t+τ, mv
 
 def LinOpX(u, Fu, J):
     def mv(v):
@@ -360,7 +355,7 @@ def LinOpX4(u, Fu, J, k3, k4):
 def largestEV(A, x=None, λ = float('inf'), powerits=100, safetyfactor=1.1,
               tol=0):
     if x is None:
-        x = np.random.randn(A.shape[0],1)
+        x = np.random.randn(A.shape[0],1)    
 
     for mv in range(1,powerits+1):
         λ_old, λ = λ, np.linalg.norm(x)

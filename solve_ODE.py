@@ -97,7 +97,7 @@ def compute_errors_and_costs(Integrator, Settings, add_to_row):
                     if Settings['all']['dF'] is not False:
                         # Otherwise we might mess up Experiment 1
                         if error < Setting['tol'] and s_break == s_max:
-                            s_break = 10*s
+                            s_break = 5*s
                 else:
                     raise NameError('Method name not recognized, therefore it '
                                     + 'unclear when the computation finishes')

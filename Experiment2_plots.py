@@ -121,11 +121,17 @@ for param in params:
     #     df.plot('Nx','tau', label=key[1:], ax=ax)
 
     
-    #CFLA = df.gridsize/df.β
+    
+    
+    
     if isproblem2D:
         CFLD = 0.125*df.gridsize**2/df.α 
+        CFLA = 0.5*df.gridsize/df.β
     else:
         CFLD = 0.25*df.gridsize**2/df.α
+        CFLA = df.gridsize/df.β
+    CFL = pd.concat([CFLD, CFLA], axis=1).min(axis=1)
+    
     
     # #ax.plot(df.Nx, CFLA, label="$C_{adv}$",linestyle='-.')
     # ax.plot(df.Nx, CFLD, label="$C_{dif}$",linestyle=':')
@@ -247,8 +253,7 @@ for param in params:
             df = Integrators[key].optimaldata
             df.plot('Nx','tau', label=key[1:], ax=ax)
             
-        #ax.plot(df.Nx, CFLA, label="$C_{adv}$",linestyle='-.')
-        ax.plot(df.Nx, CFLD, label="$C_{dif}$",linestyle=':')
+        ax.plot(df.Nx, CFL, label="$CFL$",linestyle=':')
         ax.set_xlabel('{{$N$}}')
         if k == 0:
             ax.set_ylabel('Optimal\n time step')
