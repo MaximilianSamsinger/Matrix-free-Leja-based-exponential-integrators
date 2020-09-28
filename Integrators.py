@@ -215,7 +215,7 @@ def exprb2(F, u, t, t_end, linearCase, s,
         X = LinOpX(u, F(u), dF(u))
         
         [λ, EV, its] = normEstimator[0](X,**kwargs)
-        kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ, 1.1     
+        kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ/1.1, 0.1     
 
         u, t, mvstep = exprbstep(u, t, τ, X, v, s, tol, normEstimate=λ)
         mv += mvstep + its # Number of matrix-vector multiplications
@@ -247,7 +247,7 @@ def exprb3(F, u, t, t_end, linearCase, s,
         X = LinOpX(u, Fu, J)
         
         [λ, EV, its] = normEstimator[0](X,**kwargs)
-        kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ, 1.1        
+        kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ/1.1, 0.1        
 
         U2, _, mv2 = exprbstep(u, t, τ, X, v, s, tol, normEstimate=λ) 
         D2 = F(U2)-Fu - J@(U2-u)
@@ -285,7 +285,7 @@ def exprb4(F, u, t, t_end, linearCase, s,
         X = LinOpX(u, Fu, J)
         
         [λ, EV, its] = normEstimator[0](X,**kwargs)
-        kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ, 1.1   
+        kwargs['x'], kwargs['λ'], kwargs['tol'] = EV, λ/1.1, 0.1   
 
         U2, _, mv2 = exprbstep(u, t, τ/2, X, v1, s, tol, normEstimate=λ)       
         D2 = F(U2)-Fu - J@(U2-u) # 1 function evaluation and mv
@@ -352,18 +352,17 @@ def LinOpX4(u, Fu, J, k3, k4):
         return w
     return LinearOperator((len(u)+4,len(u)+4), matvec = mv)
 
-def largestEV(A, x=None, λ = float('inf'), powerits=100, safetyfactor=1.1,
-              tol=0):
+def largestEV(A, x=None, λ=float('inf'), powerits=100, safetyfactor=1.1,tol=0):
     if x is None:
         x = np.random.randn(A.shape[0],1)    
-
+    
     for mv in range(1,powerits+1):
-        λ_old, λ = λ, np.linalg.norm(x)
-        y = x/λ
-        x = A.dot(y)
+        y = A.dot(x)
+        λ_old, λ = λ, np.linalg.norm(y)
+        x = y/λ
         if abs(λ-λ_old)<tol*λ or λ==0:
             break
-    return safetyfactor*λ, y, mv
+    return safetyfactor*λ, x, mv
 
 def select_interp_para_for_fixed_m_and_s(
         h, A, v, tol, s=1, m=99, normEstimate = None):

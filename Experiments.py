@@ -4,7 +4,8 @@ import numpy as np
 import scipy as sp
 import pandas as pd
 from scipy import integrate
-from scipy.sparse import diags
+from scipy.sparse import diags, csr_matrix, dia_matrix
+from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from Integrators import Integrator, rk2, rk4, cn2, exprb2, exprb3, exprb4
 from time import time, sleep
 from itertools import product
@@ -49,7 +50,7 @@ def Nonlinear_Advection_Diffusion_Equation2D(Nx, param, asLinearOp, filename,
         h = u*(u-0.5)
         return param[0]*f + param[1]*g + param[2]*h
     
-    if Nx >= 300:
+    if Nx >= 200:
         try:
             Adv_gpu = csr_gpu(Adv)
             Dif_gpu = csr_gpu(Dif)
@@ -78,8 +79,8 @@ def Nonlinear_Advection_Diffusion_Equation2D(Nx, param, asLinearOp, filename,
         df = Dif@diags((u+1))
         dg = 2*(diags(Adv@u) + diags(u)@Adv)
         dh = diags(2*u-0.5)
-        return sp.sparse.csr_matrix(param[0]*df + param[1]*dg + param[2]*dh)
-    
+        return aslinearoperator(csr_matrix(
+            param[0]*df + param[1]*dg + param[2]*dh))    
 
     ''' Compute reference solution '''
     solver = sp.integrate.ode(lambda t,u: F(u))
@@ -151,11 +152,9 @@ def Nonlinear_Advection_Diffusion_Equation(Nx, param, asLinearOp, filename, lock
                         (u[1:]+1)/h**2)
                 ).flatten()
         
-        return sp.sparse.linalg.aslinearoperator(sp.sparse.csr_matrix(
-                sp.sparse.dia_matrix((data,[1,0,-1]), shape=(Nx, Nx))
-                ))
-        
-
+        return aslinearoperator(csr_matrix(dia_matrix(
+            (data,[1,0,-1]), shape=(Nx, Nx))))
+     
 
     ''' Compute reference solution '''
     solver = sp.integrate.ode(lambda t,u: F(u))

@@ -80,7 +80,7 @@ def compute_errors_and_costs(Integrator, Settings, add_to_row):
                     _, error, costs = Integrator.solve(s, **kwargs)
                     row = [s] + add_to_row + [error] + list(costs)
                     row += [value for key, value in Setting.items()]
-                    print(Integrator.name, s, error)
+                    print(Integrator.name, s, error, 2*costs[1]+3*costs[2])
                     data.append(row)
 
                 '''
