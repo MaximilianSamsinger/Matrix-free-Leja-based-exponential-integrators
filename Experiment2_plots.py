@@ -33,7 +33,7 @@ BIGGER_SIZE = 12
 
 maxerror = str(2**-24)
 
-isproblem2D = False # Switches between 1D and 2D case
+isproblem2D = True # Switches between 1D and 2D case
 
 filename = 'Experiment_2D' if isproblem2D else 'Experiment2'
 filelocation = 'HDF5-Files' + os.sep + filename + '.h5'
@@ -237,7 +237,6 @@ for param in params:
             df = Integrators[key].optimaldata
             df.plot('Nx','costnormalized', label=key[1:], ax=ax)
         ax.set_ylim([5e-2,5e1])  
-        ax.yaxis.grid(which='both')
         ax.set_xlabel('{{$N$}}')
         ax.set_yscale('log')
         if k == 0:
