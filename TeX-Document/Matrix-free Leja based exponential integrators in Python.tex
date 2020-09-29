@@ -602,7 +602,7 @@
 	\begin{align} \label{eq:CFL}
 		C_{dif} = d\frac{2\alpha\tau}{h^2} \le \frac{1}{2}, \quad C_{adv} = d\frac{\beta\tau}{h} \le 1.
 	\end{align}
-	This constraint can be seen in Figure~\ref{fig:multi1DNonlinear} and Figure~\ref{fig:multi2DNonlinear} on the second row. 
+	This constraint can be seen in Figure~\ref{fig:1DNonlinearHighPe}, \ref{fig:1DNonlinearLowPe}, \ref{fig:2DNonlinearHighPe} and \ref{fig:2DNonlinearLowPe} on the second row. 
 	
 	\begin{figure}[t]
 		\newcommand{\dif}{\detokenize{α}=0.1}
@@ -610,14 +610,23 @@
 		\centering
 		\includegraphics[width=\columnwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
 		\caption{One-dimensional matrix-free case. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
-		\label{fig:multi1DNonlinear}
+		\label{fig:1DNonlinearHighPe}
+	\end{figure}
+
+	\begin{figure}[t]
+		\newcommand{\dif}{\detokenize{α}=0.01}
+		\newcommand{\adv}{\detokenize{β}=1}
+		\centering
+		\includegraphics[width=\columnwidth]{../Figures/Experiment2/multi, \dif, \adv.pdf}
+		\caption{One-dimensional matrix-free case. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
+		\label{fig:1DNonlinearLowPe}
 	\end{figure}
 	
 \subsection{Results} \label{sec:Results}
 	We consider $\alpha\in\{0.1,0.01\}$, $\beta\in\{1, 0.1, 0.01\}$. For each integrator we calculate the cost-minimizing time step size given $\alpha$, $\beta$ and a relative tolerance $\operatorname{tol}\in \{2^{-10},2^{-24}\}$. This was done by comparing their computational costs for multiple pre-chosen, but fixed time step sizes $\tau$ as follows. For each integrator we subdivided the time domain into $N_\tau$ equidistant parts. The time step taken by each integrator corresponds $\tau = 0.1/N_\tau$. Initially we set $N_\tau=1$. Whenever the computation finished we check if the desired tolerance has been reached and no further cost improvements can be expected. If this is not the case we restart the experiment after replacing $N_\tau$ with a larger integer value close to $1.1N_\tau$. 
 	    
-	The results for the one-dimensional and two-dimensional advection-diffusion equations are shown in Figure~\ref{fig:multi1DNonlinear} and Figure~\ref{fig:multi2DNonlinear} respectively. 
-	These figures show the matrix-free case with $\alpha=0.1$, $\beta=0.1$. Since \texttt{exprb3} was always outperformed by either \texttt{exprb2} or \texttt{exprb4} we exclude it from all plots to increase readability. The results for CSR-matrix case, as well as all other choices for $\alpha$ and $\beta$, are shown in Appendix~\ref{sec:1dim}-\ref{sec:2dimCSR}. We discuss the results of the matrix-free case, unless otherwise noted.
+	We discuss the results for the one-dimensional and two-dimensional nonlinear advection-diffusion equation. Figure~\ref{fig:1DNonlinearHighPe} and \ref{fig:2DNonlinearHighPe} correspond to a highly diffusive setting, whereas Figure \ref{fig:1DNonlinearLowPe} and \ref{fig:2DNonlinearLowPe} show an highly advective setting.
+	These figures show the matrix-free case. Since \texttt{exprb3} was always outperformed by either \texttt{exprb2} or \texttt{exprb4} we exclude it from all plots to increase readability. The results for CSR-matrix case, as well as all other choices for $\alpha$ and $\beta$, are shown in Appendix~\ref{sec:1dim} and \ref{sec:2dim}. We discuss the results of the matrix-free case, unless otherwise noted.
 	
 	\paragraph{Runge-Kutta methods}
 	The stiffness of the differential equation increases with $N$ and $\alpha$, leading to higher computational costs for all integrators. For sufficiently large values of $N$ the maximal time step size of \texttt{rk2} and \texttt{rk4} is limited by the CFL conditions~\ref{eq:CFL}. This causes both integrators to have relatively high optimal costs in the \textit{half} precision setting ($\operatorname{tol}=2^{-10}$). In the \textit{single} precision setting ($\operatorname{tol}=2^{-24}$) integrators naturally have to take smaller time step sizes to achieve the necessary relative tolerance. This is more beneficial for Runge-Kutta methods compared to all other integrators. In the CSR-matrix case Runge-Kutta methods outperform all other methods considered since they do not rely on the expensive computation of Jacobian-vector products. Generally \texttt{rk2} outperforms \texttt{rk4} in every setting we considered. No hyperparameter can be adjusted to further decrease the computational costs of both Runge-Kutta methods, which is not the case for \texttt{cn2}, \texttt{exprb2} and \texttt{exprb4}.
@@ -629,12 +638,21 @@
 	The Crank-Nicholson method is unconditionally stable and is therefor not restricted by the CFL conditions. In the half precision setting we observe that the Crank-Nicholson method is a suitable choice for diffusion-dominated problems. This is no longer the case in the single precision setting, where it is outperformed by every other integrator. The tolerance setting used by \texttt{cn2} can be overly restrictive. However, in some experiments even conservative, but static choices such as $\texttt{tol}/100$ lead to solutions with insufficient accuracy for all considered time step sizes.
 	
 	\begin{figure}[t]
-	\newcommand{\dif}{\detokenize{α}=0.1}
-	\newcommand{\adv}{\detokenize{β}=0.01}
-	\centering
-	\includegraphics[width=\columnwidth]{../Figures/Experiment_2D/multi, \dif, \adv.pdf}
-	\caption{Two-dimensional matrix-free case. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
-	\label{fig:multi2DNonlinear}
+		\newcommand{\dif}{\detokenize{α}=0.1}
+		\newcommand{\adv}{\detokenize{β}=0.01}
+		\centering
+		\includegraphics[width=\columnwidth]{../Figures/Experiment_2D/multi, \dif, \adv.pdf}
+		\caption{Two-dimensional matrix-free case. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
+		\label{fig:2DNonlinearHighPe}
+	\end{figure}
+	
+	\begin{figure}[t]
+		\newcommand{\dif}{\detokenize{α}=0.01}
+		\newcommand{\adv}{\detokenize{β}=1}
+		\centering
+		\includegraphics[width=\columnwidth]{../Figures/Experiment_2D/multi, \dif, \adv.pdf}
+		\caption{Two-dimensional matrix-free case. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose $\alpha\dif$, $\beta\adv$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
+		\label{fig:2DNonlinearLowPe}
 	\end{figure}
 	
 \section{Conclusion}
@@ -670,8 +688,17 @@
 \end{appendices}
 \subsection*{Matrix-free case}
 }
-\foreach \DIF in {0.1, 0.01}
-\foreach \ADV in {1, 0.1, 0.01}
+\foreach \DIF in {0.1}
+\foreach \ADV in {1, 0.1}
+{
+	\begin{figure}[H]
+		\centering
+		\includegraphics*[width=\plotwidth]{../Figures/Experiment2/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
+		\caption{One-dimensional matrix-free case of the experiment specified in Section~\ref{sec:Experiments}. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose ${\alpha=\DIF}$, ${\beta=\ADV}$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
+	\end{figure}
+}
+\foreach \DIF in {0.01}
+\foreach \ADV in {0.1, 0.01}
 {
 	\begin{figure}[H]
 		\centering
@@ -692,6 +719,7 @@
 	\end{figure}
 }
 
+
 %%% 2D MATRIX-FREE CASE
 \afterpage{
 \begin{appendices}
@@ -699,8 +727,17 @@
 \end{appendices}
 \subsection*{Matrix-free case}
 }
-\foreach \DIF in {0.1, 0.01}
-\foreach \ADV in {1, 0.1, 0.01}
+\foreach \DIF in {0.1}
+\foreach \ADV in {1, 0.1}
+{
+	\begin{figure}[H]
+		\centering
+		\includegraphics[width=\plotwidth]{../Figures/Experiment_2D/multi, \detokenize{α}=\DIF, \detokenize{β}=\ADV.pdf}
+		\caption{Two-dimensional matrix-free case of the experiment specified in Section~\ref{sec:Experiments}. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the average number of Jacobian-vector products computed per time step. We chose ${\alpha=\DIF}$, ${\beta=\ADV}$. The dotted line indicates the largest time step size, where the CFL conditions are not violated.}
+	\end{figure}
+}
+\foreach \DIF in {0.01}
+\foreach \ADV in {0.1, 0.01}
 {
 	\begin{figure}[H]
 		\centering
