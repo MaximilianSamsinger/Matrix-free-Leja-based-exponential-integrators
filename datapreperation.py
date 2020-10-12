@@ -68,8 +68,9 @@ class IntegratorData:
             ''' Experiment 2 '''
             self.Experiment = 2
             filename = os.path.split(filelocation)[-1]
-            assert filename in ['Experiment2.h5', 'Experiment_2D.h5']
-            d = 1 if filename=='Experiment2.h5' else 2
+            assert filename in ['Experiment2.h5', 'Experiment_2D.h5',
+                                'Experiment4.h5']
+            d = 1 if filename in ['Experiment2.h5','Experiment4.h5'] else 2
             self.α = self.data['α'].unique()
             self.β = self.data['β'].unique()
             self.γ = self.data['γ'].unique()

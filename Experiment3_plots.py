@@ -10,12 +10,12 @@ from datapreperation import IntegratorData, get_optimal_data
 '''
 DISCRETIZED ONE DIMENSIONAL LINEAR ADVECTION-DIFFUSION EQUATION
 
-Experiment1 Powerit:
+Experiment3:
     We study the matrix-free case and determine for which parameter
     (number of power iterations, substeps, etc) expleja still converges
 
     The integrators are
-        - exprb2... Exponential euler method of order 2, in this case EXACT
+        - exprb2... Exponential euler method of order 2 (in this case EXACT)
 
 Note: We write exprb2, even though we only compute the matrix exponential
     function of the discretized matrix using expleja with half/single precision
@@ -59,7 +59,7 @@ difs = [1e0, 1e-1, 1e-2] # Coefficient of diffusion matrix. Should be <= 1
 '''
 Load data
 '''
-filelocation = 'HDF5-Files' + os.sep + 'Experiment1LinOp.h5'
+filelocation = 'HDF5-Files' + os.sep + 'Experiment3.h5'
 with pd.HDFStore(filelocation) as hdf:
     keys = hdf.keys()
     Integrators = {key:IntegratorData(filelocation,key) for key in keys}

@@ -145,26 +145,24 @@ def cn2(F, u, t, t_end, linearCase, s, tol=None, dF=None):
     else:
         def newton(u0):
             Fu0 = F(u0)
-            g  = lambda u1: u1 - u0 - τ/2*(Fu0 + F(u1))
-            #dg = lambda u1: Id      - τ/2*      dF(u1)
             u1 = u0 + τ*Fu0
-                    
+            
+            g  = lambda u1: u1 - u0 - τ/2*(Fu0 + F(u1))
+          #dg  = lambda u1: Id      - τ/2*      dF(u1)
+
             def dg(u1):
                 dFu1 = dF(u1)
-                mv = lambda v: v - τ/2*dFu1@v
-                return LinearOperator((Nx,Nx), matvec = mv)         
+                return LinearOperator((Nx,Nx), matvec = lambda v: v-τ/2*dFu1@v)         
             
-            for k in range(9):
-                if k%3 == 0:
-                    A = dg(u1)
-                Δu, _ = gmres(A,-g(u1),x0 = u1, tol=tol/s, atol=0,
+            for k in range(1,10):
+                Δu, _ = gmres(dg(u1),-g(u1),x0 = u1, tol=tol/s, atol=0,
                               callback=gmresiterations, M = None)
                 u1 += Δu.reshape(ushape)
                 if np.linalg.norm(Δu)/np.linalg.norm(u0) < tol/s:
                     break
             
-            functionEvaluation = 1 + k
-            derivativeEvaluations = 1 + k//3
+            functionEvaluation = k
+            derivativeEvaluations = k
             mv = k # Without gmres
             return u1, (functionEvaluation, derivativeEvaluations, mv)
         
@@ -197,12 +195,12 @@ def exprb2(F, u, t, t_end, linearCase, s,
     
     ''' Linear Case '''
     if linearCase:
-        M = F(u, returnMatrix=True)
-        ''' We force s = s and m = 99 '''
+        M = F(u, returnMatrix=True)        
+        # We force s = s  and m = 99
         para = select_interp_para_for_fixed_m_and_s(
-                t_end-t, M, u, tol, s=s, normEstimator = normEstimator)
+                t_end-t, M, u, tol, s=s, normEstimate = normEstimator)
 
-        expMu, _, info, c, m, _, _ = expleja(
+        expMu, _, info, c, _, _, _ = expleja(
                 t_end-t, M, u, tol, p=0, interp_para=para)
 
         mv = int(sum(info) + c) # Total matrix-vector multiplications
@@ -413,6 +411,15 @@ def select_interp_para_for_fixed_m_and_s(
         if not issparse(A):
             A = np.asarray(A)
         γ2, mv = normAmp(A,1,tol[3])
+
+# =============================================================================
+#     if m is None: # Choose m dynamically
+#         if γ2 == 0: #Prevents division by 0
+#             m = 0
+#         else:
+#             m = np.argmin(s * np.ceil((h*γ2)/θ[2:99]).T)
+#             m = m+2
+# =============================================================================
 
     γ2, dd = θ[m], dd[:,m]
     ξ = ξ*(γ2/2)

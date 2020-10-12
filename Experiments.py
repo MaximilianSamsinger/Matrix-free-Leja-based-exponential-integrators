@@ -20,6 +20,8 @@ except:
 
 
 '''
+For the description of the experiments see the ExperimentX_plots.py files.
+
 Linear Case: dt u = adv dxx u + dif dx u
 On the interval [0,1] with homogeneous Dirichlet boundary conditions
 for t in [0,0.1]
@@ -35,8 +37,9 @@ Nx... discretize x-axis into Nx-1 parts
 s... number of substeps used when integrating
 '''
 
-def Nonlinear_Advection_Diffusion_Equation2D(Nx, param, asLinearOp, filename, 
+def Nonlinear_Advection_Diffusion_Equation2D(Nx, param, Experiment, filename, 
                                              lock):
+    assert(Experiment == 2)
     t = 0 # Start time
     t_end = 1e-1 # Final time
 
@@ -108,7 +111,9 @@ def Nonlinear_Advection_Diffusion_Equation2D(Nx, param, asLinearOp, filename,
     solve_ODE(Integrators, Settings, add_to_row, filename, lock=lock)
 
 
-def Nonlinear_Advection_Diffusion_Equation(Nx, param, asLinearOp, filename, lock):
+def Nonlinear_Advection_Diffusion_Equation(Nx, param, Experiment, filename, 
+                                           lock):
+    assert(Experiment in [2,4])    
     t = 0 # Start time
     t_end = 1e-1 # Final time
 
@@ -121,40 +126,47 @@ def Nonlinear_Advection_Diffusion_Equation(Nx, param, asLinearOp, filename, lock
         dxu = -u
         dxu[:-1] += u[1:]
         return dxu/h
-
-    def F(u, param=param):
-        dxu = dx(u)
-        f = dxu**2 + (u+1)*Dif.dot(u)
-        g = 2*u*dxu
-        h = u*(u-0.5)
-        return param[0]*f + param[1]*g + param[2]*h
-
-
-    def dF(u, param=param):
-
-        #df = 2*diags(dx(u)).dot(Adv) + diags(Dif.dot(u)) + diags(u+1).dot(Dif)
-        #dg = 2* ( diags(dx(u)) + diags(u).dot(Adv) )
-        #dh = diags(2*u - .5)
-        dxu = dx(u)
-        data = np.zeros((3,Nx))
-        data[0,1:] = (
-                param[0]*(2*dxu[:-1]
-                + (u[:-1]+1)/h)/h
-                + param[1]*(2*u[:-1]/h)
-                ).flatten()
-        data[1] = (
-                param[0]*(-2*dxu/h + Dif.dot(u) -2*(u+1)/h**2)
-                + param[1]*(-2*u/h + 2*dxu)
-                + param[2]*(2*u - .5)
-                ).flatten()
-        data[2,:-1] = (
-                param[0]*(
-                        (u[1:]+1)/h**2)
-                ).flatten()
+    
+    if Experiment == 2:
+        def F(u, param=param):
+            dxu = dx(u)
+            f = dxu**2 + (u+1)*Dif.dot(u)
+            g = 2*u*dxu
+            h = u*(u-0.5)
+            return param[0]*f + param[1]*g + param[2]*h
+    
+    
+        def dF(u, param=param):
+            #df = 2*diags(dx(u)).dot(Adv) + diags(Dif.dot(u)) + diags(u+1).dot(Dif)
+            #dg = 2* ( diags(dx(u)) + diags(u).dot(Adv) )
+            #dh = diags(2*u - .5)
+            dxu = dx(u)
+            data = np.zeros((3,Nx))
+            data[0,1:] = (
+                    param[0]*(2*dxu[:-1]
+                    + (u[:-1]+1)/h)/h
+                    + param[1]*(2*u[:-1]/h)
+                    ).flatten()
+            data[1] = (
+                    param[0]*(-2*dxu/h + Dif.dot(u) -2*(u+1)/h**2)
+                    + param[1]*(-2*u/h + 2*dxu)
+                    + param[2]*(2*u - .5)
+                    ).flatten()
+            data[2,:-1] = (
+                    param[0]*(
+                            (u[1:]+1)/h**2)
+                    ).flatten()
+            
+            return aslinearoperator(csr_matrix(dia_matrix(
+                (data,[1,0,-1]), shape=(Nx, Nx))))
+    else:
+        # Experiment 4, fully linear problem
+        assert(param[2]==0)
+        def F(u, param=param):
+            return (param[0]*Dif+param[1]*Adv).dot(u)            
         
-        return aslinearoperator(csr_matrix(dia_matrix(
-            (data,[1,0,-1]), shape=(Nx, Nx))))
-     
+        def dF(u, param=param):
+            return LinearOperator((Nx,Nx), matvec = F)
 
     ''' Compute reference solution '''
     solver = sp.integrate.ode(lambda t,u: F(u))
@@ -181,6 +193,32 @@ def Nonlinear_Advection_Diffusion_Equation(Nx, param, asLinearOp, filename, lock
     add_to_row = [Nx, *param]
     solve_ODE(Integrators, Settings, add_to_row, filename, lock=lock)
 
+def Linear_Advection_Diffusion_Equation(Nx, dif, Experiment, filename, lock):
+    assert(Experiment in [1,3,4])    
+    Settings, methods = SettingsLinear(Experiment)
+
+    t = 0 # Start time
+    t_end = 1e-1 # Final time
+
+    A, u = AdvectionDiffusion1D(Nx, 1, dif, asLinearOp = False) # Dont change
+    reference_solution = expleja(t_end, A, u)[0] # Double precision
+
+
+    A, u = AdvectionDiffusion1D(Nx, 1, dif, asLinearOp = Experiment in [3,4])
+    columns = ['substeps', 'Nx', 'dif', 'relerror', 'mv']
+
+    def F(v, returnMatrix=False):
+        return A if returnMatrix else A@v
+
+    inputs = [F, u, t, t_end, True]
+    Integrators = [Integrator(
+            method, inputs, reference_solution,
+            columns + list(Settings[method.__name__][0].keys()))
+            for method in methods]
+    add_to_row = [Nx, dif]
+    
+    solve_ODE(Integrators, Settings, add_to_row, filename, lock=lock)
+
 def SettingsNonlinear(dF):
     Settings = {}
     Settings['all'] = {'tol':[2**-10, 2**-24], "dF": dF} 
@@ -200,11 +238,11 @@ def SettingsNonlinear(dF):
     }
 
     ''' Define Integrators '''
-    methods = [exprb2, exprb4]
+    methods = [cn2, exprb2, rk2, rk4,]
     
     return Settings, methods
 
-def SettingsLinear(asLinearOp):
+def SettingsLinear(Experiment):
     Settings = {}
     Settings['all'] = {'tol':[2**-10,2**-24], "dF": False}
     Settings['rk2'] = [{}]
@@ -215,7 +253,7 @@ def SettingsLinear(asLinearOp):
             'mv':np.int32,
     }
 
-    if asLinearOp:
+    if Experiment == 3:
         ''' Define Integrators '''
         methods = [exprb2]
         substeps = [250, 500, 750, 1000]
@@ -225,79 +263,59 @@ def SettingsLinear(asLinearOp):
         Settings['exprb2'] = [{'tol':te, **ne}
                         for te in Settings['all']['tol']
                         for ne in normEstimatorParams]
-    else:
+    elif Experiment in [1,4]:
         ''' Define Integrators '''
         methods = [exprb2, cn2, rk2, rk4]
         substeps = (1.10**np.array(range(1,122))).astype('int')
-        Settings['exprb2'] = [{'tol':te} for te in Settings['all']['tol']]
+        if Experiment == 1:
+            Settings['exprb2'] = [{'tol':te} for te in Settings['all']['tol']]
+        elif Experiment == 4:
+            Settings['exprb2'] = [{'tol':te, 'powerits': 4, 'safetyfactor': 1.1} 
+                                  for te in Settings['all']['tol']]
+    else:
+        raise NotImplementedError
 
     Settings['all']['substeps'] = np.unique(substeps)
 
     return Settings, methods
 
 
-def Linear_Advection_Diffusion_Equation(Nx, dif, asLinearOp, filename, lock):    
-    Settings, methods = SettingsLinear(asLinearOp)
-
-    t = 0 # Start time
-    t_end = 1e-1 # Final time
-
-    A, u = AdvectionDiffusion1D(Nx, 1, dif, asLinearOp = False) # Dont change
-    reference_solution, tmp = expleja(t_end, A, u)[:2] # Double precision
-
-    A, u = AdvectionDiffusion1D(Nx, 1, dif, asLinearOp = asLinearOp)
-    columns = ['substeps', 'Nx', 'dif', 'relerror', 'mv']
-
-    def F(v, returnMatrix=False):
-        return A if returnMatrix else A@v
-
-    inputs = [F, u, t, t_end, True]
-    Integrators = [Integrator(
-            method, inputs, reference_solution,
-            columns + list(Settings[method.__name__][0].keys()))
-            for method in methods]
-
-    add_to_row = [Nx, dif]
-
-    solve_ODE(Integrators, Settings, add_to_row, filename, lock=lock)
-
-
 if __name__ == '__main__':
     multiprocessing = True # On Windows use a seperate console, not IPython
-    asLinearOp = True  # Calculations use LinearOperators instead of matrices
-    LinearCase = False # Switches between linear and nonlinear case
-    isproblem2D = True # Switches between 1D and 2D case
-   
-    if isproblem2D:
-        assert(not LinearCase)
-        assert(asLinearOp)
-        Nxlist = list(range(50,401,50))
-        params = [[α, β, γ] for α in 
-                  [0.1, 0.01] for β in [1, 0.1, 0.01] for γ in [1]]
-        problem_to_solve = Nonlinear_Advection_Diffusion_Equation2D
-        filename = 'Experiment_2D.h5'
-
-    elif LinearCase:
-        Nxlist = list(range(50,401,50))
-        params = [1e0, 1e-1, 1e-2] # Diffusion coefficient. Should be <= 1
-        problem_to_solve = Linear_Advection_Diffusion_Equation
-        filename = 'Experiment1LinOp.h5' if asLinearOp else 'Experiment1.h5'
+    Experiment = 4
+    problemis2D = False # Switches between 1D and 2D case
     
-    else:
-        assert(asLinearOp) # Probably unnecessary
-        Nxlist = list(range(50,401,50))
-        params = [[α, β, γ] for α in 
-                  [0.1, 0.01] for β in [1, 0.1, 0.01] for γ in [1]]
-        problem_to_solve = Nonlinear_Advection_Diffusion_Equation
-        filename = 'Experiment2.h5'
+    Nxlist = list(range(50,401,50))
+    
+    if Experiment in [1,3]:
+        # We consider the linear case and fix the number of 
+        assert(not problemis2D)
+        params = [1e0, 1e-1, 1e-2] # Diffusion coefficient. Should be <= 1
+        problem2solve = Linear_Advection_Diffusion_Equation
+        filename = f'Experiment{Experiment}.h5'
+        
+    elif Experiment == 2:
+        params = [[α, β, 1] for α in [0.1, 0.01] for β in [1, 0.1, 0.01]]
+        
+        if problemis2D:
+            problem2solve = Nonlinear_Advection_Diffusion_Equation2D
+            filename = 'Experiment_2D.h5'
+        else:
+            problem2solve = Nonlinear_Advection_Diffusion_Equation
+            filename = 'Experiment2.h5'
+    elif Experiment == 4:
+        params = [[α, β, 0] for α in [1] for β in [0]]
+        problem2solve = Nonlinear_Advection_Diffusion_Equation
+        filename = 'Experiment4.h5'
+
     filelocation = 'HDF5-files' + os.sep + filename
 
     begin = time()
     if multiprocessing:
         lock = Lock()
         all_processes = [
-            Process(target = problem_to_solve,
-            args=(Nx, param, asLinearOp, filelocation, lock)) 
+            Process(target = problem2solve,
+            args=(Nx, param, Experiment, filelocation, lock)) 
             for Nx in Nxlist for param in params
             ]
 
@@ -306,7 +324,7 @@ if __name__ == '__main__':
 
     else:
         for Nx, param in product(Nxlist, params):
-            problem_to_solve(Nx, param, asLinearOp, filelocation, None)
+            problem2solve(Nx, param, Experiment, filelocation, None)
 
     pd.set_option('io.hdf.default_format','table')
     with pd.HDFStore(filelocation) as hdf:
