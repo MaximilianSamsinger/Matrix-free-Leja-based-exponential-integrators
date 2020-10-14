@@ -656,34 +656,54 @@
 	\end{figure}
 
 \section{Discussion}
-The results of the numerical experiments in Section \ref{sec:Experiments} are surprising for multiple reasons. First of all, exponential integrators can take much larger time step sizes compared to the other integrators. This is especially true for \texttt{exprb4} since it is a fourth-order method. Despite these advantages, neither \texttt{exprb2} nor \texttt{exprb4} consistently outperform the other methods. We observe that the costs of all exponential integrators largely depend on the number of matrix-vector products computed by \texttt{expleja}. The cost incurred by evaluating $F$ are negligible. Secondly, \texttt{exprb4} performs much better in highly advective settings compared to highly diffusive settings given $\operatorname{tol} = 2^{-24}$.\\
-We argue that the costs of our exponential integrators indirectly depend on the CFL-conditions of the problem. In particular the costs of \texttt{expleja} depend on the spectral radius of $F'(u)$. By considering only the terms depending on $\alpha$ we can approximate the spectral radius as
-\[ \rho(F'(u)) \approx \alpha(u+1)\frac{4}{h^2} \le \frac{8\alpha}{h^2}.\]
-in the one-dimensional setting. This demonstrates that the costs of \texttt{expleja} are roughly proportional to $C_{dif}$ in \ref{eq:CFL}.
-We provide a more thorough analysis for the heat equation in the next section. Using the argumentation above the results are representative for highly diffusive nonlinear cases.
-
-\subsection{One-dimensional heat equation}
-We redo the experiment described in \ref{sec:Experiments}, but we replace $F$ with $F(u) = \partial_{xx}u$. We do not modify our integrators or introduce additional optimizations. The space discretized problem
-\[\partial_{t}u = Au\]
-can be solved exactly by the exponential Euler method using a single evaluation of \texttt{expleja}. The costs of Newton interpolation mainly depends on the number of matrix-vector products. Without early termination, the costs are given by $m_* s_*$, as defined in \ref{eq:msmatrixfree}. Shifting the matrix diminishes the spectral radius of $A$ by a factor of two. Therefore the theoretical costs are given by
+The results of the numerical experiments in Section \ref{sec:Experiments} are surprising for multiple reasons. First of all, exponential integrators can take much larger time step sizes compared to the other integrators. This is especially true for \texttt{exprb4} since it is a fourth-order method. Despite this advantage, neither \texttt{exprb2} nor \texttt{exprb4} consistently outperform the other methods. We observe that the costs of all exponential integrators largely depend on the number of Jacobian-vector products computed by \texttt{expleja}. The cost incurred by evaluating $F$ are negligible. Secondly, \texttt{exprb4} performs much better in highly advective settings compared to highly diffusive settings given $\operatorname{tol} = 2^{-24}$. \\
+In order to shed light on this phenomenon, we simplify and redo our experiments. We solve the one-dimensional heat equation $d_tu = d_{xx}u$ and the one-dimensional advection equation $d_tu = d_{x}u$. We do not modify our integrators or introduce additional optimizations. The results for the heat equation and advection equation are shown in Figure \ref{fig:heat} and Figure \ref{fig:advection} respectively. Once again we observe that exponential integrators achieve better performance in for the advection equation given given $\operatorname{tol} = 2^{-24}$. Obviously, the costs also mainly depend on the number of Jacobian-vector products. These observation prompts us to investigate the theoretical costs for \texttt{expleja}.
+After space discretization $\partial_{t}u = Au$ the problem can be solved exactly with a single evaluation of \texttt{expleja}. Without early termination, the costs are given by $m_* s_*$ matrix-vector multiplications, as defined in \ref{eq:msmatrixfree}. Shifting the matrix diminishes the spectral radius of $A$ by a factor of two. For sufficiently large $\rho (A)$, we can approximate the number of matrix-vector multiplications for evaluating $e^{0.1A}u$ with \texttt{expleja} as
 \[
-\underset{2\le m\le 100}{\min}  \left\{{\left\lceil{\frac{\rho(0.1A)}{2\theta_m}}\right\rceil}m\right\}
-\approx \frac{0.8}{h^2} \quad \footnote{[Footnote will be removed] We remove the ceiling function. $m/\theta_m \approx 4$. (For \texttt{half}, \texttt{single} and \texttt{double} precision $m/\theta_m$ equals 3.73, 4.19 and 4.46 respectively with m=18, m=81 and m=116). $\rho(A) \approx 4/h^2$. }
-\] 
-matrix-vector multiplications for \texttt{exprb2}. In total the costs approximate $19.2N/h^2$ bytes. The CFL-condition for this problem is given by
-\[C_{dif} = \frac{2\tau}{h^2} \le \frac{1}{2}.\]
-For a fixed time step size $\tau$, \texttt{rk2} needs to evaluate $F$ exactly $0.2/\tau$ times. The time step size is limited by the CFL condition. This leads to a total cost of at least $3.2N/h^2$ bytes for \texttt{rk2} and $6.4N/h^2$ bytes for \texttt{rk4}. In summary, \texttt{exprb2} without early termination for \texttt{expleja} is approximately 6 times more expensive than \texttt{rk2} for the heat equation. \\
-The numerical results \ref{fig:heat} show, that the early termination plays an important role for an efficient computation of \texttt{exprb2}. The number of Jacobian-vector products are well below the estimate for \texttt{exprb2}, as indicated on the bottom row.
-\\
-For the sake of completeness we solved the one-dimensional advection problem given by $F(u)=\partial_{x}u$. The results are shown in Figure \ref{fig:Advection} in the Appendix.
+m_*s_* = \underset{2\le m\le 100}{\min}  \left\{{\left\lceil{\frac{\rho(A)}{20\theta_m}}\right\rceil}m\right\}
+\approx
+\underset{2\le m\le 100}{\min}  \left\{\frac{\rho(A)}{20}\frac{m}{\theta_m}\right\}
+\approx \frac{\rho(A)}{5}.
+\]
+This approximation is indicated as a dash-dotted line on the bottom row of both figures. The total number of matrix-vector multiplications of \texttt{exprb2} are well below the estimate. This shows, that the early termination plays an important role for an efficient computation of \texttt{exprb2}.
+
+%\subsection{One-dimensional heat equation}
+%[THIS SUBSECTION IS UNFINISHED AND MIGHT BE REMOVED IN THE FINAL VERSION.]
+%We argue that the costs of our exponential integrators indirectly depend on the CFL-conditions of the problem. In particular the costs of \texttt{expleja} depend on the spectral radius of $F'(u)$. By considering only the terms depending on $\alpha$ we can approximate the spectral radius as
+%\[ \rho(F'(u)) \approx \alpha(u+1)\frac{4}{h^2} \le \frac{8\alpha}{h^2}.\]
+%in the one-dimensional setting. This demonstrates that the costs of \texttt{expleja} are roughly proportional to $C_{dif}$ in \ref{eq:CFL}.
+%We provide a more thorough analysis for the heat equation in the next section. Using the argumentation above the results are representative for highly diffusive nonlinear cases.
+%
+%We redo the experiment described in \ref{sec:Experiments}, but we replace $F$ with $F(u) = \partial_{xx}u$. We do not modify our integrators or introduce additional optimizations. The space discretized problem
+%\[\partial_{t}u = Au\]
+%can be solved exactly by the exponential Euler method using a single evaluation of \texttt{expleja}. The costs of Newton interpolation mainly depends on the number of matrix-vector products. Without early termination, the costs are given by $m_* s_*$, as defined in \ref{eq:msmatrixfree}. Shifting the matrix diminishes the spectral radius of $A$ by a factor of two. Therefore the theoretical costs are given by
+%\[
+%\underset{2\le m\le 100}{\min}  \left\{{\left\lceil{\frac{\rho(0.1A)}{2\theta_m}}\right\rceil}m\right\}
+%\approx \frac{0.8}{h^2} \quad \footnote{[Footnote will be removed] We remove the ceiling function. $m/\theta_m \approx 4$. (For \texttt{half}, \texttt{single} and \texttt{double} precision $m/\theta_m$ equals 3.73, 4.19 and 4.46 respectively with m=18, m=81 and m=116). $\rho(A) \approx 4/h^2$. }
+%\] 
+%matrix-vector multiplications for \texttt{exprb2}. In total the costs approximate $19.2N/h^2$ bytes. The CFL-condition for this problem is given by
+%\[C_{dif} = \frac{2\tau}{h^2} \le \frac{1}{2}.\]
+%For a fixed time step size $\tau$, \texttt{rk2} needs to evaluate $F$ exactly $0.2/\tau$ times. The time step size is limited by the CFL condition. This leads to a total cost of at least $3.2N/h^2$ bytes for \texttt{rk2} and $6.4N/h^2$ bytes for \texttt{rk4}. In summary, \texttt{exprb2} without early termination for \texttt{expleja} is approximately 6 times more expensive than \texttt{rk2} for the heat equation. \\
+%The numerical results \ref{fig:heat} show, that the early termination plays an important role for an efficient computation of \texttt{exprb2}. The number of Jacobian-vector products are well below the estimate for \texttt{exprb2}, as indicated on the bottom row.
+%\\
+%For the sake of completeness we solved the one-dimensional advection problem given by $F(u)=\partial_{x}u$. The results are shown in Figure \ref{fig:advection} in the Appendix.
 
 \begin{figure}[t]
 	\newcommand{\dif}{\detokenize{α}=1}
 	\newcommand{\adv}{\detokenize{β}=0}
 	\centering
 	\includegraphics[width=\columnwidth]{../Figures/Experiment4/multi, \dif, \adv.pdf}
-	\caption{Heat equation. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the total number of Jacobian-vector products computed. The dotted line in the second row indicates the largest time step size, where the CFL conditions are not violated. The dashed line in the third row is an estimate for the total number of matrix-vector multiplications for \texttt{expleja} without early termination.}
+	\caption{Heat equation. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the total number of Jacobian-vector products computed. The dotted line in the second row indicates the largest time step size, where the CFL conditions are not violated. The dash-dotted line in the third row is an estimate for the total number of matrix-vector multiplications for \texttt{expleja} without early termination.}
 	\label{fig:heat}
+\end{figure}
+
+\begin{figure}[t]
+	\newcommand{\dif}{\detokenize{α}=0}
+	\newcommand{\adv}{\detokenize{β}=1}
+	\centering
+	\includegraphics[width=\columnwidth]{../Figures/Experiment4/multi, \dif, \adv.pdf}
+	\caption{Advection equation. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the total number of Jacobian-vector products computed. The dotted line  in the second row indicates the largest time step size, where the CFL conditions are not violated. The dash-dotted line in the third row is an estimate for the total number of matrix-vector multiplications for \texttt{expleja} without early termination.}
+	\label{fig:advection}
 \end{figure}
 
 %We do not modify our integrators to introducing additional optimizations. After discretization the exponential Euler method solves this problem exactly. We observe the \texttt{exprb2} benefits from the lack of nonlinearities, but still has to compute exponential 
@@ -742,17 +762,17 @@ For the sake of completeness we solved the one-dimensional advection problem giv
 	\end{figure}
 }
 
-\afterpage{
-	\subsection*{Advection equation}
-}
-\begin{figure}[H]
-	\newcommand{\dif}{\detokenize{α}=0}
-	\newcommand{\adv}{\detokenize{β}=1}
-	\centering
-	\includegraphics[width=\columnwidth]{../Figures/Experiment4/multi, \dif, \adv.pdf}
-	\caption{Advection equation. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the total number of Jacobian-vector products computed. The dotted line  in the second row indicates the largest time step size, where the CFL conditions are not violated. The dashed line in the third row is an estimate for the total number of matrix-vector multiplications for \texttt{expleja} without early termination.}
-	\label{fig:Advection}
-\end{figure}
+%\afterpage{
+%	\subsection*{Advection equation}
+%}
+%\begin{figure}[H]
+%	\newcommand{\dif}{\detokenize{α}=0}
+%	\newcommand{\adv}{\detokenize{β}=1}
+%	\centering
+%	\includegraphics[width=\columnwidth]{../Figures/Experiment4/multi, \dif, \adv.pdf}
+%	\caption{Advection equation. Comparison of different matrix-free integrators given relative tolerances \textit{half} ($\operatorname{tol} = 2^{-10}$) and single \textit{single} ($\operatorname{tol} = 2^{-24}$). We calculated the cost-minimizing time step size for each integrator, as shown in the second row. The top row displays the corresponding cost incurred. The bottom row shows the total number of Jacobian-vector products computed. The dotted line  in the second row indicates the largest time step size, where the CFL conditions are not violated. The dash-dotted line in the third row is an estimate for the total number of matrix-vector multiplications for \texttt{expleja} without early termination.}
+%	\label{fig:Advection}
+%\end{figure}
 
 
 %%% 1D CSR-MATRIX CASE
