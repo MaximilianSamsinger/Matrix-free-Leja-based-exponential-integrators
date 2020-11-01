@@ -1,6 +1,6 @@
 import numpy as np
 import scipy as sp
-from AdvectionDiffusion1D import AdvectionDiffusion1D
+from AdvectionDiffusion import AdvectionDiffusion1D
 from expleja import expleja
 
 '''

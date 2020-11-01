@@ -45,7 +45,7 @@ def expleja(h, A, v, tol=[0,2**-53,float('inf'),float('inf')],
       exponential, submitted, http://arxiv.org/abs/1506.08665
 
       Python implementation:
-      Maximilian Samsinger, April 4, 2016
+      Maximilian Samsinger, November 1, 2020
 
       Original Matlab implementation:
       Peter Kandolf, July 8, 2015, cooperation with Marco Caliari,

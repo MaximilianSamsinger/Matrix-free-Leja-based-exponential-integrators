@@ -92,7 +92,7 @@
 \begin{center}\textbf{Abstract}\end{center}
 \begin{abstract}
 	In this master thesis we develop an algorithm to approximate the action of a matrix exponential function. In particular, we consider the case where the matrix is itself not available, but only its action as a linear operator. The construction is achieved by using a modified version of the real Leja method. We choose optimal interpolation parameters based on a spectral radius estimate computed by the power method. With this procedure we construct exponential Rosenbrock-type integrators to solve stiff advection-diffusion-reaction equations. We compare the performance of these integrators with other matrix-free differential equation solvers. 
-		As part of this thesis we publish the code for the matrix-free Leja method for the action of the matrix exponential function on GitHub. \footnote{INSERT LINK HERE}
+	As part of this thesis we publish the code for the matrix-free Leja method for the action of the matrix exponential function on GitHub. \footnote{\url{https://github.com/MaximilianSamsinger/Matrix-free-Leja-based-exponential-integrators}}
 \end{abstract}
 \setcounter{page}{1}
 	
@@ -125,8 +125,8 @@
 	\[\limsup\limits_{m \rightarrow \infty}\norm{f(A)v-p_m(A)v}_{2}^{1/m} = 0, \]
 	for $A\in\mathbb{C}^{n\times n}, v\in\mathbb{C}^n$.
 	
-	\paragraph{Early termination}
-	The Newton interpolation polynomial $p_m$ can be constructed iteratively since the corresponding Leja interpolation points $(\xi_k)_{k=0}^{m}$ are defined recursively. Therefore, if the approximation $p_n \approx f$ is accurate enough after $n<m$ steps the interpolation can be stopped early to reduce the cost of the interpolation. Note that this is not possible with Chebyshev nodes.
+	\paragraph{Iterative construction}
+	The Newton interpolation polynomial $p_m$ can be constructed iteratively since the corresponding Leja interpolation points $(\xi_k)_{k=0}^{m}$ are defined recursively. Note that this is not possible with Chebyshev nodes.
 	
 	\paragraph{Leja sequence can be stored}
 	For a given $K$ the Leja interpolation nodes only need to be computed once and for all. These values can be stored a priori and loaded once they are needed for the interpolation. If $f$ is fixed the same is also true for the corresponding divided differences.\\
@@ -194,6 +194,9 @@
 	\end{align}
 	In our algorithm we set $m_{\operatorname{max}} = 100$ in order to avoid over- and underflow errors.
 	
+	\paragraph{Early termination}
+	The cost estimate does not depend on $v$. In some cases, for example $v=0$, this can cause $m_*$ to be much larger than necessary. It is beneficial to use an error estimate and terminate the interpolation early if the error is small enough. 
+	
 	\paragraph{Shifting the matrix}
 	The cost of the interpolation can be decreased by employing a shift $\mu\in\mathbb{C}$. Let $I$ be the identity matrix. We replace the matrix $A$ with $A-\mu I$ for all computations. If the shifted matrix $A-\mu I$ satisfies $\norm{A -\mu I} < \norm A$ then the cost $C_{m_*}$ of the interpolation decreases.
 	We compensate for the shift by multiplying with $e^\mu$ since
@@ -201,6 +204,8 @@
 	e^{A} = e^{\mu}e^{A-\mu I}.
 	\]
 	A well-chosen shift centers the eigenvalues of $A-\mu I$ around $0$. Such a shift can be found by using Gerschgorin's circle theorem. This is, however, not possible in the matrix-free case.
+	 
+	
 	
 \section{Matrix-free implementation}\label{sec:matrixfreeimplementation}
 	Matrix-free methods are algorithms which use linear functions, but do not explicitly rely on their respective matrix representations. These methods are preferable when saving and loading matrix coefficients becomes prohibitively expensive. As a motivational example we perform a cost analysis in terms of memory operations for finite difference schemes in Section~\ref{sec:FDS}.
@@ -234,7 +239,7 @@
 	\[
 	\rho(A) \le \norm{A}_{A,\varepsilon} \le \rho(A) + \varepsilon. 
 	\]
-	While the first inequality holds true for every operator norm, it is not possible to select an operator norm independent of either $A$ or $\varepsilon$ for the second one. We choose $\varepsilon$ small enough, such that
+	The first inequality holds true for every operator norm. We choose $\varepsilon$ small enough, such that
 	\[
 	\norm{s^{-1}A}_{A,\varepsilon} \le \underset{\rho(s^{-1}A) < \theta_m}{\min}\theta_m.
 	\]
@@ -364,12 +369,12 @@
 		= \frac{2}{N}\sum_{j=0}^{N-1}\sin^{4n}\!\left(\frac{\pi j}{N}\right)
 		= 2 I_{N,n}
 	\]
-	due to symmetry. Since $x\mapsto\sin^{4n}(x)$ is a $2\pi$-peroidic trigonometric polynomial of degree $4n$ the trapezoidal rule is exact if $2N>4n$. In general the error converges exponentially to $0$. For readers unfamiliar with these properties we refer to~\cite[Corollary 3.3]{trapezoidal}. 
+	due to symmetry. Since $x\mapsto\sin^{4n}(x)$ is a $2\pi$-peroidic trigonometric polynomial of degree $4n$ the trapezoidal rule is exact if $2N>4n$. The error of the approximation converges exponentially to $0$. For readers unfamiliar with these properties we refer to~\cite[Corollary 3.3]{trapezoidal}. 
 	By comparing both trapezoidal approximations we establish $I_n = I_{n,N}$ if $N > 2n$.\\
 	We underestimate the largest eigenvalue $\lambda_{max}$ by a factor of
 	\begin{align*}
 		\frac{\norm{A^{n+1}v}_2}{\norm{A^nv}_2}\frac{1}{\abs{\lambda_{max}}}
-		= \frac{\frac{2^{2n+2}}{h^{2n+2}}\sqrt{I_{N,n+1}}}{\frac{2^{2n}}{h^{2n}}\sqrt{I_{N,n}}}\frac{1}{\abs{\lambda_{max}}} = \sqrt{\frac{I_{N,n+1}}{I_{N,n}}}\sin^{-2}\!\left(\frac{\pi}{N}\left\lfloor\frac{N}{2}\right\rfloor\right)
+		= \frac{\frac{2^{2n+2}}{h^{2n+2}N^{1/2}}\sqrt{I_{N,n+1}}}{\frac{2^{2n}}{h^{2n}N^{1/2}}\sqrt{I_{N,n}}}\frac{1}{\abs{\lambda_{max}}} = \sqrt{\frac{I_{N,n+1}}{I_{N,n}}}\sin^{-2}\!\left(\frac{\pi}{N}\left\lfloor\frac{N}{2}\right\rfloor\right)
 	\end{align*}
 	using the power method. From now on we assume $N > 2(n+1)$. By using the properties of the beta function $\operatorname{B}$ we get
 	\[
@@ -472,7 +477,7 @@
 	\begin{alignat*}{2}
 	U_{1} &= u_0,\\
 	U_{2} &= e^{\frac{\tau}{2} A}u_0 &&+ \tau\varphi_1\left(\frac{\tau}{2} A\right)g(U_1) = u_0 + \frac{\tau}{2}\varphi_1\left(\frac{\tau}{2}A\right)F(u_0),\\
-	U_{3} &= e^{\tau A}u_0 &&+ \tau\varphi_1(\tau A)g(U_2) = e^{\tau A}F(U_2),\\
+	U_{3} &= e^{\tau A}u_0 &&+ \tau\varphi_1(\tau A)g(U_2) = u_0 + \tau\varphi_1\left(\tau A\right)F(U_2),\\
 	\tilde{u}_1 &= e^{\tau A}u_0 &&+ (\varphi_1 - 14\varphi_3)(\tau A)g(u_0) + 16\varphi_3(\tau A)g(U_2) - 2\varphi_3(\tau A)g(U_3),\\
 	\hat{u}_1 &= e^{\tau A}u_0 &&+ (\varphi_1 - 14\varphi_3 + 36\varphi_4)(\tau A)g(u_0) + (16\varphi_3 -48\varphi_4)(\tau A)g(U_2) \\
 	& &&+ (-2\varphi_3 + 12\varphi_4)(\tau A)g(U_3),
@@ -620,7 +625,7 @@
 	The Crank-Nicholson method is unconditionally stable and is therefore not restricted by the CFL conditions. In the half precision setting we observe that the Crank-Nicholson method is a suitable choice for diffusion-dominated problems. This is no longer the case in the single precision setting, where it is outperformed by every other integrator. The tolerance setting used by \texttt{cn2} can be overly restrictive. However, in some experiments even conservative, but static choices such as $\texttt{tol}/100$ lead to solutions with insufficient accuracy for all considered time step sizes.\\
 	
 The results of the numerical experiments are surprising for multiple reasons. First of all, exponential integrators can take much larger time step sizes compared to the other integrators. This is especially true for \texttt{exprb4} since it is a fourth-order method. Despite this advantage, neither \texttt{exprb2} nor \texttt{exprb4} consistently outperform the other methods. We observe that the costs of all exponential integrators largely depend on the number of Jacobian-vector products computed by \texttt{expleja}. The cost incurred by evaluating $F$ are negligible. Secondly, \texttt{exprb4} performs much better in highly advective settings compared to highly diffusive settings given $\operatorname{tol} = 2^{-24}$. \\
-In order to shed light on this phenomenon, we simplify and redo our experiments. We solve the one-dimensional heat equation~$d_tu=d_{xx}u$ and the one-dimensional advection equation~$d_tu=d_{x}u$. We do not modify our integrators or introduce additional optimizations. The results for the heat equation and advection equation are shown in Figure~\ref{fig:heat} and Figure~\ref{fig:advection} respectively. Once again we observe that exponential integrators achieve better performance for the advection equation given $\operatorname{tol} = 2^{-24}$. Obviously, the costs also mainly depend on the number of Jacobian-vector products. These observation prompts us to investigate the theoretical costs for \texttt{expleja}.
+In order to shed light on this phenomenon, we simplify and redo our experiments. We solve the one-dimensional heat equation~$d_tu=d_{xx}u$ and the one-dimensional advection equation~$d_tu=d_{x}u$. We do not modify our integrators or introduce additional optimizations. The results for the heat equation and advection equation are shown in Figures~\ref{fig:heat} and \ref{fig:advection} respectively. Once again we observe that exponential integrators achieve better performance for the advection equation given $\operatorname{tol} = 2^{-24}$. Obviously, the costs also mainly depend on the number of Jacobian-vector products. These observation prompts us to investigate the theoretical costs for \texttt{expleja}.
 After space discretization $\partial_{t}u = Au$ the problem can be solved exactly with a single evaluation of \texttt{expleja}. Without early termination, the costs are given by $m_* s_*$ matrix-vector multiplications, as defined in \eqref{eq:msmatrixfree}. Shifting the matrix diminishes the spectral radius of $A$ by a factor of two. For sufficiently large $\rho (A)$, we can approximate the number of matrix-vector multiplications for evaluating $e^{0.1A}u$ with \texttt{expleja} as
 \[
 m_*s_* = \underset{2\le m\le 100}{\min}  \left\{{\left\lceil{\frac{\rho(A)}{20\theta_m}}\right\rceil}m\right\}
@@ -706,17 +711,16 @@ Finally, we demonstrated a trade-off for exponential integrators in stiff settin
 	\bibitem{action} A. Al-Mohy, N. Higham. Computing the action of the matrix exponential, with an application to exponential integrators, SIAM Journal on Scientific Computing 33 (2011), 488-511.
 	\bibitem{newt} L. Reichel. Newton interpolation at Leja points, BIT Numerical Mathematics 30 (1990), 332-346.
 	\bibitem{advdif} M. Caliari, M. Vianello, L. Bergamaschi. Interpolating discrete advection-diffusion propagators at Leja sequences, Journal of Computational and Applied Mathematics 172 (2004), 79-99.
-	\bibitem{lejarev} M. Caliari, P. Kandolf, A. Ostermann, S. Rainer. The Leja method revisited: backward error analysis for the matrix exponential, SIAM Journal on Scientific Computation, Accepted for publication (2016). arXiv:1506.08665.
+	\bibitem{lejarev} M. Caliari, P. Kandolf, A. Ostermann, S. Rainer. The Leja method revisited: Backward error analysis for the matrix exponential, SIAM Journal on Scientific Computation 38.3 (2016), A1639-A1661.
 	\bibitem{bible} M. Hochbruck, A. Ostermann. Exponential integrators, Acta Numerica 19 (2010), 209-286
-	\bibitem{polynomialmethods} P. Novati, Polynomial methods for the computation of functions of large unsymmetric matrices, Ph.D. Thesis in Computational Mathematics, University of Trieste, advisor I. Moret (2000).
-	\bibitem{newtoninterpolation} L. Reichel, Newton interpolation at Leja points, BIT 30 (2) (1990), 332–346.
-	\bibitem{matrixanalysis} R. Horn, C. Johnson, Matrix Analysis, Cambridge University Press (2012).
-	\bibitem{trapezoidal} L. N. Trefethen, J.A.C. Weideman, The exponentially convergent trapezoidal rule, SIAM Review 56-3 (2014), 385-458.
+	\bibitem{polynomialmethods} P. Novati. Polynomial methods for the computation of functions of large unsymmetric matrices, Ph.D. Thesis in Computational Mathematics, University of Trieste, advisor I. Moret (2000).
+	\bibitem{matrixanalysis} R. Horn, C. Johnson. Matrix Analysis, Cambridge University Press (2012).
+	\bibitem{trapezoidal} L. N. Trefethen, J.A.C. Weideman. The exponentially convergent trapezoidal rule, SIAM Review 56-3 (2014), 385-458.
 	
-	\bibitem{python} Python Software Foundation. Python Language Reference, version 3.7. Available at https://www.python.org. Manual at https://docs.python.org/3/. [Online; accessed 2020-02-19]
-	\bibitem{numpy} S. v. d. Walt, C. Colbert, G Varoquaux. The NumPy Array: A Structure for Efficient Numerical Computation, Computing in Science \& Engineering, 13 (2011), 22-30.
-	\bibitem{numpyguide} T. Oliphant. A guide to NumPy, USA: Trelgol Publishing, (2006).
-	\bibitem{scipy} P. Virtanen et al. SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python. Nature Methods, in press.
+	\bibitem{python} Python Software Foundation. Python Language Reference, version 3.7. Available at https://www.python.org. Manual at https://docs.python.org/3.7/. [Online; accessed 2020-11-01]
+	\bibitem{numpy} S. v. d. Walt, C. Colbert, G. Varoquaux. The NumPy Array: A Structure for Efficient Numerical Computation, Computing in Science \& Engineering, 13 (2011), 22-30.
+	\bibitem{numpyguide} T. Oliphant. A guide to NumPy, USA: Trelgol Publishing (2006).
+	\bibitem{scipy} P. Virtanen et al. SciPy 1.0: Fundamental Algorithms for Scientific Computing in Python. Nature methods 17.3 (2020) 261-272.
 	\bibitem{matplotlib} J. Hunter. Matplotlib: A 2D Graphics Environment, Computing in Science \& Engineering, 9, 90-95 (2007).
 	\bibitem{pandas} W. McKinney. Data Structures for Statistical Computing in Python, Proceedings of the 9th Python in Science Conference, 51-56 (2010).
 \end{thebibliography}

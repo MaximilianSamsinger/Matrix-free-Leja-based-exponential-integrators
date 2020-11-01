@@ -305,7 +305,9 @@ def exprb4(F, u, t, t_end, linearCase, s,
 
 def exprbstep(u, t, τ, X, v, s, tol, normEstimate):
     tol = [tol[0]/s, tol[1]/s, tol[2], tol[3]]
-    para = select_interp_para_tmp(τ, X, v, tol, normEstimate = normEstimate)
+    
+    #para = select_interp_para_nE(τ, X, v, tol, normEstimate = normEstimate)
+    para = select_interp_para_for_fixed_m_and_s(τ, X, v, tol, normEstimate = normEstimate)
 
     if para[0] > 10**10:
         raise MemoryError("Too many substeps, computation will fail")
@@ -366,7 +368,7 @@ def select_interp_para_for_fixed_m_and_s(
         h, A, v, tol, s=1, m=99, normEstimate = None):
     '''
     The code is shortened version select_interp_para from expleja
-    and forces
+    and accepts a normEstimator as an argument. Furthermore it forces
         a fixed interpolation degree m,
         a fixed number of substeps s,
         no hump reduction.
@@ -412,26 +414,15 @@ def select_interp_para_for_fixed_m_and_s(
             A = np.asarray(A)
         γ2, mv = normAmp(A,1,tol[3])
 
-# =============================================================================
-#     if m is None: # Choose m dynamically
-#         if γ2 == 0: #Prevents division by 0
-#             m = 0
-#         else:
-#             m = np.argmin(s * np.ceil((h*γ2)/θ[2:99]).T)
-#             m = m+2
-# =============================================================================
-
     γ2, dd = θ[m], dd[:,m]
     ξ = ξ*(γ2/2)
 
     return s, γ2, ξ.flatten(), dd, A, μ, mv, m
 
-def select_interp_para_tmp(h, A, v, tol, normEstimate = None, m_max=99):
+def select_interp_para_nE(h, A, v, tol, normEstimate = None, m_max=99):
     '''
     The code is shortened version select_interp_para from expleja
-    and forces
-        a fixed interpolation degree m,
-        no hump reduction.
+    and accepts a normEstimator as an argument.
     '''
     n = v.shape[0]
 
