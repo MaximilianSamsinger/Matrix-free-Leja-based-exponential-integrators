@@ -1,8 +1,6 @@
-In this master thesis we develop an algorithm to approximate the action of a matrix exponential function for matrix-free linear operators. This is achieved by using a modified version of the real Leja method. We choose optimal interpolation parameters based on a spectral radius estimate computed by the power method. With this procedure we construct exponential Rosenbrock-type integrators to solve stiff advection-diffusion-reaction equations. We compare the performance of these integrators with other matrix-free differential equation solvers. 
- 		As part of this thesis we publish the code for the matrix-free Leja method for the action of the matrix exponential function on GitHub.
+In this master thesis we develop an algorithm to approximate the action of a matrix exponential function. In particular, we consider the case where the matrix is itself not available, but only its action as a linear operator. The construction is achieved by using a modified version of the real Leja method. We choose optimal interpolation parameters based on a spectral radius estimate computed by the power method. With this procedure we construct exponential Rosenbrock-type integrators to solve stiff advection-diffusion-reaction equations. We compare the performance of these integrators with other matrix-free differential equation solvers. 
 
-
-We consider discretized advection-diffusion equations of the form
+Experiments: We consider discretized advection-diffusion equations of the form
 
 dt u = F(u) = Au + g(u), 
 u(0) = u_0,
